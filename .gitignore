@@ -7,6 +7,7 @@ test-results/
 .env*
 !.env.example
 .vercel/
+.local-auth/
 *.tsbuildinfo
 next-env.d.ts
 *.log

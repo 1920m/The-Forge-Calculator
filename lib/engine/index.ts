@@ -53,22 +53,28 @@ export function scaledEffect(amount: number, share: number) {
   return amount * traitStrength(share);
 }
 
-export function ceilStat(value: number): number {
+export function roundStat(value: number, kind: Kind): number {
   nonNegative(value, "Stat");
-  return Math.max(0, Math.ceil(value * 100 - 1e-6) / 100);
+  return kind === "armour" ? Math.round(value) : Math.max(0, Math.ceil(value * 100 - 1e-6) / 100);
 }
 
-export function stat(base: number, multiplier: number, quality: number): number {
+/** Keep the underlying value available so enhancement never compounds display rounding. */
+export function rawStat(base: number, multiplier: number, quality: number): number {
   nonNegative(base, "Base stat");
   nonNegative(multiplier, "Multiplier");
   nonNegative(quality, "Quality");
   if (quality > 1) throw new RangeError("Quality must be between zero and one.");
-  return ceilStat(2 * base * multiplier * quality);
+  return 2 * base * multiplier * quality;
 }
 
-export function enhancementTable(levelZero: number) {
+export function stat(base: number, multiplier: number, quality: number, kind: Kind): number {
+  return roundStat(rawStat(base, multiplier, quality), kind);
+}
+
+/** Pass rawStat(...), not the rounded card value. Rounding order remains provisional. */
+export function enhancementTable(levelZero: number, kind: Kind) {
   nonNegative(levelZero, "Level zero stat");
-  return Array.from({ length: 11 }, (_, level) => ({ level, multiplier: 1 + 0.05 * level, stat: ceilStat(levelZero * (1 + 0.05 * level)) }));
+  return Array.from({ length: 11 }, (_, level) => ({ level, multiplier: 1 + 0.05 * level, stat: roundStat(levelZero * (1 + 0.05 * level), kind) }));
 }
 
 /** Inputs are 1/N denominators; outputs are conditional percentages. */

@@ -23,7 +23,7 @@ These are enough to write the engine; the PRD has the evidence.
 | Variant odds | P(v) = (1/c_v) / sum(1/c_j) inside the class |
 | Primary ore | Largest count; ties broken by highest multiplier. It sets the look and the rarity. |
 | Trait strength | 0 below a 10% share, else min(1, 0.10 + 4.5 x (share - 0.10)); full at 30% |
-| Armour defence | ceil( 2 x HealthPct x M x quality ) to two decimals |
+| Armour defence | round( 2 x HealthPct x M x quality ) to the nearest whole number; confirmed by Cris on 23 Oct 2026 |
 | Weapon damage | ceil( 2 x BaseDamage x M x quality ) to two decimals |
 | Enhancement | Stat at level L = value x (1 + 0.05 x L), L from 0 to 10 |
 
@@ -105,10 +105,11 @@ Use these names so the screens and the tests agree.
 | `variantOdds` | list of variant weights | percentage per variant |
 | `primaryOre` | list of ore + count | the ore with the largest count, ties by highest multiplier |
 | `traitStrength` | share 0 to 1 | f(s) from the PRD |
-| `stat` | base value, M, quality 0 to 1 | ceil of 2 x base x M x quality at two decimals |
-| `enhancementTable` | stat at level 0 | 11 rows, level 0 to 10, each x(1 + 0.05 x L) |
+| `rawStat` | base value, M, quality 0 to 1 | unrounded 2 x base x M x quality |
+| `stat` | base value, M, quality 0 to 1, kind | armour: nearest whole number; weapon: ceiling to two decimals |
+| `enhancementTable` | unrounded stat at level 0, kind | 11 rows, level 0 to 10, each x(1 + 0.05 x L), then category-specific rounding |
 
-Round with a small epsilon (subtract 1e-6 before the ceiling) so that values like 625.5 are not pushed up by floating-point error.
+Armour uses nearest-integer rounding, confirmed by Cris on 23 Oct 2026. Weapons use a small epsilon (subtract 1e-6 from the scaled value before the ceiling) to avoid floating-point bumps. Keep the raw base stat for enhancements rather than compounding rounded display values; that rounding sequence remains provisional until measured in game.
 
 ### Tests to write first
 
@@ -116,7 +117,7 @@ These real items were checked in the game; each must pass exactly.
 
 | Case | Inputs | Expected |
 | --- | --- | --- |
-| Dark Knight Chestplate | Sun Stone 9, Lucky Cat 8, Sealed Curse 8, Roosite 5; Health % 25; quality 100% | M = 12.51, defence 626 (625.5 rounded up) |
+| Dark Knight Chestplate | Sun Stone 9, Lucky Cat 8, Sealed Curse 8, Roosite 5; Health % 25; quality 100% | Display M = 12.51; exact M = 375.31/30; defence 626 after nearest-integer rounding |
 | Hachiwari | Sun Stone 2, Yeti Heart 2, Golem Heart 1, Meteorite 2; base damage 8.25; quality 100% | M = 10.88, damage 179.52 |
 | Shogun's Leggings | Meteorite 4, Roosite 12, Heat Steel 12, Sakurite 13; Health % 36 | M = 13.375; with defence 803 the quality is about 83.4% |
 | Primary ore | the Hachiwari mix | Meteorite wins the three-way tie of 2 by highest multiplier; rarity Mythic |
@@ -124,7 +125,7 @@ These real items were checked in the game; each must pass exactly.
 | Class odds, armour | 30 ores | Heavy Leggings 49, Heavy Helmet 28, Heavy Chestplate 13, Medium Chestplate 8, Medium Leggings 1 |
 | Variant odds | Dagger class weights 1, 2, 4, 16, 2, 6, 8 | 38.40, 19.20, 9.60, 2.40, 19.20, 6.40, 4.80 |
 | Trait strength | Mythril at 18.2% share | 7.02% of +15% Vitality; 30% share gives the full 15% |
-| Enhancement | Dark Knight Chestplate at 100% quality | +10 equals 938.25 |
+| Enhancement | Dark Knight Chestplate at 100% quality | Calculated +10 displays 938 DEF with final nearest-integer rounding. Old 938.25 decimal expectation superseded; enhancement rounding order still needs direct measurement |
 
 ### Data loading
 
@@ -183,7 +184,7 @@ None of this blocks the first build. Each item has a default, so the agent keeps
 | GitHub, Supabase and Vercel access | none, needed to deploy | Collaborator access to the repository, the Supabase project URL and anon key, and a Vercel login |
 | Real images | placeholder tiles | Ore, weapon and armour pictures uploaded to the `forge-images` bucket under the paths in the PRD |
 | Quality label ranges | the unverified list in the PRD | The in-game percentage range of each label (for example, where "Great" starts and ends) |
-| Whole-number or decimal armour defence | two decimals | One armour screenshot with a decimal-looking value, or confirmation that armour shows whole numbers |
+| Armour rounding | Resolved: nearest whole number, confirmed by Cris on 23 Oct 2026 | No longer an open question |
 | Which attack speed is real | the card value (index speed) | A stopwatch check on one weapon |
 | Wolf armour odds | 1/4, as the calculator he trusts uses | A look at the Heavy class tiles in the Forge Chances panel |
 | Items on the wiki but not in the calculator | shown with an Unverified badge | Whether Shogun, Vanguard Helmet and Leggings, Raven's pieces, Reaper Scythe and Batwing Reaver exist in game |
@@ -193,7 +194,7 @@ None of this blocks the first build. Each item has a default, so the agent keeps
 
 ### Open questions the agent should not guess
 
-- Does the game round armour defence up to a whole number on the item card? The Dark Knight Chestplate showed 626 for 625.5.
+- Resolved on 23 Oct 2026: armour rounds to the nearest whole number, not upward. Still open: does enhancement use the raw stat or the already-rounded card value?
 - What does the "[86]%" on the Shogun's Leggings card mean? It is not the quality: the numbers need about 83.4%.
 - For a tie at the top of the ore counts (for example 2 + 2 + 1), the highest multiplier among the tied ores is assumed to win the look. One screenshot of such a craft would confirm it.
 - The odds above 55 ores are unknown; the app uses the 55-ore row and says so.

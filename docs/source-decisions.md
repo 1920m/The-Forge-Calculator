@@ -14,13 +14,13 @@ World 1 and 2 share odds. World 3 and 4 replace weapon slots 3/4/5 with Mace/Axe
 
 ## Numerical discrepancies requiring in-game confirmation
 
-Keep calculations at full precision; apply the epsilon ceiling at the final two-decimal stat. The displayed multiplier is rounded independently. Cris has been told this provisional choice and why; it is not a confirmed game behaviour.
+**Confirmed correction from Cris, 23 October 2026:** armour rounds to the nearest whole number, not upward. Weapons keep two decimals, using the existing PRD weapon ceiling default. Keep calculations at full precision and round each final category output independently. The PRD and handoff have been updated at Cris's explicit request. The hidden precision and the order of enhancement rounding still require measurement; rounding once at the end remains the provisional implementation.
 
 | Case | Exact arithmetic | Published expectation | Handling |
 | --- | --- | --- | --- |
 | Dark Knight recipe | 375.31 / 30 = 12.510333333… | M 12.51 | Assert display rounding separately from exact average |
-| Dark Knight base stat | 2 × 25 × (375.31 / 30) = 625.516666… | 625.5, shown as 626 | Two-decimal default gives 625.52; whole-number display gives 626. Badge the display rule as Unverified |
-| Dark Knight +10 | 625.52 × 1.5 = 938.28 using rounded +0; or 938.275 before +0 rounding | 938.25 | Document as an unresolved golden discrepancy; do not alter ore values to force a pass |
+| Dark Knight base stat | 2 × 25 × (375.31 / 30) = 625.516666… | Card shows 626 | Nearest-integer armour rounding gives 626, matching Cris's screenshot |
+| Dark Knight +10 | Raw value × 1.5 = 938.275 | Old handoff said 938.25 | New armour display rule gives 938 DEF. Old decimal expectation is superseded. This is a calculated prediction; enhancement rounding order is not yet confirmed |
 | Shogun recipe | 548.36 / 41 = 13.374634146… | M 13.375 | Matches three-decimal display; do not silently replace exact average |
 | Mythril share | 18.2% gives 7.035% before display rounding | 7.02% | Likely a rounded share (e.g. 2/11); keep exact share input and ask for original counts |
 
@@ -30,7 +30,7 @@ Hachiwari is consistent: 76.16 / 7 = 10.88; 2 × 8.25 × 10.88 = 179.52. The Dar
 
 Two supplied in-game screenshots confirm Sun Stone ×9, Lucky Cat ×8, Sealed Curse ×8, Roosite ×5 (30 total), displayed multiplier 12.51×, and a completed Dark Knight Chestplate at Masterwork 100%, Legendary, 626 DEF. Visible class odds are Heavy Leggings 49%, Heavy Helmet 28%, Heavy Chestplate 13%, Medium Chestplate 8%, Medium Leggings 1%. The Heavy Chestplate panel visibly contains tiles labelled 1/1, 1/4 and 1/8; no readable variant names accompany them, so do not infer a name-to-weight mapping or silently remove other variants. Structured observations are in `tests/fixtures/cris-dark-knight.json`. Game art is not copied into the repository.
 
-This proves the observed card value and those visible odds. It does not establish the universal armour rounding rule, the hidden multiplier precision, or enhancement behaviour.
+This proves the observed card value and those visible odds. Cris subsequently confirmed nearest-integer armour rounding in chat. Hidden multiplier precision and enhancement rounding order remain unmeasured.
 
 Category-odds rows are measured rounded percentages and may sum to 99 or 101; do not normalise them or invent missing percentages. Conditional variant odds are normalised inverse weights. Multiply class and conditional variant probability only when showing overall odds.
 
@@ -77,4 +77,4 @@ All public tables: enable RLS, revoke all from `anon`, `authenticated`, and inhe
 
 ## Current foundation status
 
-Local scaffold and initial pure engine created. The correct target for both Supabase and Vercel is **Cristi Excelsis**, explicitly selected by Cris. The currently connected account exposes only Clearpath resources. Do not provision Supabase or deploy source there. An empty Vercel project was created before the account clarification; it has no source deployment. Git linking was refused, and the GitHub connector confirms read access without push permission. No Supabase project has been created or changed. CI will run remotely once the intended accounts are connected and the feature branch can be pushed.
+Local scaffold and initial pure engine created. The only authorized identity for GitHub, Supabase and Vercel is **Cristi Excelsis**. Cris confirmed that the repository remains `1920m/Forge-Calculator`. No Clearpath account, credential or resource may be used, including as a fallback. Do not repeat connector calls known to use that identity. New connection profiles are visible in Cris's settings screenshots, but this session's callable schemas expose no connection-selection field. Cris completed an isolated GitHub CLI login; the authenticated user is **1920m**, with admin and push permission on the confirmed repository. Git author settings and both unpublished commits were corrected to Cris's supplied name/email. All Git network operations must use that isolated configuration and override global credential helpers. Supabase and Vercel browser sessions are signed out; no Supabase changes or source deployments have occurred.

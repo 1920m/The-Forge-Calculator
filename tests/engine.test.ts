@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { averageMultiplier, primaryOre, traitStrength, scaledEffect, stat, enhancementTable, variantOdds, classOdds, type Ingredient, type CategoryRow } from "../lib/engine";
+import { averageMultiplier, primaryOre, traitStrength, scaledEffect, rawStat, stat, enhancementTable, variantOdds, classOdds, type Ingredient, type CategoryRow } from "../lib/engine";
 import armourEvidence from "./fixtures/cris-dark-knight.json";
 import weaponEvidence from "./fixtures/cris-hachiwari.json";
 
@@ -13,7 +13,7 @@ describe("golden in-game examples and exact arithmetic", () => {
     expect(hachiwari.map(({ ore, count }) => ({ slug: ore.slug, count }))).toEqual(weaponEvidence.recipe);
     expect(multiplier).toBeCloseTo(10.88, 12);
     expect(multiplier.toFixed(2)).toBe(weaponEvidence.displayedMultiplier);
-    expect(stat(8.25, multiplier, 1)).toBe(weaponEvidence.displayedDamage);
+    expect(stat(8.25, multiplier, 1, "weapon")).toBe(weaponEvidence.displayedDamage);
     expect(primaryOre(hachiwari)).toMatchObject({ slug: "meteorite", rarity: weaponEvidence.rarity });
   });
   it("preserves Dark Knight precision, matching the displayed multiplier and whole-number card", () => {
@@ -21,8 +21,7 @@ describe("golden in-game examples and exact arithmetic", () => {
     expect(multiplier).toBeCloseTo(375.31 / 30, 12);
     expect(darkKnight.map(({ ore, count }) => ({ slug: ore.slug, count }))).toEqual(armourEvidence.recipe);
     expect(multiplier.toFixed(2)).toBe(armourEvidence.displayedMultiplier);
-    expect(stat(25, multiplier, 1)).toBe(625.52);
-    expect(Math.ceil(stat(25, multiplier, 1))).toBe(armourEvidence.displayedDefence);
+    expect(stat(25, multiplier, 1, "armour")).toBe(armourEvidence.displayedDefence);
   });
   it("matches Shogun's displayed multiplier and implied quality without rounding the mix", () => {
     const mix = [ingredient("meteorite", 14.44, 4), ingredient("roosite", 14, 12), ingredient("heat-steel", 11.5, 12), ingredient("sakurite", 14.2, 13)];
@@ -30,12 +29,15 @@ describe("golden in-game examples and exact arithmetic", () => {
     expect(multiplier.toFixed(3)).toBe("13.375");
     const quality = 803 / (2 * 36 * multiplier);
     expect(quality * 100).toBeCloseTo(83.4, 1);
-    expect(stat(36, multiplier, quality)).toBe(803);
+    expect(stat(36, multiplier, quality, "armour")).toBe(803);
   });
-  it("reproduces the documented +10 example when given its stated +0 value", () => {
-    expect(enhancementTable(625.5)[10].stat).toBe(938.25);
+  it("shows whole-number armour enhancements under Cris's updated rounding rule", () => {
+    const raw = rawStat(25, averageMultiplier(darkKnight)!, 1);
+    const levels = enhancementTable(raw, "armour");
+    expect(levels[0].stat).toBe(626);
+    expect(levels[1].stat).toBe(657);
+    expect(levels[10].stat).toBe(938);
   });
-  it.todo("Confirm Dark Knight recipe's +10: full precision gives 938.28, handoff expects 938.25");
 });
 
 describe("traits and rounding boundaries", () => {
@@ -50,15 +52,25 @@ describe("traits and rounding boundaries", () => {
     expect(scaledEffect(-10, 0.2)).toBeCloseTo(-5.5);
     expect(scaledEffect(15, 0.182)).toBeCloseTo(7.035);
   });
-  it("ceilings decimals without floating-point bumps or whole-number armour rounding", () => {
-    expect(stat(25, 12.51, 1)).toBe(625.5);
-    expect(stat(8.25, 10.88, 1)).toBe(179.52);
-    expect(stat(1, 1.000001, 1)).toBe(2.01);
-    expect(stat(25, 12.51, 0)).toBe(0);
-    expect(stat(25, 12.51, 0.25)).toBe(156.38);
+  it("rounds armour to integers and weapons to two decimals, without floating-point bumps", () => {
+    expect(stat(25, 12.51, 1, "armour")).toBe(626);
+    expect(stat(8.25, 10.88, 1, "weapon")).toBe(179.52);
+    expect(stat(1, 1.000001, 1, "weapon")).toBe(2.01);
+    expect(stat(25, 12.51, 0, "armour")).toBe(0);
+    expect(stat(25, 12.51, 0.25, "armour")).toBe(156);
+    expect(stat(25, 12.51, 0.25, "weapon")).toBe(156.38);
+  });
+  it("rounds armour below and above the half-point to the nearest integer", () => {
+    expect(stat(1, 78.05, 1, "armour")).toBe(156);
+    expect(stat(1, 78.3, 1, "armour")).toBe(157);
+    expect(stat(1, 78.25, 1, "armour")).toBe(157);
+    expect(stat(1, 78, 1, "armour")).toBe(156);
+  });
+  it("keeps weapon enhancement values at two decimals", () => {
+    expect(enhancementTable(rawStat(8.25, 10.88, 1), "weapon")[10].stat).toBe(269.28);
   });
   it("has eleven enhancement levels and no success-chance fields", () => {
-    const levels = enhancementTable(100);
+    const levels = enhancementTable(100, "armour");
     expect(levels).toHaveLength(11);
     expect(levels[0]).toEqual({ level: 0, multiplier: 1, stat: 100 });
     expect(levels[10]).toEqual({ level: 10, multiplier: 1.5, stat: 150 });
@@ -115,14 +127,14 @@ describe("input validation", () => {
     expect(averageMultiplier([filler])).toBeNull();
   });
   it.each([-1, NaN, Infinity])("rejects invalid numbers", (value) => {
-    expect(() => stat(value, 1, 1)).toThrow();
+    expect(() => stat(value, 1, 1, "weapon")).toThrow();
     expect(() => traitStrength(value)).toThrow();
     expect(() => averageMultiplier([ingredient("iron", 1, value)])).toThrow();
   });
   it("rejects fractional counts, duplicate entries and out-of-range quality/shares", () => {
     expect(() => averageMultiplier([ingredient("iron", 1, 0.5)])).toThrow();
     expect(() => averageMultiplier([ingredient("iron", 1, 1), ingredient("iron", 1, 1)])).toThrow();
-    expect(() => stat(1, 1, 1.01)).toThrow();
+    expect(() => stat(1, 1, 1.01, "weapon")).toThrow();
     expect(() => traitStrength(1.01)).toThrow();
     expect(() => variantOdds([0])).toThrow();
   });

@@ -28,7 +28,7 @@ Runs lint, type generation and strict typechecking, tests, and a production buil
 3. [Design notes](forge-calculator-handoff/design/DESIGN-NOTES.md) and the seven boards in that folder
 4. [Source decisions and open discrepancies](docs/source-decisions.md)
 
-The original handoff folder is preserved. Design markup is reference material only and is not copied into production components. Cris is the owner referred to as Albert in the original documents.
+The original design folder is preserved. The PRD and handoff include Cris's requested correction: armour rounds to the nearest integer; weapons keep two decimals. Design markup is reference material only and is not copied into production components. Cris is the owner referred to as Albert in the original documents.
 
 ## Structure
 
@@ -51,9 +51,9 @@ The engine must have no React, Next.js, or Supabase imports. An ESLint rule reje
 
 Intended Vercel configuration: `forge-calculator` in **Cristi Excelsis**, Node.js 24, Next.js preset, repository root as the root directory, `npm run build` as the build command. Production remains gated on review; the current app has `noindex` metadata.
 
-Link `1920m/Forge-Calculator` through the intended GitHub account in Vercel. The currently connected Vercel account could create an empty project but could not link the repository (`repo_no_access`). No source has been deployed to that account. Automatic branch previews require the correct account connection and repository link.
+Link `1920m/Forge-Calculator` through Cris's GitHub account in Vercel. Automatic branch previews require the intended account connection and repository link. Git author settings are project-local; they do not authenticate a push. CLI authentication can use an isolated, ignored `.local-auth/github` configuration with inherited `GH_TOKEN` and `GITHUB_TOKEN` unset in that process. Never use another project's credentials as a fallback.
 
-Supabase is not provisioned or linked yet. Cris has selected **Cristi Excelsis** for both Supabase and Vercel. The current connections expose Clearpath resources; do not deploy or provision there. An empty Vercel project was created before this clarification, with no source deployment. GitHub's connected account has read-only repository access. Correct account connections are needed before publishing.
+Supabase is not provisioned or linked yet. Only **Cristi Excelsis** accounts are authorized for GitHub, Supabase and Vercel. Do not inspect, provision, deploy to, or modify Clearpath resources. No Supabase project was changed and no source was deployed there. The accidental empty Vercel project is outside this project's authorized account and must not be reused or modified. Correct account routing is required before publishing.
 
 Once connected to the intended project, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to local and Vercel Preview/Production environments. The image allowlist is restricted to the configured project and the `forge-images` public bucket.
 
