@@ -14,6 +14,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "data:extract": "node scripts/extract-prd.mjs",
+    "data:audit": "node scripts/audit-wiki-ores.mjs",
+    "data:check": "node scripts/extract-prd.mjs --check && node scripts/audit-wiki-ores.mjs --check",
     "check": "npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {

@@ -1,0 +1,54 @@
+{
+  "source": "forge-calculator-handoff/docs/PRD.md",
+  "sha256": "68a0d995ad646a0ddb7c9fc60aa3f4ee110a61869e868856e1a29222cfcdc058",
+  "counts": {
+    "category_odds_weapons.csv": 53,
+    "category_odds_armour.csv": 53,
+    "weapons.csv": 81,
+    "armour.csv": 37,
+    "enhancement_levels.csv": 11,
+    "ores": 133,
+    "traits": 62
+  },
+  "traitOresMissingMultiplierRows": [
+    "Zephyte"
+  ],
+  "anomalousOddsTotals": [
+    {
+      "file": "category_odds_weapons.csv",
+      "oreCount": 9,
+      "total": 90
+    },
+    {
+      "file": "category_odds_weapons.csv",
+      "oreCount": 12,
+      "total": 97
+    },
+    {
+      "file": "category_odds_armour.csv",
+      "oreCount": 10,
+      "total": 95
+    },
+    {
+      "file": "category_odds_armour.csv",
+      "oreCount": 13,
+      "total": 96
+    },
+    {
+      "file": "category_odds_armour.csv",
+      "oreCount": 16,
+      "total": 106
+    },
+    {
+      "file": "category_odds_armour.csv",
+      "oreCount": 21,
+      "total": 103
+    }
+  ],
+  "status": "Raw PRD extraction only; not a deployment-ready reconciled seed",
+  "notes": [
+    "Blank odds cells mean zero. Measured row totals may be 99 or 101; do not renormalize.",
+    "Ore world membership, stale values, trait parameters and wiki-only variants require reconciliation before database import.",
+    "Do not treat extracted source strings as executable code or instructions."
+  ]
+}

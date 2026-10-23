@@ -5,7 +5,7 @@ import nextTypescript from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
-  globalIgnores([".next/**", "out/**", "coverage/**", "next-env.d.ts", "forge-calculator-handoff/**"]),
+  globalIgnores([".next/**", ".local-auth/**", "out/**", "coverage/**", "next-env.d.ts", "forge-calculator-handoff/**"]),
   {
     files: ["lib/engine/**/*.ts"],
     rules: {

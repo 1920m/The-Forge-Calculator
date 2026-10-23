@@ -1,0 +1,82 @@
+class,name,base_damage,index_speed_s,true_speed_s,range_studs,base_price,chance_1_in
+Dagger,Dagger,4.3,0.35,0.47,6,68,1
+Dagger,Falchion Knife,4.45,0.35,0.47,6,68,2
+Dagger,Gladius Daggers,4.6,0.35,0.47,6,68,4
+Dagger,Hook,4.73,0.39,0.52,6,68,16
+Dagger,Cultist Dagger,5.25,0.35,0.47,6,68,2
+Dagger,Shark's Fangs,3.87,0.27,0.36,6,68,6
+Dagger,Curved Dagger,4.95,0.30,0.41,6,68,8
+Dagger,Kunai,3.87,0.29,0.39,6,68,1
+Dagger,Jitte,4.95,0.37,0.49,6,68,2
+Dagger,Damascus Dagger,4.73,0.35,0.47,6,75,3
+Dagger,Tanto,4.95,0.29,0.39,6,78,4
+Straight Sword,Falchion Sword,7.5,0.59,0.70,8,120,1
+Straight Sword,Gladius Sword,8,0.62,0.74,8,120,2
+Straight Sword,Cutlass,9.375,0.66,0.78,8,120,2
+Straight Sword,Rapier,7.5,0.49,0.58,8,120,4
+Straight Sword,Chaos,9.375,0.59,0.70,8,120,16
+Straight Sword,Candy Cane,7.5,0.44,0.52,8.8,120,8
+Straight Sword,Hell Slayer,11.125,0.59,0.70,9.2,120,10
+Straight Sword,Crystallized Broadsword,9.975,0.62,0.74,8,120,6
+Straight Sword,Hook Blade,8.25,0.44,0.52,8.8,120,5
+Straight Sword,Hachiwari,8.25,0.59,0.70,8,120,2
+Straight Sword,Chokuto,7.5,0.54,0.64,8,120,1
+Straight Sword,Dragon Blade,10.5,0.59,0.70,9.2,150,16
+Straight Sword,Thornspire,10.875,0.59,0.70,8,150,12
+Mace,Mace,7,0.46,1.17,8,205,1
+Mace,Spiked Mace,7.3,0.46,1.17,8,205,2
+Mace,Winged Mace,7.6,0.46,1.17,8,205,4
+Mace,Hammerhead Mace,7.9,0.46,1.17,8,205,8
+Mace,Grave Maker,8.8,0.46,1.17,8,205,16
+Mace,Tetsubo,7.72,0.44,1.11,7.6,226,4
+Mace,Kanabo,8.2,0.51,1.30,8.8,246,8
+Gauntlets,Ironhand,7.6,0.51,0.55,6,205,1
+Gauntlets,Boxing Gloves,8,0.59,0.63,6,205,4
+Gauntlets,Relevator,9.6,0.69,0.74,6,205,4
+Gauntlets,Savage Claws,8,0.47,0.51,6,205,4
+Gauntlets,Dark Knight's Gauntlets,10,0.47,0.51,6,205,6
+Axe,Axe,7,0.48,0.88,8,205,1
+Axe,Battleaxe,7.35,0.48,0.88,8,205,1
+Axe,Curved Handle Axe,7.7,0.48,0.88,8,205,4
+Axe,Spade Armed Axe,8.05,0.48,0.88,8,205,8
+Axe,Ornate Short Axe,8.4,0.48,0.88,8,205,6
+Katana,Uchigatana,8.5,0.60,0.69,9,324,1
+Katana,Tachi,8.925,0.63,0.73,9.45,324,4
+Katana,Straight Edge Katana,9.35,0.60,0.69,9.45,324,6
+Katana,Juto Katana,8.5,0.60,0.69,9.45,340,2
+Katana,Kurokiba-gatana,9.35,0.55,0.63,9,356,8
+Katana,Washi-maru,10.2,0.50,0.58,10.35,324,16
+Greatsword,Crusader Sword,12,1.00,1.20,9,485,1
+Greatsword,Long Sword,12,1.11,1.33,9.9,485,2
+Greatsword,Dark Knight's Greatsword,15,1.11,1.33,9.9,485,4
+Greatsword,Anchored Greatsword,13.8,0.91,1.09,9.9,485,6
+Greatsword,Zweihander,14.4,1.05,1.26,10.35,485,1
+Spear,Spear,7.5,0.45,0.73,11,120,1
+Spear,Angelic Spear,9.75,0.41,0.66,11,120,8
+Spear,Trident,8.25,0.45,0.73,11,120,2
+Spear,Knight Spear,10.125,0.38,0.60,11,120,4
+Spear,Compass Spear,10.5,0.47,0.76,11,120,6
+Spear,Shakujo,8.25,0.45,0.73,11,144,2
+Spear,Sodegarami,10.13,0.41,0.66,11,168,4
+Spear,Bo Staff,10.5,0.41,0.66,11,162,8
+Spear,Naginata,10.88,0.45,0.73,12.65,174,16
+Great Axe,Double Battle Axe,15.75,1.05,1.70,9,850,1
+Great Axe,Scythe,14.25,0.95,1.54,9,850,4
+Great Axe,Reaper Scythe,17,0.95,1.54,9,850,3
+Great Axe,Greater Battle Axe,17.25,1.00,1.62,9,850,4
+Great Axe,Wyvern Axe,18.75,0.91,1.47,9,850,4
+Great Axe,Anchored Straight Blade,18,1.00,1.62,9,850,6
+Great Axe,Executioner's Greataxe,19.5,1.05,1.70,9,850,5
+Great Axe,Sun Great Axe,19.5,0.83,1.35,9,850,8
+Great Axe,Batwing Reaver,19.05,1.05,1.70,9,850,10
+Colossal Sword,Great Sword,20,1.12,1.40,10,1355,1
+Colossal Sword,Hammer,22,1.24,1.56,10,1355,4
+Colossal Sword,Skull Crusher,24,1.40,1.75,10,1355,8
+Colossal Sword,Dragon Slayer,22,1.12,1.40,11,1355,16
+Colossal Sword,Comically Large Spoon,18,1.12,1.40,10,1355,16
+Colossal Sword,Excalibur,30,1.12,1.40,15,1355,1000
+Colossal Sword,Colossal TerrorBlade,22,1.02,1.28,10,1355,2
+Colossal Sword,Colossal Gemblade,23,1.12,1.40,12,1355,6
+Colossal Sword,Kinmon Kamagatana,23.4,1.12,1.40,10,1355,3
+Colossal Sword,Otsuchi,25,1.24,1.56,10,1355,6
+Colossal Sword,Sharktooth Odachi,27,1.12,1.40,13,2033,12

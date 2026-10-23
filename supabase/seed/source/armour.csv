@@ -1,0 +1,38 @@
+class,name,slot,base_health_pct,base_price,chance_1_in
+Light,Light Helmet,helmet,3.75,65,1
+Light,Light Chestplate,chestplate,5,225,1
+Light,Light Leggings,leggings,4.375,112.5,1
+Light,Ninja's Helmet,helmet,9,65,1
+Light,Ninja's Armor,chestplate,13.5,225,1
+Light,Ninja's Leggings,leggings,10,112.5,1
+Medium,Medium Helmet,helmet,6.25,335,1
+Medium,Medium Chestplate,chestplate,8.75,850,1
+Medium,Medium Leggings,leggings,7.5,485,1
+Medium,Samurai Helmet,helmet,8,335,2
+Medium,Samurai Chestplate,chestplate,12.75,850,2
+Medium,Samurai Leggings,leggings,9,485,2
+Medium,Viking Helmet,helmet,10.5,335,4
+Medium,Viking Chestplate,chestplate,15,850,4
+Medium,Viking Leggings,leggings,11,485,4
+Medium,Rootguard Helmet,helmet,15,335,2
+Medium,Rootguard Chestplate,chestplate,21,850,2
+Medium,Rootguard Leggings,leggings,17,485,2
+Heavy,Knight Helmet,helmet,12.5,1020,1
+Heavy,Knight Chestplate,chestplate,16.25,1355,1
+Heavy,Knight Leggings,leggings,13.75,1200,1
+Heavy,Dark Knight Helmet,helmet,18.75,1020,2
+Heavy,Dark Knight Chestplate,chestplate,25,1355,2
+Heavy,Dark Knight Leggings,leggings,21.875,1200,2
+Heavy,Wolf Helmet,helmet,25,1020,3
+Heavy,Wolf Chestplate,chestplate,35,1355,3
+Heavy,Wolf Leggings,leggings,28,1200,3
+Heavy,Goblin's Crown,helmet,26,1020,6
+Heavy,Raven's Helmet,helmet,26.5,1020,8
+Heavy,Raven's Chestplate,chestplate,37,1355,8
+Heavy,Raven's Leggings,leggings,29.25,1200,8
+Heavy,Vanguard Helmet,helmet,29,1020,4
+Heavy,Vanguard Chestplate,chestplate,40,1355,4
+Heavy,Vanguard Leggings,leggings,32,1200,4
+Heavy,Shogun Helmet,helmet,34,1020,8
+Heavy,Shogun Chestplate,chestplate,46,1355,8
+Heavy,Shogun Leggings,leggings,36,1200,8

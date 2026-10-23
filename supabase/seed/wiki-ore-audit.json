@@ -1,0 +1,119 @@
+{
+  "source": "https://forgewiki.org/wiki/Ores",
+  "observed": "2026-10-23",
+  "pageLastEdited": "2026-10-20 16:44",
+  "attribution": "The Forge Official Roblox Wiki contributors; CC BY-SA 4.0. Adapted statistical snapshot from the displayed All Ores table.",
+  "license": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "counts": {
+    "prd": 133,
+    "wiki": 150
+  },
+  "missingFromPrd": [
+    {
+      "name": "Fichillium",
+      "multiplier": 0,
+      "rarity": "Relic"
+    },
+    {
+      "name": "Boneite",
+      "multiplier": 1.2,
+      "rarity": "Rare"
+    },
+    {
+      "name": "Volcanic Rock Ore",
+      "multiplier": 1.55,
+      "rarity": "Rare"
+    },
+    {
+      "name": "Quartz",
+      "multiplier": 1.5,
+      "rarity": "Rare"
+    },
+    {
+      "name": "Amethyst",
+      "multiplier": 1.65,
+      "rarity": "Rare"
+    },
+    {
+      "name": "Topaz",
+      "multiplier": 1.75,
+      "rarity": "Rare"
+    },
+    {
+      "name": "Dark Boneite",
+      "multiplier": 2.25,
+      "rarity": "Rare"
+    },
+    {
+      "name": "Sapphire",
+      "multiplier": 2.25,
+      "rarity": "Rare"
+    },
+    {
+      "name": "Cuprite",
+      "multiplier": 2.43,
+      "rarity": "Epic"
+    },
+    {
+      "name": "Slimite",
+      "multiplier": 2.25,
+      "rarity": "Epic"
+    },
+    {
+      "name": "Orange Crystal Ore",
+      "multiplier": 3,
+      "rarity": "Epic"
+    },
+    {
+      "name": "Magenta Crystal Ore",
+      "multiplier": 3.1,
+      "rarity": "Epic"
+    },
+    {
+      "name": "Green Crystal Ore",
+      "multiplier": 3.2,
+      "rarity": "Epic"
+    },
+    {
+      "name": "Crimson Crystal Ore",
+      "multiplier": 3.3,
+      "rarity": "Epic"
+    },
+    {
+      "name": "Blue Crystal Ore",
+      "multiplier": 3.4,
+      "rarity": "Epic"
+    },
+    {
+      "name": "Grass",
+      "multiplier": 0.1,
+      "rarity": "Common"
+    },
+    {
+      "name": "Zephyte",
+      "multiplier": 18.5,
+      "rarity": "Legendary"
+    }
+  ],
+  "missingFromWiki": [],
+  "multiplierConflicts": [
+    {
+      "name": "Aite",
+      "prd": "1.00",
+      "wiki": 1.1
+    },
+    {
+      "name": "Arcane Crystal",
+      "prd": "7.50",
+      "wiki": 9
+    }
+  ],
+  "rarityConflicts": [],
+  "notes": [
+    "Unverified secondary-source evidence. PRD and Cris's in-game evidence retain precedence; this report changes no production values.",
+    "Mythical and Mythic are treated as naming aliases for comparison only.",
+    "Fichilliumorite is listed as 1x on the wiki, while the PRD specifies a special average-of-other-ores rule; a scalar comparison cannot resolve that mechanic.",
+    "Used For describes trait applicability, not proof that an ore cannot be forged into the other equipment kind. None does not mean unusable.",
+    "The All Ores table provides mining sources but no full numerical trait effects. Individual ore pages and in-game evidence remain necessary for traits and exact world assignments."
+  ]
+}

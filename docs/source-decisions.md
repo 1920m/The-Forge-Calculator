@@ -60,6 +60,14 @@ The existing comparison-calculator tab initially loaded blank. A reload rendered
 
 Two additional screenshots confirm Sun Stone ×2, Yeti Heart ×2, Golem Heart ×1, Meteorite ×2 (7 total), displayed multiplier 10.88×, and a completed Hachiwari at Masterwork 100%, Mythic, 179.52 DMG, with displayed ATK Speed 0.59s. Forge chances show Straight Sword 74%, Mace 20%, Dagger 6%, and Spear 0%. The screenshots support the handoff's 2× weapon formula and displayed index speed; they do not measure true swing timing or enhancement gains. Observations are in `tests/fixtures/cris-hachiwari.json`.
 
+### Complete ore audit, resumed 24 October 2026
+
+The 23 October browser snapshot contains 150 distinct ores. All 133 PRD ore names are present, with 17 additional names: Fichillium, Boneite, Volcanic Rock Ore, Quartz, Amethyst, Topaz, Dark Boneite, Sapphire, Cuprite, Slimite, Orange Crystal Ore, Magenta Crystal Ore, Green Crystal Ore, Crimson Crystal Ore, Blue Crystal Ore, Grass and Zephyte. Wiki-only data stays Unverified; Fichillium's eligibility for forging remains unknown. The wiki's multiplier conflicts are Aite (PRD 1.00, wiki 1.10) and Arcane Crystal (PRD 7.50, wiki 9.00). Retain PRD values pending Cris's confirmation. No rarity conflicts remain after treating Mythical/Mythic as aliases.
+
+The attributed snapshot and machine-readable comparison are in `supabase/seed/`. Table columns are resolved by header, because the early-world PRD table places Multiplier before Drop, while later tables reverse them. Raw extraction preserves both orders. The wiki All Ores page does not contain numerical trait effects; Used For must not be interpreted as material eligibility.
+
+PRD class odds also need six explicit Unverified flags: weapons at 9 ores total 90%, at 12 total 97%; armour at 10 totals 95%, at 13 totals 96%, at 16 totals 106%, and at 21 totals 103%. No values are silently normalized or corrected.
+
 ## Database plan
 
 `patches`, `ores`, `ore_traits`, `weapon_types`, `weapons`, `armour_variants`, `armour_pieces`, `category_odds`, `enhancement_levels`, `quality_tiers`, `trait_strength`. Public Storage bucket: `forge-images`.

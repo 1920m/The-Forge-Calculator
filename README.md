@@ -39,8 +39,8 @@ lib/engine/             Pure TypeScript calculations
 lib/data/               Public configuration, then queries and fallback data
 tests/                  Vitest tests
 supabase/migrations/    Reproducible schema changes (planned)
-supabase/seed/          PRD-derived source data (planned)
-scripts/                Data validation and image checks (planned)
+supabase/seed/          Extracted PRD data and attributed wiki ore audit
+scripts/                Reproducible extraction and source checks
 docs/                   Build plan, source decisions, skill review
 forge-calculator-handoff/ Original PRD, guide, and reference boards
 ```
