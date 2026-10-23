@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How it works</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;700&amp;family=Montserrat:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0a09}
+a{color:#d8d0bd;text-decoration:none}a:hover{color:#fff}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc,#e8d48a);outline-offset:2px}
+.gp{position:relative;border:1px solid var(--bd);background:linear-gradient(var(--br),var(--br)) 0 0/16px 3px no-repeat,linear-gradient(var(--br),var(--br)) 0 0/3px 16px no-repeat,linear-gradient(var(--br),var(--br)) 100% 0/16px 3px no-repeat,linear-gradient(var(--br),var(--br)) 100% 0/3px 16px no-repeat,linear-gradient(var(--br),var(--br)) 0 100%/16px 3px no-repeat,linear-gradient(var(--br),var(--br)) 0 100%/3px 16px no-repeat,linear-gradient(var(--br),var(--br)) 100% 100%/16px 3px no-repeat,linear-gradient(var(--br),var(--br)) 100% 100%/3px 16px no-repeat,var(--panel)}
+.tb{background:var(--bar);border-bottom:1px solid var(--bd2)}
+.gb{position:relative;border:1px solid #4f8a3d;color:#ece6d2;font-family:Alegreya,Georgia,serif;font-weight:700;background:linear-gradient(#6bc04f,#6bc04f) 0 0/10px 3px no-repeat,linear-gradient(#6bc04f,#6bc04f) 0 0/3px 10px no-repeat,linear-gradient(#6bc04f,#6bc04f) 100% 100%/10px 3px no-repeat,linear-gradient(#6bc04f,#6bc04f) 100% 100%/3px 10px no-repeat,#26391f}
+.gt{background:repeating-linear-gradient(135deg,#1a1816,#1a1816 8px,#161412 8px,#161412 16px)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes sheen{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes drift{from{background-position:0 0}to{background-position:12px 0}}
+@keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@keyframes fall{from{top:-4%}to{top:104%}}
+@keyframes lift{from{top:104%}to{top:-4%}}
+@keyframes sway{from{transform:translateX(-30px) rotate(-35deg)}to{transform:translateX(30px) rotate(70deg)}}
+@keyframes sway2{from{transform:translateX(-14px)}to{transform:translateX(14px)}}
+@keyframes bar{from{width:0}to{width:100%}}
+.rise{animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+.gp:hover{border-color:var(--bd2)}
+.gp,.gp button{transition:border-color .25s}
+button.gt{transition:transform .2s ease,border-color .2s,filter .2s}
+button.gt:hover{transform:translateY(-3px);filter:brightness(1.25)}
+button.gt:active{transform:translateY(0) scale(.97)}
+.gb{transition:background-color .2s,border-color .2s,transform .15s}
+.gb:hover{background-color:#31482a}
+.vr,.tc{transition:background-color .2s,transform .2s,border-color .2s}
+.vr:hover{background-color:#24211d !important}
+.tc:hover{transform:translateY(-2px);border-color:var(--br)}
+.bar{transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.shine{color:transparent;background:linear-gradient(110deg,#8d8c92 35%,#fff 50%,#8d8c92 65%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;animation:sheen 5s linear infinite}
+.fl{display:flex;flex-direction:column;gap:12px}
+.fl a{color:#8d8c92;font-size:18px;transition:color .2s,transform .2s;display:inline-block}
+.fl a:hover{color:#fff;transform:translateX(3px)}
+.dotword{margin:10px -20px 0;text-align:center;font-family:Montserrat,sans-serif;font-weight:700;font-size:230px;line-height:.9;letter-spacing:.04em;height:170px;overflow:hidden;color:transparent;background:radial-gradient(circle,var(--br) 1.3px,transparent 1.8px) 0 0/6px 6px;-webkit-background-clip:text;background-clip:text;-webkit-mask-image:linear-gradient(to bottom,#000 10%,transparent 92%);mask-image:linear-gradient(to bottom,#000 10%,transparent 92%);animation:drift 3s linear infinite}
+.sk{position:relative;overflow:hidden;background:#1d1c20;border:1px solid #2a292e}
+.sk::after{content:"";position:absolute;top:0;bottom:0;left:0;width:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent);transform:translateX(-100%);animation:sweep 1.4s ease-in-out infinite;animation-delay:var(--d,0s)}
+.pill{min-height:40px;padding:0 14px;background:var(--panel);border:1px solid var(--bd2);color:#d8d0bd;font-family:Alegreya,Georgia,serif;font-size:17px;transition:background-color .2s,border-color .2s}
+.pill:hover{border-color:var(--br)}
+.ocard{transition:transform .2s,border-color .2s,background-color .2s}
+.ocard:hover{transform:translateY(-2px)}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</helmet>
+<div style="{{rootStyle}}">
+<div aria-hidden="true" style="{{overlayStyle}}">
+<sc-for list="{{particles}}" as="p" hint-placeholder-count="20">
+<span style="{{p.o}}"><span style="{{p.i}}"></span></span>
+</sc-for>
+</div>
+<header style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 32px;padding:14px 32px;background:var(--bar);border-bottom:1px solid var(--bd);position:relative;z-index:2">
+<div style="display:flex;align-items:center;gap:12px">
+<div class="gt" style="width:38px;height:38px;border:1px solid #4a4850;display:flex;align-items:center;justify-content:center">
+<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9a9a9a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h13a4 4 0 0 0 4-4h1M6 8v3c0 2 2 3 4 3l-2 4h8l-2-4c2 0 4-1 4-3V8"></path></svg>
+</div>
+<div class="shine" style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px">Forge Calculator</div>
+</div>
+<nav style="display:flex;flex-wrap:wrap;gap:4px" aria-label="Main">
+<a href="Main.dc.html" style="padding:8px 14px;border-bottom:2px solid transparent">Calculator</a>
+<a href="Ores.dc.html" style="padding:8px 14px;border-bottom:2px solid transparent">Ores</a>
+<a href="Weapons.dc.html" style="padding:8px 14px;border-bottom:2px solid transparent">Weapons</a>
+<a href="Armour.dc.html" style="padding:8px 14px;border-bottom:2px solid transparent">Armour</a>
+<a href="HowItWorks.dc.html" style="padding:8px 14px;border-bottom:2px solid var(--acc);color:#fff;font-weight:700">How it works</a>
+</nav>
+<div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+<span style="font-size:15px;color:#a39c8b">World</span>
+<sc-for list="{{worlds}}" as="w" hint-placeholder-count="4">
+<button onClick="{{w.pick}}" aria-pressed="{{w.on}}" aria-label="{{w.aria}}" style="{{w.style}}">{{w.label}}</button>
+</sc-for>
+</div>
+</header>
+<div style="height:3px;background:var(--bd);position:relative;z-index:2;opacity:{{barOpacity}};transition:opacity .6s ease .3s"><div style="height:100%;width:{{progress}};background:var(--acc);transition:width .7s cubic-bezier(.2,.8,.2,1)"></div></div>
+<main style="display:flex;flex-wrap:wrap;gap:24px;padding:28px 32px;align-items:flex-start;position:relative;z-index:2">
+<sc-if value="{{p1}}" hint-placeholder-val="{{ true }}">
+<div style="flex:1 1 100%;display:flex;flex-wrap:wrap;gap:24px;align-items:stretch"><article class="gp rise" style="padding:0;flex:1 1 400px;min-width:0"><div class="tb" style="padding:12px 18px;display:flex;align-items:center;gap:12px"><span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px;color:var(--acc)">1</span><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:21px;color:#fff">Average multiplier</h2></div><div style="padding:14px 18px 18px;color:#cfc7b2;font-size:17px">Every ore has a multiplier. The craft uses the average, weighted by how many of each you add.<div style="margin:10px 0;padding:10px 14px;background:#0e0d0c;border:1px solid var(--bd);color:#e6dfcc;font-size:18px">M = sum(multiplier x count) / total ores</div><span style="color:#a39c8b">Dark Knight example: Sun Stone 9, Lucky Cat 8, Sealed Curse 8, Roosite 5 gives M = 12.51.</span></div></article><article class="gp rise" style="padding:0;flex:1 1 400px;min-width:0"><div class="tb" style="padding:12px 18px;display:flex;align-items:center;gap:12px"><span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px;color:var(--acc)">2</span><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:21px;color:#fff">Class odds</h2></div><div style="padding:14px 18px 18px;color:#cfc7b2;font-size:17px">Only the total number of ores sets which classes can come out, from 3 to 55 ores. A class is greyed out in the game until you have enough ores, and the odds table is the same in every world.<br><span style="color:#a39c8b">World 3 and later swap some weapon classes (Gauntlets to Mace, Katana to Axe, Greatsword to Spear).</span></div></article><article class="gp rise" style="padding:0;flex:1 1 400px;min-width:0"><div class="tb" style="padding:12px 18px;display:flex;align-items:center;gap:12px"><span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px;color:var(--acc)">3</span><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:21px;color:#fff">Variant odds</h2></div><div style="padding:14px 18px 18px;color:#cfc7b2;font-size:17px">Inside a class each variant has a count c. Rarer variants have a bigger c.<div style="margin:10px 0;padding:10px 14px;background:#0e0d0c;border:1px solid var(--bd);color:#e6dfcc;font-size:18px">P(v) = (1 / c<sub>v</sub>) / sum(1 / c<sub>j</sub>)</div></div></article><article class="gp rise" style="padding:0;flex:1 1 400px;min-width:0"><div class="tb" style="padding:12px 18px;display:flex;align-items:center;gap:12px"><span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px;color:var(--acc)">4</span><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:21px;color:#fff">Primary ore</h2></div><div style="padding:14px 18px 18px;color:#cfc7b2;font-size:17px">The ore you add the most of is the primary ore. Ties go to the highest multiplier. It sets how the item looks and its rarity.</div></article><article class="gp rise" style="padding:0;flex:1 1 400px;min-width:0"><div class="tb" style="padding:12px 18px;display:flex;align-items:center;gap:12px"><span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px;color:var(--acc)">5</span><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:21px;color:#fff">Traits</h2></div><div style="padding:14px 18px 18px;color:#cfc7b2;font-size:17px">A trait only activates when its ore is at least 10% of the craft. It then rises in a straight line and is at full strength from 30%. The same strength also scales negative effects.<svg viewBox="0 0 520 230" width="100%" style="max-width:520px;display:block;margin-top:10px" role="img" aria-label="Trait strength against ore share: zero below 10 percent, 10 percent strength at 10 percent share, rising in a straight line to full strength at 30 percent share">
+<rect x="40" y="10" width="460" height="170" fill="#0e0d0c" stroke="#34322e"></rect>
+<g stroke="#34322e" stroke-width="1"><line x1="40" y1="95" x2="500" y2="95"></line><line x1="40" y1="52" x2="500" y2="52"></line><line x1="40" y1="138" x2="500" y2="138"></line></g>
+<polyline points="40,180 155,180 155,163 385,10 500,10" fill="none" stroke="#8a5cc9" stroke-width="3"></polyline>
+<g fill="#a39c8b" font-size="13" font-family="Alegreya,Georgia,serif"><text x="40" y="200">0%</text><text x="145" y="200">10%</text><text x="375" y="200">30%</text><text x="487" y="200">40%</text><text x="6" y="184">0%</text><text x="2" y="14">100%</text><text x="150" y="222">share of the craft</text></g>
+</svg></div></article><article class="gp rise" style="padding:0;flex:1 1 400px;min-width:0"><div class="tb" style="padding:12px 18px;display:flex;align-items:center;gap:12px"><span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px;color:var(--acc)">6</span><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:21px;color:#fff">Defence and damage</h2></div><div style="padding:14px 18px 18px;color:#cfc7b2;font-size:17px">Armour and weapons use the same multiplier, then your craft quality.<div style="margin:10px 0;padding:10px 14px;background:#0e0d0c;border:1px solid var(--bd);color:#e6dfcc;font-size:18px">Defence = ceil(2 x health % x M x quality)</div><div style="margin:10px 0;padding:10px 14px;background:#0e0d0c;border:1px solid var(--bd);color:#e6dfcc;font-size:18px">Damage = ceil(2 x base damage x M x quality)</div><span style="color:#a39c8b">Quality is a straight percentage and results round up to two decimals. The quality label names are unverified.</span></div></article><article class="gp rise" style="padding:0;flex:1 1 400px;min-width:0"><div class="tb" style="padding:12px 18px;display:flex;align-items:center;gap:12px"><span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px;color:var(--acc)">7</span><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:21px;color:#fff">Enhancement</h2></div><div style="padding:14px 18px 18px;color:#cfc7b2;font-size:17px">Each enhancement level adds 5% of the base stat, from +0 to +10. This calculator shows the stat at every level, not the chance to succeed.<div style="margin:10px 0;padding:10px 14px;background:#0e0d0c;border:1px solid var(--bd);color:#e6dfcc;font-size:18px">stat = value x (1 + 0.05 x level)</div><a href="Main.dc.html" style="color:var(--acc)">Try it in the calculator</a></div></article><article class="gp rise" style="padding:0;flex:1 1 400px;min-width:0"><div class="tb" style="padding:12px 18px;display:flex;align-items:center;gap:12px"><span style="font-family:Montserrat,sans-serif;font-weight:700;font-size:20px;color:var(--acc)">8</span><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:21px;color:#fff">Worked example</h2></div><div style="padding:14px 18px 18px;color:#cfc7b2;font-size:17px">Dark Knight Chestplate: M = 12.51, 100% quality, base 625.5. At +10 it reaches 938.25 (625.5 x 1.5).</div></article></div>
+</sc-if>
+<sc-if value="{{n1}}" hint-placeholder-val="{{ false }}">
+<div style="flex:1 1 100%;display:flex;flex-wrap:wrap;gap:24px"><section class="gp" style="flex:1 1 400px;padding:0"><div class="tb" style="padding:12px 18px"><div class="sk" style="--d:0.0s;width:50%;height:24px;"></div></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><div class="sk" style="--d:0.1s;width:100%;height:18px;"></div><div class="sk" style="--d:0.2s;width:85%;height:18px;"></div><div class="sk" style="--d:0.3s;width:100%;height:60px;"></div></div></section><section class="gp" style="flex:1 1 400px;padding:0"><div class="tb" style="padding:12px 18px"><div class="sk" style="--d:0.1s;width:50%;height:24px;"></div></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><div class="sk" style="--d:0.2s;width:100%;height:18px;"></div><div class="sk" style="--d:0.3s;width:85%;height:18px;"></div><div class="sk" style="--d:0.4s;width:100%;height:60px;"></div></div></section><section class="gp" style="flex:1 1 400px;padding:0"><div class="tb" style="padding:12px 18px"><div class="sk" style="--d:0.2s;width:50%;height:24px;"></div></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><div class="sk" style="--d:0.3s;width:100%;height:18px;"></div><div class="sk" style="--d:0.4s;width:85%;height:18px;"></div><div class="sk" style="--d:0.5s;width:100%;height:60px;"></div></div></section><section class="gp" style="flex:1 1 400px;padding:0"><div class="tb" style="padding:12px 18px"><div class="sk" style="--d:0.3s;width:50%;height:24px;"></div></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><div class="sk" style="--d:0.4s;width:100%;height:18px;"></div><div class="sk" style="--d:0.5s;width:85%;height:18px;"></div><div class="sk" style="--d:0.6s;width:100%;height:60px;"></div></div></section><section class="gp" style="flex:1 1 400px;padding:0"><div class="tb" style="padding:12px 18px"><div class="sk" style="--d:0.4s;width:50%;height:24px;"></div></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><div class="sk" style="--d:0.5s;width:100%;height:18px;"></div><div class="sk" style="--d:0.6s;width:85%;height:18px;"></div><div class="sk" style="--d:0.7s;width:100%;height:60px;"></div></div></section><section class="gp" style="flex:1 1 400px;padding:0"><div class="tb" style="padding:12px 18px"><div class="sk" style="--d:0.5s;width:50%;height:24px;"></div></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><div class="sk" style="--d:0.6s;width:100%;height:18px;"></div><div class="sk" style="--d:0.7s;width:85%;height:18px;"></div><div class="sk" style="--d:0.8s;width:100%;height:60px;"></div></div></section></div>
+</sc-if>
+</main>
+<footer style="padding:24px 32px 0;position:relative;z-index:2">
+<div class="gp" style="background-color:#18181b;padding:40px 44px 0;overflow:hidden;min-height:430px">
+<div style="display:flex;flex-wrap:wrap;gap:36px 64px;justify-content:space-between">
+<div style="max-width:340px">
+<div style="display:flex;align-items:center;gap:12px">
+<div class="gt" style="width:44px;height:44px;border:1px solid #4a4850;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#9a9a9a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h13a4 4 0 0 0 4-4h1M6 8v3c0 2 2 3 4 3l-2 4h8l-2-4c2 0 4-1 4-3V8"></path></svg></div>
+<span class="shine" style="font-family:Montserrat,sans-serif;font-weight:700;font-size:28px">Forge Calculator</span>
+</div>
+<p style="margin:14px 0 0;color:#8d8c92;font-size:18px">Plan every craft before you smelt it.<br>Free. No login. Built for The Forge.</p>
+</div>
+<nav style="display:flex;flex-wrap:wrap;gap:28px 64px" aria-label="Footer">
+<div><div style="font-family:Montserrat,sans-serif;font-weight:700;color:#fff;font-size:17px;margin-bottom:14px">Calculator</div>
+<div class="fl"><a href="Armour.dc.html">Armour</a><a href="Weapons.dc.html">Weapons</a><a href="Ores.dc.html">Ores</a><a href="HowItWorks.dc.html">How it works</a></div></div>
+<div><div style="font-family:Montserrat,sans-serif;font-weight:700;color:#fff;font-size:17px;margin-bottom:14px">Game data</div>
+<div class="fl"><a href="Ores.dc.html">Ore traits</a><a href="HowItWorks.dc.html">Forge odds</a><a href="HowItWorks.dc.html">Enhancement</a><a href="Ores.dc.html">World 4 changes</a></div></div>
+<div><div style="font-family:Montserrat,sans-serif;font-weight:700;color:#fff;font-size:17px;margin-bottom:14px">Community</div>
+<div class="fl"><a href="#">Roblox game page</a><a href="#">Forge Wiki</a><a href="#">Report a mistake</a><a href="#">Partnerships</a></div></div>
+</nav>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;margin-top:30px;font-size:15px;color:#8d8c92">
+<span>Data as of 20 Oct 2026. Fan-made tool, not affiliated with the game's developers.</span>
+<span style="border:1px dashed #4a4850;padding:2px 12px;color:#8d8c92">Official partner badge: reserved</span>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:14px;align-items:center">
+<span style="border:1px solid #4f8a3d;color:#8fd19b;padding:2px 10px">Confirmed in game</span>
+<span style="border:1px solid #8a7a4a;color:#d8c58f;padding:2px 10px">Derived</span>
+<span style="border:1px solid #8a4a4a;color:#d89090;padding:2px 10px">Unverified</span>
+
+</div>
+<div class="dotword" aria-hidden="true">FORGE</div>
+</div>
+</footer>
+<div style="height:36px"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"world":{"editor":"enum","options":["1","2","3","4"],"default":"1"},"$preview":{"width":1360,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = Object.assign({ world: (props && props.world) || '1' }, { phase: 0 });
+  }
+
+  theme() {
+    const w = this.state.world;
+    const T = {
+      '1': { name: 'Stonewake', bd: '#34322e', bd2: '#4a4850', br: '#9a9a9a', bar: '#1c1b1e', panel: '#141210', acc: '#e8d48a', base: '#0b0a09',
+        tex: 'linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px) 0 0/140px 70px,linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px) 0 0/140px 70px',
+        glow: 'inset 0 0 200px rgba(0,0,0,.5)', kind: 'dust', n: 20 },
+      '2': { name: 'Forgotten Kingdom', bd: '#3a2a2b', bd2: '#5a4346', br: '#8f7a7a', bar: '#1f1718', panel: '#150f10', acc: '#d9908f', base: '#0c0809',
+        tex: 'repeating-linear-gradient(115deg,rgba(201,90,90,.045) 0 1px,transparent 1px 52px),repeating-linear-gradient(35deg,rgba(255,255,255,.015) 0 1px,transparent 1px 90px)',
+        glow: 'inset 0 0 180px rgba(150,40,40,.16)', kind: 'ember', n: 26 },
+      '3': { name: 'Frostspire Expanse', bd: '#2a3a4c', bd2: '#3f5873', br: '#8fb4d4', bar: '#131c28', panel: '#0e141c', acc: '#8fd0f2', base: '#080b10',
+        tex: 'repeating-linear-gradient(60deg,rgba(150,205,245,.05) 0 1px,transparent 1px 44px),repeating-linear-gradient(120deg,rgba(150,205,245,.05) 0 1px,transparent 1px 44px)',
+        glow: 'inset 0 0 190px rgba(110,180,235,.14)', kind: 'snow', n: 34 },
+      '4': { name: 'Sakura', bd: '#4a2c38', bd2: '#6a3f50', br: '#d9a0b6', bar: '#241520', panel: '#160e12', acc: '#f0a8c0', base: '#0f0a0c',
+        tex: 'radial-gradient(circle at 50% 100%,transparent 0 38%,rgba(240,168,192,.09) 39% 41%,transparent 42% 52%,rgba(240,168,192,.07) 53% 55%,transparent 56%) 0 0/64px 32px',
+        glow: 'inset 0 0 190px rgba(232,140,175,.12)', kind: 'petal', n: 22 }
+    };
+    const t = T[w] || T['4'];
+    let s = (parseInt(w, 10) || 4) * 7919;
+    const rnd = () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
+    const particles = [];
+    for (let i = 0; i < t.n; i++) {
+      const x = (rnd() * 100).toFixed(1), y0 = (rnd() * 100).toFixed(0);
+      const dur = t.kind === 'dust' ? 34 + rnd() * 24 : t.kind === 'snow' ? 16 + rnd() * 14 : t.kind === 'ember' ? 14 + rnd() * 14 : 20 + rnd() * 16;
+      const dly = -(rnd() * dur).toFixed(1);
+      const sd = (3 + rnd() * 4).toFixed(1);
+      let o, inn;
+      if (t.kind === 'petal') {
+        const z = 9 + rnd() * 8;
+        o = 'position:absolute;left:' + x + '%;top:' + y0 + '%;animation:fall ' + dur.toFixed(1) + 's linear ' + dly + 's infinite';
+        inn = 'display:block;width:' + z.toFixed(0) + 'px;height:' + (z * 0.7).toFixed(0) + 'px;background:#f0a8c0;border-radius:100% 0 100% 0;opacity:.7;animation:sway ' + sd + 's ease-in-out ' + dly + 's infinite alternate';
+      } else if (t.kind === 'snow') {
+        const z = 2 + rnd() * 3;
+        o = 'position:absolute;left:' + x + '%;top:' + y0 + '%;animation:fall ' + dur.toFixed(1) + 's linear ' + dly + 's infinite';
+        inn = 'display:block;width:' + z.toFixed(1) + 'px;height:' + z.toFixed(1) + 'px;background:#e4f2ff;border-radius:50%;opacity:.65;animation:sway2 ' + sd + 's ease-in-out ' + dly + 's infinite alternate';
+      } else if (t.kind === 'ember') {
+        const z = 2 + rnd() * 3;
+        o = 'position:absolute;left:' + x + '%;top:' + y0 + '%;animation:lift ' + dur.toFixed(1) + 's linear ' + dly + 's infinite';
+        inn = 'display:block;width:' + z.toFixed(1) + 'px;height:' + z.toFixed(1) + 'px;background:#d9605f;border-radius:50%;box-shadow:0 0 7px #c24a4a;opacity:.75;animation:sway2 ' + sd + 's ease-in-out ' + dly + 's infinite alternate';
+      } else {
+        const z = 1.5 + rnd() * 2;
+        o = 'position:absolute;left:' + x + '%;top:' + y0 + '%;animation:lift ' + dur.toFixed(1) + 's linear ' + dly + 's infinite';
+        inn = 'display:block;width:' + z.toFixed(1) + 'px;height:' + z.toFixed(1) + 'px;background:#bdb49a;border-radius:50%;opacity:.35;animation:sway2 ' + sd + 's ease-in-out ' + dly + 's infinite alternate';
+      }
+      particles.push({ o, i: inn });
+    }
+    const worlds = ['1', '2', '3', '4'].map((k) => ({
+      label: k,
+      aria: 'World ' + k + ', ' + T[k].name,
+      on: k === w ? 'true' : 'false',
+      style: k === w
+        ? 'min-width:40px;min-height:36px;padding:0 12px;background:#26391f;border:1px solid #4f8a3d;color:#ece6d2;font-family:inherit;font-size:15px;font-weight:700'
+        : 'min-width:40px;min-height:36px;padding:0 12px;background:var(--panel);border:1px solid var(--bd2);color:#d8d0bd;font-family:inherit;font-size:15px',
+      pick: () => this.setState({ world: k })
+    }));
+    const rootStyle = '--bd:' + t.bd + ';--bd2:' + t.bd2 + ';--br:' + t.br + ';--bar:' + t.bar + ';--panel:' + t.panel + ';--acc:' + t.acc + ';position:relative;overflow:hidden;color:#d8d0bd;font-family:Alegreya,Georgia,serif;font-size:17px;line-height:1.45;min-height:100%;background:' + t.tex + ',' + t.base + ';transition:background-color .6s';
+    const overlayStyle = 'position:absolute;top:0;right:0;bottom:0;left:0;overflow:hidden;pointer-events:none;z-index:50;box-shadow:' + t.glow;
+    return { rootStyle, overlayStyle, particles, worlds, worldName: t.name, accent: t.acc };
+  }
+
+
+  componentDidMount() { this.run(); }
+  componentWillUnmount() { (this.tm || []).forEach(clearTimeout); }
+  run() {
+    (this.tm || []).forEach(clearTimeout);
+    this.tm = [];
+    if (false) return;
+    this.setState({ phase: 0 });
+    [700, 1400, 2100, 2900].forEach((ms, i) => this.tm.push(setTimeout(() => this.setState({ phase: i + 1 }), ms)));
+  }
+  load() {
+    const ph = this.state.phase || 0;
+    return {
+      p1: ph >= 1, p2: ph >= 2, p3: ph >= 3, p4: ph >= 4,
+      n1: ph < 1, n2: ph < 2, n3: ph < 3, n4: ph < 4,
+      progress: (false ? 38 : ph * 25) + '%',
+      barOpacity: (false || ph < 4) ? 1 : 0,
+      replay: () => this.run()
+    };
+  }
+
+  renderVals() {
+    const base = this.theme();
+    return Object.assign({}, base, this.load(), {
+      
+    });
+  }
+}
+</script>
+</body>
+</html>

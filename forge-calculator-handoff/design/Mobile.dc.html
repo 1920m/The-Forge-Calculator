@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Forge Calculator phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;700&amp;family=Montserrat:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0a09}
+button{font-family:inherit}
+.gp{position:relative;border:1px solid #34322e;background:linear-gradient(#9a9a9a,#9a9a9a) 0 0/14px 3px no-repeat,linear-gradient(#9a9a9a,#9a9a9a) 0 0/3px 14px no-repeat,linear-gradient(#9a9a9a,#9a9a9a) 100% 0/14px 3px no-repeat,linear-gradient(#9a9a9a,#9a9a9a) 100% 0/3px 14px no-repeat,linear-gradient(#9a9a9a,#9a9a9a) 0 100%/14px 3px no-repeat,linear-gradient(#9a9a9a,#9a9a9a) 0 100%/3px 14px no-repeat,linear-gradient(#9a9a9a,#9a9a9a) 100% 100%/14px 3px no-repeat,linear-gradient(#9a9a9a,#9a9a9a) 100% 100%/3px 14px no-repeat,#141210}
+.gt{background:repeating-linear-gradient(135deg,#1a1816,#1a1816 8px,#161412 8px,#161412 16px)}
+</style>
+</helmet>
+<div style="width:390px;height:2250px;box-sizing:border-box;background:#0b0a09;color:#d8d0bd;font-family:Alegreya,Georgia,serif;font-size:17px;line-height:1.4;overflow:hidden">
+
+<header style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#100f0e;border-bottom:1px solid #2a2825">
+<div style="display:flex;align-items:center;gap:10px">
+<div class="gt" style="width:34px;height:34px;border:1px solid #4a4850;display:flex;align-items:center;justify-content:center">
+<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#9a9a9a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h13a4 4 0 0 0 4-4h1M6 8v3c0 2 2 3 4 3l-2 4h8l-2-4c2 0 4-1 4-3V8"></path></svg>
+</div>
+<div style="font-family:Montserrat,sans-serif;font-weight:700;font-size:17px;color:#fff">Forge Calculator</div>
+</div>
+<button aria-label="Open menu" style="width:44px;height:44px;border:1px solid #4a4850;background:#141210;color:#d8d0bd">
+<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+</button>
+</header>
+
+<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:8px">
+<button style="flex:1;min-height:44px;background:#141210;border:1px solid #4a4850;color:#d8d0bd;font-size:16px">World 1 and 2</button>
+<button style="flex:0 0 56px;min-height:44px;background:#141210;border:1px solid #4a4850;color:#d8d0bd;font-size:16px">3</button>
+<button style="flex:0 0 56px;min-height:44px;background:#26391f;border:1px solid #4f8a3d;color:#ece6d2;font-size:16px;font-weight:700">4</button>
+</div>
+<div style="display:flex;gap:8px">
+<button style="flex:1;min-height:44px;background:#26391f;border:1px solid #4f8a3d;color:#ece6d2;font-size:19px;font-weight:700">Armor</button>
+<button style="flex:1;min-height:44px;background:#141210;border:1px solid #4a4850;color:#8d8676;font-size:19px;font-weight:700">Weapon</button>
+</div>
+</div>
+
+<section class="gp" style="margin:0 16px 16px;padding:16px;text-align:center">
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+<div class="gt" style="height:74px;border:2px solid #d1a042;position:relative"><span style="position:absolute;top:2px;right:5px;font-weight:700;color:#fff;font-size:15px">x9</span><span style="position:absolute;bottom:2px;left:0;right:0;font-size:11px;font-weight:700;color:#e6dfcc">Sun Stone</span></div>
+<div class="gt" style="height:74px;border:2px solid #8a5cc9;position:relative"><span style="position:absolute;top:2px;right:5px;font-weight:700;color:#fff;font-size:15px">x8</span><span style="position:absolute;bottom:2px;left:0;right:0;font-size:11px;font-weight:700;color:#e6dfcc">Lucky Cat</span></div>
+<div class="gt" style="height:74px;border:2px solid #8a5cc9;position:relative"><span style="position:absolute;top:2px;right:5px;font-weight:700;color:#fff;font-size:15px">x8</span><span style="position:absolute;bottom:2px;left:0;right:0;font-size:11px;font-weight:700;color:#e6dfcc">Sealed Curse</span></div>
+<div class="gt" style="height:74px;border:2px solid #d1a042;position:relative"><span style="position:absolute;top:2px;right:5px;font-weight:700;color:#fff;font-size:15px">x5</span><span style="position:absolute;bottom:2px;left:0;right:0;font-size:11px;font-weight:700;color:#e6dfcc">Roosite</span></div>
+</div>
+<div style="margin-top:12px;font-size:20px;font-weight:700;color:#fff">Multiplier: 12.51x</div>
+<div style="color:#a39c8b;font-size:15px">30 ores. Primary ore: Sun Stone</div>
+<button style="margin-top:12px;width:100%;min-height:48px;background:#26391f;border:1px solid #4f8a3d;color:#ece6d2;font-size:20px;font-weight:700">Select ores</button>
+</section>
+
+<section class="gp" style="margin:0 16px 16px;padding:18px 16px 18px">
+<h2 style="margin:0 0 8px;text-align:center;font-weight:700;font-size:25px;color:#fff">Dark Knight Chestplate</h2>
+<div style="display:flex;justify-content:center"><div class="gt" style="width:88px;height:88px;border:1px solid #4a4850"></div></div>
+<div style="margin-top:12px">
+<div style="display:flex;gap:12px;background:#1f1d1a;padding:6px 8px"><span style="flex:0 0 112px;text-align:right;color:#e6dfcc">Craft Quality:</span><span style="font-weight:700;color:#e8d48a">Masterwork (100)%</span></div>
+<div style="display:flex;gap:12px;padding:6px 8px"><span style="flex:0 0 112px;text-align:right;color:#e6dfcc">Class:</span><span style="color:#a39c8b">Heavy Chestplate</span></div>
+<div style="display:flex;gap:12px;background:#1f1d1a;padding:6px 8px"><span style="flex:0 0 112px;text-align:right;color:#e6dfcc">Rarity:</span><span style="font-weight:700;color:#d1a042">Legendary</span></div>
+<div style="display:flex;gap:12px;padding:6px 8px"><span style="flex:0 0 112px;text-align:right;color:#e6dfcc">Defense:</span><span style="color:#a39c8b">626 DEF</span></div>
+</div>
+<div style="display:flex;gap:6px;margin-top:12px">
+<button style="flex:1;min-height:44px;background:#141210;border:1px solid #4a4850;color:#d8d0bd;font-size:16px">25%</button>
+<button style="flex:1;min-height:44px;background:#141210;border:1px solid #4a4850;color:#d8d0bd;font-size:16px">50%</button>
+<button style="flex:1;min-height:44px;background:#141210;border:1px solid #4a4850;color:#d8d0bd;font-size:16px">75%</button>
+<button style="flex:1;min-height:44px;background:#26391f;border:1px solid #4f8a3d;color:#ece6d2;font-size:16px;font-weight:700">100%</button>
+</div>
+</section>
+
+<section class="gp" style="margin:0 16px 16px;padding:0">
+<div style="background:#1c1b1e;border-bottom:1px solid #4a4850;padding:10px 16px"><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:19px;color:#fff">Forge Chances</h2></div>
+<div style="padding:10px 12px 14px;display:flex;flex-direction:column;gap:10px">
+<div><div style="background:#1c1a18;border-top:1px solid #34322e;border-bottom:1px solid #34322e;text-align:center;padding:3px 8px;font-weight:700;color:#e6dfcc">Heavy Leggings (49%)</div></div>
+<div><div style="background:#1c1a18;border-top:1px solid #34322e;border-bottom:1px solid #34322e;text-align:center;padding:3px 8px;font-weight:700;color:#e6dfcc">Heavy Helmet (28%)</div></div>
+<div>
+<div style="background:#1c1a18;border-top:1px solid #34322e;border-bottom:1px solid #34322e;text-align:center;padding:3px 8px;font-weight:700;color:#e6dfcc">Heavy Chestplate (13%)</div>
+<div style="display:flex;gap:6px;justify-content:center;margin-top:8px">
+<div class="gt" style="width:56px;height:56px;border:1px solid #3a3834;position:relative"><span style="position:absolute;bottom:1px;left:0;right:0;text-align:center;font-size:13px;font-weight:700;color:#e6dfcc">1/1</span></div>
+<div class="gt" style="width:56px;height:56px;border:1px solid #3a3834;position:relative"><span style="position:absolute;bottom:1px;left:0;right:0;text-align:center;font-size:13px;font-weight:700;color:#e6dfcc">1/4</span></div>
+<div class="gt" style="width:56px;height:56px;border:1px solid #3a3834;position:relative"><span style="position:absolute;bottom:1px;left:0;right:0;text-align:center;font-size:13px;font-weight:700;color:#e6dfcc">1/8</span></div>
+</div>
+</div>
+<div><div style="background:#1c1a18;border-top:1px solid #34322e;border-bottom:1px solid #34322e;text-align:center;padding:3px 8px;font-weight:700;color:#e6dfcc">Medium Chestplate (8%)</div></div>
+</div>
+</section>
+
+<section class="gp" style="margin:0 16px 16px;padding:0">
+<div style="background:#2a2140;border-bottom:1px solid #5a4a86;padding:10px 16px"><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:19px;color:#fff">Enhance Equipment</h2></div>
+<div style="padding:8px 12px 14px">
+<div style="background:#1c1b1e;border:1px solid #34322e;padding:3px 10px;font-weight:700;color:#e6dfcc">Stat Improvement:</div>
+<div style="display:flex;flex-direction:column;font-size:17px">
+<div style="display:flex;justify-content:space-between;padding:5px 10px;background:#1c1a18"><strong style="color:#fff">+0</strong><span style="color:#a39c8b">1.00x</span><strong style="color:#e8d48a">625.50</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px"><strong style="color:#fff">+1</strong><span style="color:#a39c8b">1.05x</span><strong style="color:#e8d48a">656.78</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px;background:#1c1a18"><strong style="color:#fff">+2</strong><span style="color:#a39c8b">1.10x</span><strong style="color:#e8d48a">688.05</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px"><strong style="color:#fff">+3</strong><span style="color:#a39c8b">1.15x</span><strong style="color:#e8d48a">719.33</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px;background:#1c1a18"><strong style="color:#fff">+4</strong><span style="color:#a39c8b">1.20x</span><strong style="color:#e8d48a">750.60</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px"><strong style="color:#fff">+5</strong><span style="color:#a39c8b">1.25x</span><strong style="color:#e8d48a">781.88</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px;background:#1c1a18"><strong style="color:#fff">+6</strong><span style="color:#a39c8b">1.30x</span><strong style="color:#e8d48a">813.15</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px"><strong style="color:#fff">+7</strong><span style="color:#a39c8b">1.35x</span><strong style="color:#e8d48a">844.43</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px;background:#1c1a18"><strong style="color:#fff">+8</strong><span style="color:#a39c8b">1.40x</span><strong style="color:#e8d48a">875.70</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px"><strong style="color:#fff">+9</strong><span style="color:#a39c8b">1.45x</span><strong style="color:#e8d48a">906.98</strong></div>
+<div style="display:flex;justify-content:space-between;padding:5px 10px;background:#1c1a18"><strong style="color:#fff">+10</strong><span style="color:#a39c8b">1.50x</span><strong style="color:#e8d48a">938.25</strong></div>
+</div>
+</div>
+</section>
+
+<section class="gp" style="margin:0 16px 16px;padding:0">
+<div style="background:#1c1b1e;border-bottom:1px solid #4a4850;padding:10px 16px"><h2 style="margin:0;font-family:Montserrat,sans-serif;font-weight:700;font-size:19px;color:#fff">Traits that transfer</h2></div>
+<div style="padding:12px;display:flex;flex-direction:column;gap:10px">
+<div style="background:#1c1a18;border:1px solid #34322e;padding:10px 12px"><div style="display:flex;justify-content:space-between"><strong style="color:#fff">Lucky Cat</strong><span style="font-size:14px;color:#a39c8b">26.7%, 85%</span></div><div style="font-size:16px;margin-top:4px">+4.25% Luck, +4.25% chance of an extra ore</div></div>
+<div style="background:#1c1a18;border:1px solid #34322e;padding:10px 12px"><div style="display:flex;justify-content:space-between"><strong style="color:#fff">Sealed Curse</strong><span style="font-size:14px;color:#a39c8b">26.7%, 85%</span></div><div style="font-size:16px;margin-top:4px">+25.5% Lethality, -17% Vitality, -8.5% Endurance, -12.75% Swiftness</div></div>
+</div>
+</section>
+
+<footer style="padding:4px 16px 24px;font-size:13px;color:#8d8676">Data as of 20 Oct 2026. Not affiliated with the game.</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2250}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
