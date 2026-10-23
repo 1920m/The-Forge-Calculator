@@ -38,7 +38,7 @@ components/             Shared UI (planned)
 lib/engine/             Pure TypeScript calculations
 lib/data/               Public configuration, then queries and fallback data
 tests/                  Vitest tests
-supabase/migrations/    Reproducible schema changes (planned)
+supabase/migrations/    Initial read-only catalogue schema
 supabase/seed/          Extracted PRD data and attributed wiki ore audit
 scripts/                Reproducible extraction and source checks
 docs/                   Build plan, source decisions, skill review
@@ -53,7 +53,7 @@ Intended Vercel configuration: `forge-calculator` in **Cristi Excelsis**, Node.j
 
 Link `1920m/Forge-Calculator` through Cris's GitHub account in Vercel. Automatic branch previews require the intended account connection and repository link. Git author settings are project-local; they do not authenticate a push. CLI authentication can use an isolated, ignored `.local-auth/github` configuration with inherited `GH_TOKEN` and `GITHUB_TOKEN` unset in that process. Never use another project's credentials as a fallback.
 
-Supabase is not provisioned or linked yet. Only **Cristi Excelsis** accounts are authorized for GitHub, Supabase and Vercel. Do not inspect, provision, deploy to, or modify Clearpath resources. No Supabase project was changed and no source was deployed there. The accidental empty Vercel project is outside this project's authorized account and must not be reused or modified. Correct account routing is required before publishing.
+Supabase project **Forge Calculator** (`jzvdmthbcmdwwpkoekso`) is provisioned in Cris's Free organization, Paris region. Its initial read-only schema and source catalogue are loaded. Vercel project **forge-calculator** is in `cris-projects-5a26d984` on Hobby and linked to the confirmed repository. Only **Cristi Excelsis** accounts are authorized. Do not inspect, provision, deploy to, or modify Clearpath resources. The accidental empty Vercel project is outside this project's authorized account and must not be reused or modified.
 
 Once connected to the intended project, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to local and Vercel Preview/Production environments. The image allowlist is restricted to the configured project and the `forge-images` public bucket.
 

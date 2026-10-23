@@ -68,6 +68,8 @@ The attributed snapshot and machine-readable comparison are in `supabase/seed/`.
 
 PRD class odds also need six explicit Unverified flags: weapons at 9 ores total 90%, at 12 total 97%; armour at 10 totals 95%, at 13 totals 96%, at 16 totals 106%, and at 21 totals 103%. No values are silently normalized or corrected.
 
+Cris confirmed on 24 October that the wiki is correct for both disputed multipliers. The PRD is now corrected to Aite 1.10 and Arcane Crystal 9.00. The historical CSV snapshot is unchanged; regenerating the audit now reports zero scalar multiplier conflicts. This confirmation does not resolve unknown world membership or trait effects for wiki-only ores.
+
 ## Database plan
 
 `patches`, `ores`, `ore_traits`, `weapon_types`, `weapons`, `armour_variants`, `armour_pieces`, `category_odds`, `enhancement_levels`, `quality_tiers`, `trait_strength`. Public Storage bucket: `forge-images`.

@@ -8,6 +8,7 @@ test-results/
 !.env.example
 .vercel/
 .local-auth/
+supabase/.temp/
 *.tsbuildinfo
 next-env.d.ts
 *.log

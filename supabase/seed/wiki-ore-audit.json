@@ -96,18 +96,7 @@
     }
   ],
   "missingFromWiki": [],
-  "multiplierConflicts": [
-    {
-      "name": "Aite",
-      "prd": "1.00",
-      "wiki": 1.1
-    },
-    {
-      "name": "Arcane Crystal",
-      "prd": "7.50",
-      "wiki": 9
-    }
-  ],
+  "multiplierConflicts": [],
   "rarityConflicts": [],
   "notes": [
     "Unverified secondary-source evidence. PRD and Cris's in-game evidence retain precedence; this report changes no production values.",

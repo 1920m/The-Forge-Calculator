@@ -1,5 +1,15 @@
 # Foundation validation
 
+## Resumed verification, 24 October 2026
+
+The missing optional WebAssembly dependencies in the original Windows-generated lockfile caused Linux `npm ci` to fail. Regenerated the lockfile from the unchanged exact-version package manifest in an isolated directory. GitHub CI now passes for commit `f1e440d`: push run `40037844968` and PR run `40037848138`. Both run source synchronization checks, lint, typechecking, 34 tests and a production build. Local lint, typechecking, all 34 tests and production build also passed. The original design files have no diff against main.
+
+Cris confirmed Aite 1.10 and Arcane Crystal 9.00 on 24 October. The PRD and deterministic source extraction are corrected; the complete wiki audit now reports no multiplier or rarity discrepancies for matching names. Seventeen wiki additions remain separately attributed and Unverified.
+
+Supabase project `jzvdmthbcmdwwpkoekso` (Forge Calculator) is created in `cris' projects`, Free/Nano, Paris. Vercel project `prj_GTRXlVOuFqZVzZ9mZTx6s9YwTkdE` is created in `cris-projects-5a26d984`, Hobby, connected to `1920m/Forge-Calculator`, using Next.js and Node 24. Source deployment verification and data API checks are recorded below when complete.
+
+The schema and generated seed were executed successfully through the verified Forge project's SQL Editor. Live queries confirm 150 ores, 62 trait descriptions, 81 weapons, 37 armour pieces and 848 odds cells. All 11 tables have RLS and anonymous SELECT grants; there are 11 anon-only SELECT policies, zero public write policies, no anonymous write grants and no authenticated-role table grants. Unknown worlds and structured trait parameters remain null and flagged; this is a source catalogue, not a claim that every game mechanic is verified.
+
 23 October 2026. Local checks; Cris's isolated GitHub login is now verified as `1920m`, with repository push access. Remote CI results must be checked after publishing.
 
 | Check | Result |

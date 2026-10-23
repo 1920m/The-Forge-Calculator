@@ -129,7 +129,7 @@ This is the starting dataset, collected from guides and the Fandom and BloxInfor
 | Mushroomite | Rare | 0.80 | 22 | None |
 | Platinum | Rare | 0.80 | 28 | None |
 | Diamond | Rare | 2.00 | 192 | None |
-| Aite | Epic | 1.00 | 44 | None |
+| Aite | Epic | 1.10 | 44 | None |
 | Poopite | Epic | 1.20 | 131 | Poison aura below 35% HP, fears enemies (both) |
 | Obsidian | Epic | 2.35 | 333 | +30% defence (armour) |
 | Emerald | Epic | 2.55 | 363 | None |
@@ -144,7 +144,7 @@ This is the starting dataset, collected from guides and the Fandom and BloxInfor
 | Rainbow Crystal | Legendary | 5.25 | not found | None listed |
 | Demonite | Mythical | 5.50 | 3,666 | 15% on-hit burn, Demon's Backfire on armour (both) |
 | Darkryte | Mythical | 6.30 | 5,555 | 15% chance to dodge a hit (armour) |
-| Arcane Crystal | Mythical | 7.50 | 100,000 (one source) | None listed |
+| Arcane Crystal | Mythical | 9.00 | 100,000 (one source) | None listed |
 
 ### World 3 ores (from your in-game index screenshots)
 
