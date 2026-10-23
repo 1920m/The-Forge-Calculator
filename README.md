@@ -2,7 +2,7 @@
 
 A free, no-login calculator for the Roblox game The Forge. Next.js App Router and TypeScript on Vercel, with public read-only game data and images in Supabase.
 
-**Status: foundation preview.** The pure calculation engine has an initial implementation and tests. The dataset and calculator screens are not implemented yet. The unstyled homepage deliberately shows no fabricated game results. Cris's approved design files are untouched; see [the visual contract](docs/visual-contract.md).
+**Status: foundation preview.** The pure calculation engine is tested and the read-only Supabase source catalogue is loaded. The calculator screens are not implemented yet. The unstyled homepage deliberately shows no fabricated game results. Cris's approved design files are untouched; see [the visual contract](docs/visual-contract.md).
 
 ## Run locally
 
@@ -20,6 +20,8 @@ npm run check
 ```
 
 Runs lint, type generation and strict typechecking, tests, and a production build. CI runs the same checks on feature branch pushes and pull requests to `main`. Dependencies use exact versions and a committed lockfile. Builds do not fetch Google Fonts. The approved Alegreya/Montserrat fonts will be bundled when the reference UI is implemented.
+
+`npm run data:check` verifies PRD extracts, the wiki audit, generated SQL and the bundled ore fallback. `npm run data:smoke` checks the live Forge REST API and denied public writes. `/api/ores` serves validated public data with confidence fields and an attributed local fallback if Supabase is unavailable. Unknown world pools and structured trait parameters still need reconciliation before calculator integration.
 
 ## Read first
 

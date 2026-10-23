@@ -10,6 +10,12 @@ Supabase project `jzvdmthbcmdwwpkoekso` (Forge Calculator) is created in `cris' 
 
 The schema and generated seed were executed successfully through the verified Forge project's SQL Editor. Live queries confirm 150 ores, 62 trait descriptions, 81 weapons, 37 armour pieces and 848 odds cells. All 11 tables have RLS and anonymous SELECT grants; there are 11 anon-only SELECT policies, zero public write policies, no anonymous write grants and no authenticated-role table grants. Unknown worlds and structured trait parameters remain null and flagged; this is a source catalogue, not a claim that every game mechanic is verified.
 
+`npm run data:smoke` passed against the live Forge REST API using only its publishable key: all 11 dataset counts match, and an invalid POST is denied with HTTP 401 / SQLSTATE 42501. No test row was inserted. Both public environment variables are saved as Config values for Vercel Production, Preview and Development, and in ignored local configuration. No administrative key is used.
+
+The Security Advisor initially flagged public execution of Supabase's automatic `rls_auto_enable()` SECURITY DEFINER helper. The follow-up migration revokes PUBLIC/anon/authenticated execution without changing the event trigger owner's access. It was applied successfully; rerunning the advisor reports zero errors, zero warnings and zero suggestions.
+
+The initial schema and follow-up SQL were applied through the SQL Editor, not the CLI migration runner. Before the first future CLI `db push`, authenticate explicitly as Cris and reconcile these two versions with `supabase migration repair` after checking the live schema. Do not blindly reapply CREATE TABLE statements. New empty environments can replay the migrations followed by `catalogue.sql`.
+
 23 October 2026. Local checks; Cris's isolated GitHub login is now verified as `1920m`, with repository push access. Remote CI results must be checked after publishing.
 
 | Check | Result |
