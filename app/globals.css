@@ -212,3 +212,28 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
   .header { gap: 8px 16px; }
 }
 .table .badge { margin-left: 6px; }
+
+/* ---------- ore filter dropdown ---------- */
+.ofilter { position: static; }
+.ofilter-btn { display: inline-flex; align-items: center; gap: 6px; }
+.ofilter-count { min-width: 18px; padding: 0 5px; background: var(--acc); color: #111; font-size: 12px; font-weight: 700; line-height: 18px; text-align: center; }
+.ofilter-panel { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 60; max-width: 420px; margin-left: auto; padding: 14px 16px 14px; box-shadow: 0 18px 40px rgba(0,0,0,.55); transform-origin: top center; }
+.ofilter-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-family: var(--sans); font-weight: 700; color: #fff; font-size: 15px; }
+.ofilter-head .link-btn { color: var(--acc); font-family: var(--serif); font-weight: 400; }
+.ofilter-sorts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ofilter-sorts .btn { min-height: 36px; font-size: 14px; }
+.ofilter-range { margin-top: 14px; }
+.ofilter-range-head { display: flex; justify-content: space-between; align-items: baseline; }
+.dual { position: relative; height: 30px; margin: 4px 0 2px; }
+.dual-track, .dual-fill { position: absolute; top: 13px; height: 4px; }
+.dual-track { left: 0; right: 0; background: var(--well); border: 1px solid var(--bd2); }
+.dual-fill { background: var(--acc); transition: left .08s, right .08s; }
+.dual input[type="range"] { position: absolute; inset: 0; width: 100%; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; height: 30px; }
+.dual input[type="range"]::-webkit-slider-runnable-track { background: none; border: 0; }
+.dual input[type="range"]::-moz-range-track { background: none; border: 0; }
+.dual input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--acc); border: 2px solid #111; box-shadow: 0 0 0 3px rgba(0,0,0,.25), 0 0 10px var(--acc); cursor: grab; transition: transform .15s; }
+.dual input[type="range"]::-moz-range-thumb { pointer-events: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--acc); border: 2px solid #111; cursor: grab; }
+.dual input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); cursor: grabbing; }
+.dual input[type="range"]:focus-visible { outline: none; }
+.dual input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid #fff; outline-offset: 2px; }
+.trait-marks { display: inline-flex; gap: 2px; bottom: 3px; left: 4px; }

@@ -6,6 +6,7 @@ import { imageUrl } from "@/lib/data/supabase";
 import { RARITY_ORDER, rarityColour, worldLabel } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
+import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, type OreFilterState } from "./ore-filter";
 
 type Sort = "multiplier" | "rarity" | "name";
 
@@ -13,13 +14,17 @@ export function OresPage({ cat }: { cat: Catalogue }) {
   const { world } = useShell();
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"world" | "all">("world");
-  const [traitsOnly, setTraitsOnly] = useState(false);
+  const [oreFilter, setOreFilter] = useState<OreFilterState>(EMPTY_FILTER);
   const [sort, setSort] = useState<Sort>("multiplier");
   const [selId, setSelId] = useState<string | null>(null);
 
-  const list = useMemo(() => cat.ores
-    .filter((o) => (scope === "all" || o.worlds.includes(world)) && (!traitsOnly || o.traits.length > 0) && o.name.toLowerCase().includes(q.trim().toLowerCase()))
-    .sort((a, b) => sort === "name" ? a.name.localeCompare(b.name) : sort === "rarity" ? RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || b.multiplier - a.multiplier : b.multiplier - a.multiplier), [cat, scope, world, traitsOnly, q, sort]);
+  const scopeOres = useMemo(() => cat.ores.filter((o) => scope === "all" || o.worlds.includes(world)), [cat, scope, world]);
+  const list = useMemo(() => {
+    const searched = scopeOres.filter((o) => o.name.toLowerCase().includes(q.trim().toLowerCase()));
+    const filtered = applyOreFilter(searched, oreFilter);
+    if (oreFilter.sort) return filtered; // the filter's own order wins
+    return filtered.sort((a, b) => sort === "name" ? a.name.localeCompare(b.name) : sort === "rarity" ? RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity) || b.multiplier - a.multiplier : b.multiplier - a.multiplier);
+  }, [scopeOres, q, sort, oreFilter]);
   const sel = cat.ores.find((o) => o.id === selId) ?? list[0] ?? null;
 
   return (
@@ -41,10 +46,10 @@ export function OresPage({ cat }: { cat: Catalogue }) {
                   </select>
                 </label>
               </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14, position: "relative" }}>
                 <button className="btn sm" aria-pressed={scope === "world"} onClick={() => setScope("world")}>World {worldName(world)}</button>
                 <button className="btn sm" aria-pressed={scope === "all"} onClick={() => setScope("all")}>All worlds</button>
-                <button className="btn sm" aria-pressed={traitsOnly} onClick={() => setTraitsOnly((v) => !v)}>Has a trait</button>
+                <OreFilter ores={scopeOres} value={oreFilter} onChange={setOreFilter} />
               </div>
               <div className="ore-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(112px, 1fr))", maxHeight: "none" }}>
                 {list.map((o) => (
@@ -53,7 +58,7 @@ export function OresPage({ cat }: { cat: Catalogue }) {
                     <GameImage src={imageUrl("ores", o.id)} alt="" />
                     <span className="t-top">{o.name}</span>
                     <span className="t-br">{o.multiplier}x</span>
-                    {o.traits.length > 0 && <span className="t-bl" aria-hidden="true">✦</span>}
+                    <TraitMarks ore={o} />
                   </button>
                 ))}
               </div>

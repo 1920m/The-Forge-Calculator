@@ -8,6 +8,7 @@ import { fmt, pct, rarityColour } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { Chevron, Lock } from "./icons";
+import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, oreCategory, type OreFilterState } from "./ore-filter";
 
 type Entry = { id: string; count: number };
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
@@ -35,6 +36,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const [enhanceOpen, setEnhanceOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [allWorlds, setAllWorlds] = useState(false);
+  const [oreFilter, setOreFilter] = useState<OreFilterState>(EMPTY_FILTER);
   const loaded = useRef(false);
 
   // Restore the recipe from the URL or the last visit, once.
@@ -98,9 +100,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const fullValue = selected?.v.raw != null && quality > 0 ? selected.v.raw / (quality / 100) : null;
   const enhance = selected?.v.raw != null ? enhancementTable(selected.v.raw, kind) : [];
   const maxEnh = enhance.length ? Math.max(...enhance.map((l) => l.stat)) || 1 : 1;
-  const visibleOres = cat.ores
-    .filter((o) => (allWorlds || o.worlds.includes(world)) && o.name.toLowerCase().includes(search.trim().toLowerCase()))
-    .sort((a, b) => a.multiplier - b.multiplier);
+  const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
+  const visibleOres = applyOreFilter(scopeOres.filter((o) => o.name.toLowerCase().includes(search.trim().toLowerCase())), oreFilter);
 
   return (
     <div className="page calc">
@@ -226,14 +227,15 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <span className="small muted">Search ores</span>
                 <input className="input" type="search" placeholder="Try Mythril or Kitsunite" value={search} onChange={(e) => setSearch(e.target.value)} />
               </label>
-              <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", position: "relative" }}>
                 <button className="btn sm" aria-pressed={!allWorlds} onClick={() => setAllWorlds(false)}>World {worldName(world)} ores</button>
                 <button className="btn sm" aria-pressed={allWorlds} onClick={() => setAllWorlds(true)}>All ores</button>
+                <OreFilter ores={scopeOres} value={oreFilter} onChange={setOreFilter} />
               </div>
               <div className="ore-grid">
                 {visibleOres.map((o) => <OreButton key={o.id} ore={o} count={countOf(o.id)} onAdd={() => add(o.id)} onRemove={() => add(o.id, -1)} />)}
               </div>
-              <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one.</p>
+              <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one. <span style={{ color: "#e8c27a" }}>Sword</span> = weapon trait, <span style={{ color: "#8fd0f2" }}>shield</span> = armour trait.</p>
               <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
                 <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => { setKind("armour"); setPick(null); }}>Armor</button>
                 <button className={`big-toggle ${kind === "weapon" ? "gb" : "btn"}`} aria-pressed={kind === "weapon"} onClick={() => { setKind("weapon"); setPick(null); }}>Weapon</button>
@@ -299,11 +301,11 @@ export function Calculator({ cat }: { cat: Catalogue }) {
 function OreButton({ ore, count, onAdd, onRemove }: { ore: CatalogueOre; count: number; onAdd: () => void; onRemove: () => void }) {
   return (
     <button className="tile" style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={onAdd}
-      onContextMenu={(e) => { e.preventDefault(); onRemove(); }} aria-label={`Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${ore.traits.length ? " · has a trait" : ""}`}>
+      onContextMenu={(e) => { e.preventDefault(); onRemove(); }} aria-label={`Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
       <GameImage src={imageUrl("ores", ore.id)} alt="" size={24} />
       <span className="t-top" style={{ right: count ? 26 : 2 }}>{ore.name}</span>
       <span className="t-br">{ore.multiplier}x</span>
-      {ore.traits.length > 0 && <span className="t-bl" aria-hidden="true">✦</span>}
+      <TraitMarks ore={ore} />
       {count > 0 && <span className="t-badge">{count}</span>}
     </button>
   );
