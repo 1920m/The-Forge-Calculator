@@ -39,9 +39,8 @@ Golden tests (`tests/`) reproduce the Dark Knight Chestplate (12.51x, 626 DEF), 
 ## Still to confirm in game
 
 - The quality label ranges (Broken to Masterwork) are unverified.
-- Wolf armour weight: the wiki says 1/3, the calculator uses 1/4.
-- Wiki-only items (Raven's and Vanguard helmet/leggings, Reaper Scythe, Batwing Reaver, Bo Staff) are marked Unverified.
-- Which World 1 versus World 2 ores and variants exist (both share one pool here), and the worlds of the 16 wiki-only ores.
+- Wiki-only items (Vanguard helmet and leggings, Reaper Scythe, Batwing Reaver, Bo Staff) are marked Unverified.
+- The worlds of the 16 wiki-only ores. (Worlds 1 and 2 are treated as one world, 1–2, because they share the same pools and odds.)
 - How trait chances and durations scale. Only signed amounts (+15%, −10%) are scaled for now.
 
 See [FILES.md](FILES.md) for what every file does.

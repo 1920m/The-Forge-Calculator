@@ -30,6 +30,11 @@ describe("catalogue forge results match Cris's in-game crafts", () => {
     expect(r.classes[2].name).toBe("Gauntlets");
     expect(r.classes[1].variants.some((v) => v.name === "Hachiwari")).toBe(false);
   });
+  it("uses the in-game weights: Wolf 1/3, Raven 1/8", () => {
+    const heavy = classVariants(cat, "armour", 4, "Heavy Chestplate");
+    expect(heavy.find((v) => v.name === "Wolf Chestplate")?.weight).toBe(3);
+    expect(heavy.find((v) => v.name === "Raven's Chestplate")?.weight).toBe(8);
+  });
   it("variant chances inside a class sum to 100", () => {
     const sum = classVariants(cat, "armour", 4, "Heavy Chestplate").reduce((s, v) => s + v.chance, 0);
     expect(sum).toBeCloseTo(100, 9);

@@ -5,13 +5,14 @@ import type { World } from "@/lib/engine";
 
 type Theme = { name: string; bg: string; bd: string; bd2: string; br: string; bar: string; panel: string; acc: string; tex: string; glow: string; kind: "dust" | "ember" | "snow" | "petal"; n: number };
 
+/** Display name: Worlds 1 and 2 are one combined choice. */
+export const worldName = (w: World) => (w <= 2 ? "1–2" : String(w));
+
 export const THEMES: Record<World, Theme> = {
-  1: { name: "Stonewake's Cross", bg: "#0b0a09", bd: "#34322e", bd2: "#4a4850", br: "#9a9a9a", bar: "#1c1b1e", panel: "#141210", acc: "#e8d48a",
-    tex: "linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px) 0 0/140px 70px,linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px) 0 0/140px 70px",
-    glow: "inset 0 0 200px rgba(0,0,0,.5)", kind: "dust", n: 20 },
-  2: { name: "Forgotten Kingdom", bg: "#0c0809", bd: "#3a2a2b", bd2: "#5a4346", br: "#8f7a7a", bar: "#1f1718", panel: "#150f10", acc: "#d9908f",
+  2: { name: "Stonewake's Cross and Forgotten Kingdom", bg: "#0c0809", bd: "#3a2a2b", bd2: "#5a4346", br: "#8f7a7a", bar: "#1f1718", panel: "#150f10", acc: "#d9908f",
     tex: "repeating-linear-gradient(115deg,rgba(201,90,90,.045) 0 1px,transparent 1px 52px),repeating-linear-gradient(35deg,rgba(255,255,255,.015) 0 1px,transparent 1px 90px)",
     glow: "inset 0 0 180px rgba(150,40,40,.16)", kind: "ember", n: 26 },
+  get 1() { return this[2]; },
   3: { name: "Frostspire Expanse", bg: "#080b10", bd: "#2a3a4c", bd2: "#3f5873", br: "#8fb4d4", bar: "#131c28", panel: "#0e141c", acc: "#8fd0f2",
     tex: "repeating-linear-gradient(60deg,rgba(150,205,245,.05) 0 1px,transparent 1px 44px),repeating-linear-gradient(120deg,rgba(150,205,245,.05) 0 1px,transparent 1px 44px)",
     glow: "inset 0 0 190px rgba(110,180,235,.14)", kind: "snow", n: 34 },
@@ -50,9 +51,9 @@ export const useHydrated = () => useSyncExternalStore(subscribe, () => true, () 
 function readWorld(): World | null {
   try {
     const q = Number(new URLSearchParams(window.location.search).get("world"));
-    if ([1, 2, 3, 4].includes(q)) return q as World;
+    if ([1, 2, 3, 4].includes(q)) return (q === 1 ? 2 : q) as World;
     const s = Number(window.localStorage.getItem("forge.world"));
-    if ([1, 2, 3, 4].includes(s)) return s as World;
+    if ([1, 2, 3, 4].includes(s)) return (s === 1 ? 2 : s) as World;
   } catch { /* storage unavailable */ }
   return null;
 }
@@ -72,7 +73,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  const setWorld = useCallback((w: World) => {
+  const setWorld = useCallback((picked: World) => {
+    // Worlds 1 and 2 share the same pools and odds, so they are one choice ("1–2").
+    const w = (picked === 1 ? 2 : picked) as World;
     setWorldState(w);
     try {
       window.localStorage.setItem("forge.world", String(w));
@@ -114,8 +117,8 @@ export function WorldSwitch() {
   return (
     <div className="worlds" role="group" aria-label="World">
       <span>World</span>
-      {([1, 2, 3, 4] as World[]).map((w) => (
-        <button key={w} className="btn" style={{ minWidth: 40, minHeight: 36 }} aria-pressed={w === world} aria-label={`World ${w}, ${THEMES[w].name}`} onClick={() => setWorld(w)}>{w}</button>
+      {([2, 3, 4] as World[]).map((w) => (
+        <button key={w} className="btn" style={{ minWidth: 40, minHeight: 36 }} aria-pressed={w === world} aria-label={`World ${worldName(w)}, ${THEMES[w].name}`} onClick={() => setWorld(w)}>{worldName(w)}</button>
       ))}
     </div>
   );

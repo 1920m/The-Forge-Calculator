@@ -5,7 +5,7 @@ import { classNames, classVariants, type Catalogue } from "@/lib/engine/forge";
 import { stat, type Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, pct } from "@/lib/ui";
-import { Reveal, useShell } from "./shell";
+import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 
 export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
@@ -24,7 +24,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
       <div className="row">
         <Reveal col={1} style={{ flex: "1 1 520px", minWidth: 0 }}>
           <section className="gp">
-            <div className="tb"><h1 className="title">{kind === "weapon" ? "Weapon" : "Armour"} classes</h1><span className="small muted">World {world}</span></div>
+            <div className="tb"><h1 className="title">{kind === "weapon" ? "Weapon" : "Armour"} classes</h1><span className="small muted">World {worldName(world)}</span></div>
             <div className="pad scroll-x">
               <table className="table" style={{ minWidth: 420 }}>
                 <thead><tr><th>Class</th><th>Unlocks at</th><th>Variants</th><th /></tr></thead>

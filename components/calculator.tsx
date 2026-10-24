@@ -5,7 +5,7 @@ import { enhancementTable, forge, qualityLabel, type Catalogue, type CatalogueOr
 import type { Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, pct, rarityColour } from "@/lib/ui";
-import { Reveal, useShell } from "./shell";
+import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { Chevron, Lock } from "./icons";
 
@@ -226,7 +226,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <input className="input" type="search" placeholder="Try Mythril or Kitsunite" value={search} onChange={(e) => setSearch(e.target.value)} />
               </label>
               <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-                <button className="btn sm" aria-pressed={!allWorlds} onClick={() => setAllWorlds(false)}>World {world === 1 || world === 2 ? "1 and 2" : world} ores</button>
+                <button className="btn sm" aria-pressed={!allWorlds} onClick={() => setAllWorlds(false)}>World {worldName(world)} ores</button>
                 <button className="btn sm" aria-pressed={allWorlds} onClick={() => setAllWorlds(true)}>All ores</button>
               </div>
               <div className="ore-grid">

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { Catalogue } from "@/lib/engine/forge";
 import { imageUrl } from "@/lib/data/supabase";
 import { RARITY_ORDER, rarityColour, worldLabel } from "@/lib/ui";
-import { Reveal, useShell } from "./shell";
+import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 
 type Sort = "multiplier" | "rarity" | "name";
@@ -42,7 +42,7 @@ export function OresPage({ cat }: { cat: Catalogue }) {
                 </label>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-                <button className="btn sm" aria-pressed={scope === "world"} onClick={() => setScope("world")}>World {world <= 2 ? "1 and 2" : world}</button>
+                <button className="btn sm" aria-pressed={scope === "world"} onClick={() => setScope("world")}>World {worldName(world)}</button>
                 <button className="btn sm" aria-pressed={scope === "all"} onClick={() => setScope("all")}>All worlds</button>
                 <button className="btn sm" aria-pressed={traitsOnly} onClick={() => setTraitsOnly((v) => !v)}>Has a trait</button>
               </div>

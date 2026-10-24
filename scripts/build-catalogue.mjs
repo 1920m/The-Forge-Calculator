@@ -78,9 +78,9 @@ const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, 
   const s = W4_SETS.has(set) ? set : set;
   return {
     id: slug(name), name, weightClass: cls, set: s, slot, healthPct: num(hp), price: num(price),
-    weight: name.startsWith("Wolf") ? 4 : num(chance), // calculator's 1/4 (wiki says 1/3, unverified)
+    weight: num(chance), // Wolf 1/3 and Raven 1/8 confirmed in game by Cris, 24 Oct 2026
     worlds: W4_SETS.has(s) ? [4] : [1, 2, 3, 4],
-    verified: !(name.startsWith("Wolf") || name === "Raven's Helmet" || name === "Raven's Leggings" || name === "Vanguard Helmet" || name === "Vanguard Leggings"),
+    verified: !(name === "Vanguard Helmet" || name === "Vanguard Leggings"),
   };
 });
 
