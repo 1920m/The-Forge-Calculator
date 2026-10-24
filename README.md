@@ -41,7 +41,7 @@ Golden tests (`tests/`) reproduce the Dark Knight Chestplate (12.51x, 626 DEF), 
 
 - The quality label ranges (Broken to Masterwork) are unverified.
 - Wiki-only items (Vanguard helmet and leggings, Reaper Scythe, Batwing Reaver, Bo Staff) are marked Unverified.
-- Boxing Gloves, Dark Knight's Greatsword and Anchored Greatsword are not in any world's list yet (marked Unverified). The worlds of the 16 wiki-only ores. (Worlds 1 and 2 are treated as one world, 1–2, because they share the same pools and odds.)
+- The worlds of the 16 wiki-only ores. (Worlds 1 and 2 are treated as one world, 1–2, because they share the same pools and odds.)
 - Whether trait durations and cooldowns scale (the item card does not show them, so they are left as listed).
 
 See [FILES.md](FILES.md) for what every file does.

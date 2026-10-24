@@ -116,6 +116,7 @@ button.tile:active { transform: translateY(0) scale(.97); }
 
 /* ---------- badges ---------- */
 .badge { display: inline-block; font-size: 12px; padding: 0 6px; border: 1px solid; vertical-align: middle; line-height: 1.5; white-space: nowrap; }
+.badge.shop { border-color: #4ab0f5; color: #69fbff; background: rgba(74,176,245,.12); }
 .badge.ok { border-color: #4f8a3d; color: #8fd19b; } .badge.der { border-color: #8a7a4a; color: #d8c58f; } .badge.unv { border-color: #8a4a4a; color: #d89090; }
 
 /* ---------- bars ---------- */

@@ -257,7 +257,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       <tbody>
                         {selected.cls.variants.map((v) => (
                           <tr key={v.id} className={v.id === selected.v.id ? "sel" : ""} onClick={() => setPick({ cls: selected.cls.name, id: v.id })} style={{ cursor: "pointer" }}>
-                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {!v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge der" title="Shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
+                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {!v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
                             <td>{pct(v.chance)}</td><td>{pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
                           </tr>
                         ))}

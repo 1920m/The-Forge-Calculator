@@ -81,9 +81,9 @@ const byName = new Map(allWeapons.map((w) => [w.name, w]));
 const W2 = {
   "Dagger": { items: [["Dagger"], ["Gladius Daggers"], ["Hook"]] },
   "Straight Sword": { items: [["Falchion Sword"], ["Cutlass"], ["Rapier"], ["Chaos"]] },
-  "Gauntlets": { items: [["Ironhand"], ["Relevator"], ["Savage Claws"], ["Dark Knight's Gauntlets"]] },
+  "Gauntlets": { items: [["Ironhand"], ["Boxing Gloves"], ["Relevator"], ["Savage Claws"], ["Dark Knight's Gauntlets"]] },
   "Katana": { items: [["Uchigatana"], ["Tachi"]] },
-  "Greatsword": { items: [["Crusader Sword"], ["Long Sword"], ["Zweihander"], ["Jack's Crest"], ["The Carver"]] },
+  "Greatsword": { items: [["Crusader Sword"], ["Long Sword"], ["Dark Knight's Greatsword"], ["Anchored Greatsword"], ["Zweihander"], ["Jack's Crest"], ["The Carver"]] },
   "Great Axe": { items: [["Double Battle Axe"], ["Scythe"]] },
   "Colossal Sword": { items: [["Great Sword"], ["Hammer"], ["Skull Crusher"], ["Dragon Slayer"]] },
 };
