@@ -1,3 +1,3 @@
 * text=auto eol=lf
-# Preserve the supplied reference files byte-for-byte, including line endings.
-forge-calculator-handoff/design/** -text
+# Design reference boards are kept byte-for-byte.
+docs/design-reference/** -text
