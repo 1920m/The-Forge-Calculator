@@ -28,7 +28,7 @@ No environment variables are needed. The app reads the public, read-only Supabas
 | Multiplier | M = sum(multiplier × count) ÷ total ores | Confirmed in game |
 | Class odds | Look up the total ore count (3 to 55) in the odds table; above 55 use the 55 row | Confirmed in game |
 | Variant odds | (1 ÷ N) ÷ sum(1 ÷ N) inside the class | Confirmed in game |
-| World pools | Slots 3–5 are Gauntlets/Katana/Greatsword in World 1–2, Mace/Axe/Spear in World 3, Mace/Katana/Spear in World 4; each world has its own variants | Confirmed in game |
+| World pools | Slots 3–5 are Gauntlets/Katana/Greatsword in World 1–2, Mace/Axe/Spear in World 3, Mace/Katana/Spear in World 4; each world has its own variants, plus Funguy shop blueprints where the shop sells that class, and Halloween weapons in World 4 | Confirmed in game |
 | Primary ore | Largest count, ties go to the higher multiplier; sets the look and rarity | Confirmed in game |
 | Traits | Need a 10% share; strength = 0.10 + 4.5 × (share − 0.10), full at 30%. Chances, damage and stat amounts all scale; durations do not appear to | Confirmed in game |
 | Defence | round(2 × health % × M × quality) | Confirmed in game |
@@ -41,7 +41,7 @@ Golden tests (`tests/`) reproduce the Dark Knight Chestplate (12.51x, 626 DEF), 
 
 - The quality label ranges (Broken to Masterwork) are unverified.
 - Wiki-only items (Vanguard helmet and leggings, Reaper Scythe, Batwing Reaver, Bo Staff) are marked Unverified.
-- Shop-blueprint weapons Cris doesn't own yet (some World 3 and 4 classes are marked "+ shop"), and the worlds of the 16 wiki-only ores. (Worlds 1 and 2 are treated as one world, 1–2, because they share the same pools and odds.)
+- Boxing Gloves, Dark Knight's Greatsword and Anchored Greatsword are not in any world's list yet (marked Unverified). The worlds of the 16 wiki-only ores. (Worlds 1 and 2 are treated as one world, 1–2, because they share the same pools and odds.)
 - Whether trait durations and cooldowns scale (the item card does not show them, so they are left as listed).
 
 See [FILES.md](FILES.md) for what every file does.

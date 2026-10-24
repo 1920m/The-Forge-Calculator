@@ -7,7 +7,7 @@ export type CatalogueOre = {
   worlds: number[]; drop: number | null; source: string | null; verified: boolean;
   traits: { kinds: Kind[]; text: string }[];
 };
-export type CatalogueWeapon = { id: string; name: string; class: string; baseDamage: number; indexSpeed: number; trueSpeed: number; range: number; price: number; weight: number; worlds: number[]; verified: boolean };
+export type CatalogueWeapon = { id: string; name: string; class: string; baseDamage: number; indexSpeed: number; trueSpeed: number; range: number; price: number; weight: number; worlds: number[]; verified: boolean; tag?: "shop" | "halloween" | null };
 export type CatalogueArmour = { id: string; name: string; weightClass: "Light" | "Medium" | "Heavy"; set: string; slot: "helmet" | "chestplate" | "leggings"; healthPct: number; price: number; weight: number; worlds: number[]; verified: boolean };
 export type Catalogue = {
   ores: CatalogueOre[]; weapons: CatalogueWeapon[]; armour: CatalogueArmour[];
@@ -38,7 +38,7 @@ export function categoryRows(cat: Catalogue, kind: Kind): CategoryRow[] {
   return Object.entries(cat.odds[kind]).flatMap(([n, cells]) => cells.map((probability, i) => ({ kind, oreCount: Number(n), slot: i + 1, probability })));
 }
 
-export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; range?: number };
+export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; range?: number; tag?: "shop" | "halloween" | null };
 
 /** Every variant of a class in a world, with its chance inside the class (normalised inverse weights). */
 export function classVariants(cat: Catalogue, kind: Kind, world: World, className: string): Variant[] {
@@ -46,7 +46,7 @@ export function classVariants(cat: Catalogue, kind: Kind, world: World, classNam
   const list = kind === "weapon"
     ? (cat.weaponPools[poolKey(world)].pools[className]?.items ?? []).flatMap(([id, weight]) => {
         const w = byId.get(id);
-        return w ? [{ id: w.id, name: w.name, weight: weight ?? w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, range: w.range }] : [];
+        return w ? [{ id: w.id, name: w.name, weight: weight ?? w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, range: w.range, tag: w.tag ?? null }] : [];
       })
     : cat.armour.filter((a) => armourClassName([a.weightClass, a.slot]) === className && a.worlds.includes(world)).map((a) => ({ id: a.id, name: a.name, weight: a.weight, base: a.healthPct, verified: a.verified }));
   const odds = variantOdds(list.map((v) => v.weight));

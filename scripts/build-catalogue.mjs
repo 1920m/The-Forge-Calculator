@@ -65,9 +65,13 @@ const oddsTable = (header) => Object.fromEntries(csv(header).slice(1).map(([n, .
 const EXTRA_WEAPONS = [
   ["Greatsword", "The Carver", "13.8", "0.91", "1.26", "9", "485", "4"], // wiki spells it "The Craver"
   ["Greatsword", "Jack's Crest", "13.8", "0.91", "1.26", "9", "485", "6"],
+  ["Axe", "Duskwing's Cleaver", "8.4", "0.48", "0.88", "8", "205", "8"],
+  ["Spear", "Demonic Spear", "12.75", "0.56", "0.60", "11", "120", "4"],
+  ["Great Axe", "Halberd", "16.8", "1", "0.91", "10", "850", "1"],
+  ["Colossal Sword", "Coffin's Lid", "23", "1.12", "1.56", "10", "1355", "16"],
 ];
 const allWeapons = [...csv("class,name,base_damage").slice(1), ...EXTRA_WEAPONS].map(([cls, name, dmg, idx, tru, range, price, chance]) => ({
-  id: slug(name), name, class: cls, baseDamage: num(dmg), indexSpeed: num(idx), trueSpeed: num(tru), range: num(range), price: num(price), weight: num(chance), worlds: [], verified: true,
+  id: slug(name), name, class: cls, baseDamage: num(dmg), indexSpeed: num(idx), trueSpeed: num(tru), range: num(range), price: num(price), weight: num(chance), worlds: [], verified: true, tag: null,
 }));
 const byName = new Map(allWeapons.map((w) => [w.name, w]));
 
@@ -102,6 +106,7 @@ const W4 = {
   // World 4 rolls Dragon Slayer at 1/1 (the game also lists a 1/16 copy, which Cris says to ignore).
   "Colossal Sword": { items: [["Dragon Slayer", 1], ["Kinmon Kamagatana"], ["Otsuchi"], ["Sharktooth Odachi"], ["Excalibur"]], shop: true },
 };
+const inWorld = (w, world) => { w.worlds = [...new Set([...w.worlds, ...(world === 2 ? [1, 2] : [world])])]; };
 const pool = (world, classes, def) => ({
   classes,
   pools: Object.fromEntries(classes.map((c) => [c, {
@@ -110,7 +115,7 @@ const pool = (world, classes, def) => ({
       const w = byName.get(name);
       if (!w) throw new Error(`Unknown weapon ${name}`);
       if (w.class !== c) throw new Error(`${name} is ${w.class}, not ${c}`);
-      w.worlds = [...new Set([...w.worlds, ...(world === 2 ? [1, 2] : [world])])];
+      inWorld(w, world);
       return weight ? [w.id, weight] : [w.id];
     }),
   }])),
@@ -120,6 +125,18 @@ const weaponPools = {
   3: pool(3, ["Dagger", "Straight Sword", "Mace", "Axe", "Spear", "Great Axe", "Colossal Sword"], W3),
   4: pool(4, ["Dagger", "Straight Sword", "Mace", "Katana", "Spear", "Great Axe", "Colossal Sword"], W4),
 };
+// Cris: where a class says "funguy shop", every other variant of that class (the shop blueprints) also rolls there.
+// Anything left after that is a Halloween weapon, which only rolls in World 4.
+const listed = new Set(allWeapons.filter((w) => w.worlds.length).map((w) => w.id));
+for (const w of allWeapons.filter((x) => !listed.has(x.id))) {
+  for (const world of [2, 3, 4]) {
+    const p = weaponPools[world].pools[w.class];
+    if (p?.shop) { p.items.push([w.id]); inWorld(w, world); w.tag = "shop"; }
+  }
+  if (!w.worlds.length && weaponPools[4].pools[w.class]) { weaponPools[4].pools[w.class].items.push([w.id]); inWorld(w, 4); w.tag = "halloween"; }
+  if (!w.worlds.length) w.verified = false; // class does not exist in any world we know
+}
+for (const world of [2, 3, 4]) for (const p of Object.values(weaponPools[world].pools)) p.shop = false;
 const weapons = allWeapons.map((w) => ({ ...w, worlds: w.worlds.sort() }));
 
 // ---------- armour
@@ -149,5 +166,7 @@ const catalogue = {
   qualityTiers: [["Broken", 0], ["Poor", 25], ["Rough", 40], ["Average", 50], ["Good", 65], ["Great", 75], ["Excellent", 85], ["Perfect", 90], ["Masterwork", 95]],
 };
 writeFileSync(new URL("../data/catalogue.json", import.meta.url), JSON.stringify(catalogue) + "\n");
-console.log(`unplaced weapons: ${weapons.filter((w) => !w.worlds.length).map((w) => w.name).join(", ")}`);
+console.log(`shop: ${weapons.filter((w) => w.tag === "shop").map((w) => w.name).join(", ")}`);
+console.log(`halloween: ${weapons.filter((w) => w.tag === "halloween").map((w) => w.name).join(", ")}`);
+console.log(`no world: ${weapons.filter((w) => !w.worlds.length).map((w) => w.name).join(", ")}`);
 console.log(`ores ${catalogue.ores.length}, traits ${catalogue.ores.reduce((n, o) => n + o.traits.length, 0)}, weapons ${weapons.length}, armour ${armour.length}`);
