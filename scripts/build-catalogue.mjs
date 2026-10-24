@@ -61,15 +61,66 @@ const csv = (header) => { const m = [...prd.matchAll(/```csv\n([\s\S]*?)\n```/g)
 const oddsTable = (header) => Object.fromEntries(csv(header).slice(1).map(([n, ...cells]) => [n, cells.map((c) => (c === "" ? 0 : Number(c)))]));
 
 // ---------- weapons
-const W4_WEAPONS = new Set(["Kunai", "Jitte", "Damascus Dagger", "Tanto", "Hachiwari", "Chokuto", "Dragon Blade", "Thornspire", "Tetsubo", "Kanabo", "Shakujo", "Sodegarami", "Bo Staff", "Naginata", "Sun Great Axe", "Kinmon Kamagatana", "Otsuchi", "Sharktooth Odachi"]);
-const UNVERIFIED_WEAPONS = new Set(["Reaper Scythe", "Batwing Reaver", "Bo Staff"]);
-const EARLY_ONLY = new Set(["Gauntlets", "Katana", "Greatsword"]);
-const LATE_ONLY = new Set(["Mace", "Axe", "Spear"]);
-const weapons = csv("class,name,base_damage").slice(1).map(([cls, name, dmg, idx, tru, range, price, chance]) => ({
-  id: slug(name), name, class: cls, baseDamage: num(dmg), indexSpeed: num(idx), trueSpeed: num(tru), range: num(range), price: num(price), weight: num(chance),
-  worlds: W4_WEAPONS.has(name) ? [4] : EARLY_ONLY.has(cls) ? [1, 2] : LATE_ONLY.has(cls) ? [3, 4] : [1, 2, 3, 4],
-  verified: !UNVERIFIED_WEAPONS.has(name),
+// Stats from the PRD weapon table plus wiki rows the PRD lacked (forgewiki.org/wiki/Weapons, 24 Oct 2026).
+const EXTRA_WEAPONS = [
+  ["Greatsword", "The Carver", "13.8", "0.91", "1.26", "9", "485", "4"], // wiki spells it "The Craver"
+  ["Greatsword", "Jack's Crest", "13.8", "0.91", "1.26", "9", "485", "6"],
+];
+const allWeapons = [...csv("class,name,base_damage").slice(1), ...EXTRA_WEAPONS].map(([cls, name, dmg, idx, tru, range, price, chance]) => ({
+  id: slug(name), name, class: cls, baseDamage: num(dmg), indexSpeed: num(idx), trueSpeed: num(tru), range: num(range), price: num(price), weight: num(chance), worlds: [], verified: true,
 }));
+const byName = new Map(allWeapons.map((w) => [w.name, w]));
+
+// Which classes and variants each world rolls, as listed by Cris from the game (24 Oct 2026).
+// [name] uses the wiki weight; [name, weight] overrides it for that world. shop: the class also has
+// shop-blueprint weapons Cris does not own yet, so the list (and the odds inside it) may be incomplete.
+const W2 = {
+  "Dagger": { items: [["Dagger"], ["Gladius Daggers"], ["Hook"]] },
+  "Straight Sword": { items: [["Falchion Sword"], ["Cutlass"], ["Rapier"], ["Chaos"]] },
+  "Gauntlets": { items: [["Ironhand"], ["Relevator"], ["Savage Claws"], ["Dark Knight's Gauntlets"]] },
+  "Katana": { items: [["Uchigatana"], ["Tachi"]] },
+  "Greatsword": { items: [["Crusader Sword"], ["Long Sword"], ["Zweihander"], ["Jack's Crest"], ["The Carver"]] },
+  "Great Axe": { items: [["Double Battle Axe"], ["Scythe"]] },
+  "Colossal Sword": { items: [["Great Sword"], ["Hammer"], ["Skull Crusher"], ["Dragon Slayer"]] },
+};
+const W3 = {
+  "Dagger": { items: W2["Dagger"].items, shop: true },
+  "Straight Sword": { items: [...W2["Straight Sword"].items, ["Hook Blade"]], shop: true },
+  "Mace": { items: [["Mace"], ["Spiked Mace"], ["Winged Mace"], ["Hammerhead Mace"], ["Grave Maker"]] },
+  "Axe": { items: [["Axe"], ["Battleaxe"], ["Curved Handle Axe"], ["Spade Armed Axe"]], shop: true },
+  "Spear": { items: [["Spear"], ["Trident"], ["Angelic Spear"], ["Knight Spear"], ["Compass Spear"]] },
+  "Great Axe": { items: [...W2["Great Axe"].items, ["Greater Battle Axe"], ["Wyvern Axe"]], shop: true },
+  "Colossal Sword": W2["Colossal Sword"],
+};
+const W4 = {
+  "Dagger": { items: [["Kunai"], ["Jitte"], ["Damascus Dagger"], ["Tanto"]], shop: true },
+  "Straight Sword": { items: [["Chokuto"], ["Hachiwari"], ["Dragon Blade"], ["Hook Blade"]], shop: true },
+  "Mace": { items: [["Mace"], ["Tetsubo"], ["Kanabo"]] },
+  "Katana": { items: [...W2["Katana"].items, ["Juto Katana"], ["Kurokiba-gatana"], ["Washi-maru"]] },
+  "Spear": { items: [["Spear"], ["Shakujo"], ["Sodegarami"], ["Bo Staff"], ["Naginata"]] },
+  "Great Axe": W3["Great Axe"],
+  // World 4 rolls Dragon Slayer at 1/1 (the game also lists a 1/16 copy, which Cris says to ignore).
+  "Colossal Sword": { items: [["Dragon Slayer", 1], ["Kinmon Kamagatana"], ["Otsuchi"], ["Sharktooth Odachi"], ["Excalibur"]], shop: true },
+};
+const pool = (world, classes, def) => ({
+  classes,
+  pools: Object.fromEntries(classes.map((c) => [c, {
+    shop: !!def[c].shop,
+    items: def[c].items.map(([name, weight]) => {
+      const w = byName.get(name);
+      if (!w) throw new Error(`Unknown weapon ${name}`);
+      if (w.class !== c) throw new Error(`${name} is ${w.class}, not ${c}`);
+      w.worlds = [...new Set([...w.worlds, ...(world === 2 ? [1, 2] : [world])])];
+      return weight ? [w.id, weight] : [w.id];
+    }),
+  }])),
+});
+const weaponPools = {
+  2: pool(2, ["Dagger", "Straight Sword", "Gauntlets", "Katana", "Greatsword", "Great Axe", "Colossal Sword"], W2),
+  3: pool(3, ["Dagger", "Straight Sword", "Mace", "Axe", "Spear", "Great Axe", "Colossal Sword"], W3),
+  4: pool(4, ["Dagger", "Straight Sword", "Mace", "Katana", "Spear", "Great Axe", "Colossal Sword"], W4),
+};
+const weapons = allWeapons.map((w) => ({ ...w, worlds: w.worlds.sort() }));
 
 // ---------- armour
 const W4_SETS = new Set(["Ninja's", "Rootguard", "Vanguard", "Shogun"]);
@@ -89,14 +140,14 @@ const catalogue = {
   ores: [...ores.values()].map((o) => ({ ...o, rule: o.rule ?? "fixed" })),
   weapons,
   armour,
-  weaponClasses: {
-    early: ["Dagger", "Straight Sword", "Gauntlets", "Katana", "Greatsword", "Great Axe", "Colossal Sword"],
-    late: ["Dagger", "Straight Sword", "Mace", "Axe", "Spear", "Great Axe", "Colossal Sword"],
-  },
+  weaponPools,
+  // Kept so sites running the previous version keep working with this data until they update.
+  weaponClasses: { early: weaponPools[2].classes, late: weaponPools[3].classes },
   armourClasses: [["Light", "helmet"], ["Light", "leggings"], ["Light", "chestplate"], ["Medium", "helmet"], ["Medium", "leggings"], ["Medium", "chestplate"], ["Heavy", "helmet"], ["Heavy", "leggings"], ["Heavy", "chestplate"]],
   odds: { weapon: oddsTable("ores,slot1_dagger,"), armour: oddsTable("ores,light_helmet,") },
   locks: { weapon: [3, 9, 14, 18, 24, 31, 50], armour: [3, 11, 15, 20, 24, 30, 35, 42, 52] },
   qualityTiers: [["Broken", 0], ["Poor", 25], ["Rough", 40], ["Average", 50], ["Good", 65], ["Great", 75], ["Excellent", 85], ["Perfect", 90], ["Masterwork", 95]],
 };
 writeFileSync(new URL("../data/catalogue.json", import.meta.url), JSON.stringify(catalogue) + "\n");
+console.log(`unplaced weapons: ${weapons.filter((w) => !w.worlds.length).map((w) => w.name).join(", ")}`);
 console.log(`ores ${catalogue.ores.length}, traits ${catalogue.ores.reduce((n, o) => n + o.traits.length, 0)}, weapons ${weapons.length}, armour ${armour.length}`);

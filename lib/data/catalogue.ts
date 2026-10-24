@@ -8,7 +8,7 @@ export const bundledCatalogue = bundled as unknown as Catalogue;
 
 function looksValid(c: unknown): c is Catalogue {
   const x = c as Catalogue;
-  return !!x && Array.isArray(x.ores) && x.ores.length > 50 && Array.isArray(x.weapons) && Array.isArray(x.armour) && !!x.odds?.weapon?.["55"] && !!x.odds?.armour?.["55"];
+  return !!x && Array.isArray(x.ores) && x.ores.length > 50 && Array.isArray(x.weapons) && Array.isArray(x.armour) && !!x.odds?.weapon?.["55"] && !!x.odds?.armour?.["55"] && !!x.weaponPools?.["4"];
 }
 
 /** Newest game-data release from Supabase (cached for an hour), or the bundled copy if Supabase is unreachable. */

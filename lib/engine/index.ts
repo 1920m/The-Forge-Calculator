@@ -55,7 +55,8 @@ export function scaledEffect(amount: number, share: number) {
 
 export function roundStat(value: number, kind: Kind): number {
   nonNegative(value, "Stat");
-  return kind === "armour" ? Math.round(value) : Math.max(0, Math.ceil(value * 100 - 1e-6) / 100);
+  // Both round to nearest (Tachi 247.7223 shows 247.72, Uchigatana 234.889 shows 234.89). Armour to a whole number, weapons to 2 decimals.
+  return kind === "armour" ? Math.round(value) : Math.round(value * 100 + 1e-7) / 100;
 }
 
 /** Keep the underlying value available so enhancement never compounds display rounding. */
