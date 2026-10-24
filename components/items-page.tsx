@@ -60,7 +60,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
                     <tr key={v.id}>
                       <td><span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                         <span className="tile" style={{ width: 34, height: 34, borderWidth: 1 }}><GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={16} /></span>
-                        {v.name}</span> {!v.verified && <span className="badge unv">Unverified</span>}</td>
+                        {v.name}</span> {!v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
                       {kind === "weapon" ? <><td>{v.base}</td><td>{v.speed}s</td><td>{v.range}</td></> : <td>{v.base}</td>}
                       <td className="muted">1/{v.weight}</td>
                       <td>{pct(v.chance)}</td>

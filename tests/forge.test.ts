@@ -31,8 +31,12 @@ describe("catalogue forge results match Cris's in-game crafts", () => {
     expect(names(3)).toEqual(["Mace", "Axe", "Spear"]);
     expect(names(4)).toEqual(["Mace", "Katana", "Spear"]);
   });
-  it("World 4 Katana includes the World 2 katanas plus Juto, Kurokiba and Washi-maru; Dragon Slayer is 1/1", () => {
-    expect(classVariants(cat, "weapon", 4, "Katana").map((v) => v.name)).toEqual(["Uchigatana", "Tachi", "Juto Katana", "Kurokiba-gatana", "Washi-maru"]);
+  it("World 4 Katana includes the World 2 katanas, Juto, Kurokiba, Washi-maru and Halloween Straight Edge; Dragon Slayer is 1/1", () => {
+    expect(classVariants(cat, "weapon", 4, "Katana").map((v) => v.name)).toEqual(["Uchigatana", "Tachi", "Juto Katana", "Kurokiba-gatana", "Washi-maru", "Straight Edge Katana"]);
+    // Shop blueprints roll where Cris saw the Funguy shop; leftovers are World 4 Halloween weapons.
+    expect(classVariants(cat, "weapon", 3, "Dagger").map((v) => v.name)).toEqual(expect.arrayContaining(["Dagger", "Hook", "Cultist Dagger"]));
+    expect(classVariants(cat, "weapon", 2, "Dagger").map((v) => v.name)).not.toContain("Cultist Dagger");
+    expect(classVariants(cat, "weapon", 4, "Spear").find((v) => v.name === "Demonic Spear")?.tag).toBe("halloween");
     expect(classVariants(cat, "weapon", 4, "Colossal Sword").find((v) => v.name === "Dragon Slayer")?.weight).toBe(1);
     expect(classVariants(cat, "weapon", 2, "Colossal Sword").find((v) => v.name === "Dragon Slayer")?.weight).toBe(16);
   });

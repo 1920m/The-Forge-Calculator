@@ -11,7 +11,7 @@ export const worldName = (w: World) => (w <= 2 ? "1–2" : String(w));
 export const THEMES: Record<World, Theme> = {
   2: { name: "Stonewake's Cross and Forgotten Kingdom", bg: "#0c0809", bd: "#3a2a2b", bd2: "#5a4346", br: "#8f7a7a", bar: "#1f1718", panel: "#150f10", acc: "#d9908f",
     tex: "repeating-linear-gradient(115deg,rgba(201,90,90,.045) 0 1px,transparent 1px 52px),repeating-linear-gradient(35deg,rgba(255,255,255,.015) 0 1px,transparent 1px 90px)",
-    glow: "inset 0 0 180px rgba(150,40,40,.16)", kind: "ember", n: 26 },
+    glow: "inset 0 0 180px rgba(150,40,40,.16)", kind: "ember", n: 36 },
   get 1() { return this[2]; },
   3: { name: "Frostspire Expanse", bg: "#080b10", bd: "#2a3a4c", bd2: "#3f5873", br: "#8fb4d4", bar: "#131c28", panel: "#0e141c", acc: "#8fd0f2",
     tex: "repeating-linear-gradient(60deg,rgba(150,205,245,.05) 0 1px,transparent 1px 44px),repeating-linear-gradient(120deg,rgba(150,205,245,.05) 0 1px,transparent 1px 44px)",
@@ -21,20 +21,48 @@ export const THEMES: Record<World, Theme> = {
     glow: "inset 0 0 190px rgba(232,140,175,.12)", kind: "petal", n: 22 },
 };
 
-function particles(world: World) {
+const SNOWFLAKE = "M12 1v22M2.5 6.5l19 11M2.5 17.5l19-11M12 1l-2.5 2.5M12 1l2.5 2.5M12 23l-2.5-2.5M12 23l2.5-2.5M2.5 6.5l3.4.9M2.5 6.5l.9-3.4M21.5 17.5l-3.4-.9M21.5 17.5l-.9 3.4M2.5 17.5l.9 3.4M2.5 17.5l3.4-.9M21.5 6.5l-.9-3.4M21.5 6.5l-3.4.9";
+const ASH = ["#9a938b", "#b3aca4", "#837c75", "#a8a097", "#c2bbb2"];
+
+type Particle = { key: number; outer: React.CSSProperties; inner: React.CSSProperties; flake?: { size: number; spin: string } };
+
+function particles(world: World): Particle[] {
   const t = THEMES[world];
   let s = world * 7919;
   const rnd = () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
   return Array.from({ length: t.n }, (_, i) => {
     const x = rnd() * 100, y = rnd() * 100;
-    const dur = t.kind === "dust" ? 34 + rnd() * 24 : t.kind === "snow" ? 16 + rnd() * 14 : t.kind === "ember" ? 14 + rnd() * 14 : 20 + rnd() * 16;
-    const delay = -rnd() * dur, sd = 3 + rnd() * 4, size = t.kind === "petal" ? 9 + rnd() * 8 : t.kind === "dust" ? 1.5 + rnd() * 2 : 2 + rnd() * 3;
-    const outer = { left: `${x}%`, top: `${y}%`, animation: `${t.kind === "ember" || t.kind === "dust" ? "lift" : "fall"} ${dur}s linear ${delay}s infinite` };
+    const sd = 3 + rnd() * 4;
+    if (t.kind === "snow") {
+      // Six-armed snowflakes that drift down, sway and slowly turn.
+      const dur = 18 + rnd() * 16, delay = -rnd() * dur, size = 7 + rnd() * 9;
+      return {
+        key: i,
+        outer: { left: `${x}%`, top: `${y}%`, animation: `fall ${dur}s linear ${delay}s infinite` },
+        inner: { opacity: 0.45 + rnd() * 0.45, animation: `sway2 ${sd}s ease-in-out ${delay}s infinite alternate`, filter: "drop-shadow(0 0 3px rgba(190,230,255,.6))" },
+        flake: { size, spin: `spin ${10 + rnd() * 14}s linear ${delay}s infinite${rnd() > 0.5 ? " reverse" : ""}` },
+      };
+    }
+    if (t.kind === "ember") {
+      // Mostly grey ash flakes tumbling down; a few still-glowing pieces drift up.
+      const glowing = rnd() < 0.2;
+      const dur = glowing ? 14 + rnd() * 12 : 22 + rnd() * 18, delay = -rnd() * dur, size = glowing ? 2.5 + rnd() * 2 : 5 + rnd() * 7;
+      const p = () => `${Math.round(rnd() * 35)}% ${Math.round(rnd() * 35)}%`;
+      const shape = `polygon(${p()}, ${65 + Math.round(rnd() * 35)}% ${Math.round(rnd() * 30)}%, ${70 + Math.round(rnd() * 30)}% ${60 + Math.round(rnd() * 40)}%, ${Math.round(rnd() * 40)}% ${70 + Math.round(rnd() * 30)}%)`;
+      return {
+        key: i,
+        outer: { left: `${x}%`, top: `${y}%`, animation: `${glowing ? "lift" : "fall"} ${dur}s linear ${delay}s infinite` },
+        inner: glowing
+          ? { width: size, height: size, background: "#e07a52", borderRadius: "50%", boxShadow: "0 0 6px 1px rgba(224,96,70,.8)", opacity: 0.8, animation: `sway2 ${sd}s ease-in-out ${delay}s infinite alternate` }
+          : { width: size, height: size * (0.6 + rnd() * 0.5), background: ASH[Math.floor(rnd() * ASH.length)], clipPath: shape, opacity: 0.55 + rnd() * 0.35, animation: `tumble ${sd + 2}s ease-in-out ${delay}s infinite alternate` },
+      };
+    }
+    const dur = t.kind === "dust" ? 34 + rnd() * 24 : 20 + rnd() * 16;
+    const delay = -rnd() * dur, size = t.kind === "petal" ? 9 + rnd() * 8 : 1.5 + rnd() * 2;
+    const outer = { left: `${x}%`, top: `${y}%`, animation: `${t.kind === "dust" ? "lift" : "fall"} ${dur}s linear ${delay}s infinite` };
     const sway = `${t.kind === "petal" ? "sway" : "sway2"} ${sd}s ease-in-out ${delay}s infinite alternate`;
-    const inner =
-      t.kind === "petal" ? { width: size, height: size * 0.7, background: "#f0a8c0", borderRadius: "100% 0 100% 0", opacity: 0.7, animation: sway }
-      : t.kind === "snow" ? { width: size, height: size, background: "#e4f2ff", borderRadius: "50%", opacity: 0.65, animation: sway }
-      : t.kind === "ember" ? { width: size, height: size, background: "#d9605f", borderRadius: "50%", boxShadow: "0 0 7px #c24a4a", opacity: 0.75, animation: sway }
+    const inner = t.kind === "petal"
+      ? { width: size, height: size * 0.7, background: "#f0a8c0", borderRadius: "100% 0 100% 0", opacity: 0.7, animation: sway }
       : { width: size, height: size, background: "#bdb49a", borderRadius: "50%", opacity: 0.35, animation: sway };
     return { key: i, outer, inner };
   });
@@ -93,7 +121,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <ShellContext.Provider value={{ world, setWorld, phase }}>
       <div className="app" style={style} data-world={world}>
         <div className="particles" aria-hidden="true">
-          {phase > 0 && dots.map((d) => <span key={d.key} style={d.outer}><span style={d.inner} /></span>)}
+          {phase > 0 && dots.map((d) => (
+            <span key={d.key} style={d.outer}>
+              <span style={d.inner}>
+                {d.flake && (
+                  <svg viewBox="0 0 24 24" width={d.flake.size} height={d.flake.size} style={{ display: "block", animation: d.flake.spin }} fill="none" stroke="#eaf6ff" strokeWidth="1.6" strokeLinecap="round"><path d={SNOWFLAKE} /></svg>
+                )}
+              </span>
+            </span>
+          ))}
         </div>
         {children}
       </div>

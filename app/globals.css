@@ -35,6 +35,8 @@ h1, h2, h3 { margin: 0; }
 @keyframes lift { from { top: 104%; } to { top: -4%; } }
 @keyframes sway { from { transform: translateX(-30px) rotate(-35deg); } to { transform: translateX(30px) rotate(70deg); } }
 @keyframes sway2 { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes tumble { from { transform: translateX(-18px) rotate(-40deg) rotateX(0deg); } to { transform: translateX(18px) rotate(220deg) rotateX(55deg); } }
 
 /* ---------- header ---------- */
 .header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; padding: 14px 32px; background: var(--bar); border-bottom: 1px solid var(--bd); position: relative; z-index: 3; }
@@ -116,6 +118,7 @@ button.tile:active { transform: translateY(0) scale(.97); }
 
 /* ---------- badges ---------- */
 .badge { display: inline-block; font-size: 12px; padding: 0 6px; border: 1px solid; vertical-align: middle; line-height: 1.5; white-space: nowrap; }
+.badge.shop { border-color: #4ab0f5; color: #69fbff; background: rgba(74,176,245,.12); }
 .badge.ok { border-color: #4f8a3d; color: #8fd19b; } .badge.der { border-color: #8a7a4a; color: #d8c58f; } .badge.unv { border-color: #8a4a4a; color: #d89090; }
 
 /* ---------- bars ---------- */
@@ -208,3 +211,4 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
   .ore-grid { max-height: 380px; }
   .header { gap: 8px 16px; }
 }
+.table .badge { margin-left: 6px; }
