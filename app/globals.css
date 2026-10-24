@@ -244,3 +244,19 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .dual input[type="range"]:focus-visible { outline: none; }
 .dual input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid #fff; outline-offset: 2px; }
 .trait-marks { display: inline-flex; gap: 2px; bottom: 3px; left: 4px; }
+
+/* ---------- four forge slots + hold to remove ---------- */
+.slot-empty { border: 2px dashed #4a4850; opacity: .55; }
+.tile.locked { opacity: .38; filter: grayscale(.6); cursor: not-allowed; }
+.tile.locked:hover { transform: none; filter: grayscale(.6); }
+.tile.hold { padding: 0; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.hold-ring { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10, 8, 9, .55); opacity: 0; transition: opacity .15s; pointer-events: none; }
+.hold-ring circle { fill: none; stroke-width: 4; }
+.hold-track { stroke: rgba(255, 255, 255, .12); }
+.hold-fill { stroke: rgba(224, 72, 72, .85); stroke-dasharray: 100; stroke-dashoffset: 100; transform: rotate(-90deg); transform-origin: 24px 24px; stroke-linecap: round; }
+.hold-bin { stroke: rgba(224, 72, 72, .85); }
+.tile.holding .hold-ring { opacity: 1; }
+.tile.holding .hold-fill { animation: hold-fill var(--hold) linear forwards, hold-fade var(--hold) linear forwards; }
+.tile.holding .hold-bin { animation: hold-fade var(--hold) linear forwards; }
+@keyframes hold-fill { to { stroke-dashoffset: 0; } }
+@keyframes hold-fade { from { stroke: rgba(224, 72, 72, .85); } to { stroke: rgba(170, 170, 170, .75); } }
