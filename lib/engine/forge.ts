@@ -47,12 +47,20 @@ export function qualityLabel(cat: Catalogue, qualityPct: number): string {
   return label;
 }
 
-/** Scales the signed amounts in a trait line ("+15% Vitality", "-10% stamina", "+8 regen") by strength. Chances, durations and conditions are left as written. */
+/**
+ * Scales a trait line by strength, matching the game (Sun Stone at 20% share: "35% chance … 35%/s" became 19.3% and 19.3%/s).
+ * Every percentage and signed amount scales: chances, damage, stat bonuses and penalties.
+ * Left alone: HP thresholds ("below 35% HP"), durations and cooldowns in seconds. Shown to one decimal, like the game.
+ */
 export function scaleTraitText(text: string, strength: number): string {
-  return text.replace(/([+-])(\d+(?:\.\d+)?)(%?)/g, (_, sign: string, n: string, pct: string) => {
-    const v = Number(n) * strength;
-    return `${sign}${Number.isInteger(v) ? v : Number(v.toFixed(2))}${pct}`;
-  });
+  if (strength >= 1) return text;
+  const round1 = (v: number) => Math.round(v * 10 + 1e-9) / 10;
+  return text.replace(/(below |above )?([+-]?)(\d+(?:\.\d+)?)(%|(?=\s*(?:regen|health)\b))?(\s*(?:max )?HP\b)?/gi,
+    (match, cond: string | undefined, sign: string, n: string, pct: string | undefined, hp: string | undefined) => {
+      if (cond || (hp && !/max/i.test(hp) && !sign)) return match; // condition like "below 35% HP"
+      if (!pct && !sign) return match; // plain numbers: durations ("5s"), counts
+      return `${sign}${round1(Number(n) * strength)}${pct ?? ""}${hp ?? ""}`;
+    });
 }
 
 export type TraitResult = { ore: CatalogueOre; share: number; strength: number; lines: string[]; fullLines: string[] };

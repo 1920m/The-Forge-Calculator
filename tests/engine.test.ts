@@ -55,7 +55,7 @@ describe("traits and rounding boundaries", () => {
   it("rounds armour to integers and weapons to two decimals, without floating-point bumps", () => {
     expect(stat(25, 12.51, 1, "armour")).toBe(626);
     expect(stat(8.25, 10.88, 1, "weapon")).toBe(179.52);
-    expect(stat(1, 1.000001, 1, "weapon")).toBe(2.01);
+    expect(stat(1, 1.000001, 1, "weapon")).toBe(2);
     expect(stat(25, 12.51, 0, "armour")).toBe(0);
     expect(stat(25, 12.51, 0.25, "armour")).toBe(156);
     expect(stat(25, 12.51, 0.25, "weapon")).toBe(156.38);

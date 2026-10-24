@@ -49,9 +49,23 @@ describe("traits", () => {
     const lucky = r.traits[0];
     expect(lucky.strength).toBeCloseTo(0.1 + 4.5 * (8 / 30 - 0.1));
   });
-  it("scales signed amounts and leaves chances alone", () => {
+  it("matches Cris's Sun Stone test crafts: chance and damage scale, duration does not", () => {
+    // 2 Sun Stone + 8 Roosite (20% share): the game shows Burn 19.3%/s, 19.3%.
+    const a = forge(cat, mix(["Sun Stone", 2], ["Roosite", 8]), "weapon", 4, 1).traits[0];
+    expect(a.lines[0]).toBe("19.3% chance to Burn 5s at 19.3% weapon damage/s");
+    // 3 Sun Stone + 7 Roosite (30% share): full strength, Burn 35%/s, 35%.
+    const b = forge(cat, mix(["Sun Stone", 3], ["Roosite", 7]), "weapon", 4, 1).traits[0];
+    expect(b.lines[0]).toBe("35% chance to Burn 5s at 35% weapon damage/s");
+  });
+  it("matches the damage on Cris's Tachi (247.72) and Uchigatana (234.89)", () => {
+    const tachi = forge(cat, mix(["Sun Stone", 2], ["Roosite", 8]), "weapon", 2, 1);
+    expect(tachi.classes.flatMap((c) => c.variants).find((v) => v.name === "Tachi")?.value).toBe(247.72);
+    const uchi = forge(cat, mix(["Sun Stone", 3], ["Roosite", 7]), "weapon", 2, 1);
+    expect(uchi.classes.flatMap((c) => c.variants).find((v) => v.name === "Uchigatana")?.value).toBe(234.89);
+  });
+  it("scales stat lines and leaves HP thresholds and durations alone", () => {
     expect(scaleTraitText("+15% Vitality, -10% stamina", 0.5)).toBe("+7.5% Vitality, -5% stamina");
-    expect(scaleTraitText("35% chance to Burn 5s at 35% weapon damage/s", 0.5)).toBe("35% chance to Burn 5s at 35% weapon damage/s");
+    expect(scaleTraitText("Below 35% HP: +20% damage and speed for 6s", 0.5)).toBe("Below 35% HP: +10% damage and speed for 6s");
   });
   it("labels quality tiers", () => {
     expect(qualityLabel(cat, 100)).toBe("Masterwork");

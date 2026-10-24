@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { enhancementTable, forge, qualityLabel, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
+import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
 import type { Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, pct, rarityColour } from "@/lib/ui";
@@ -194,7 +194,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>Class:</span><span className="muted">{selected.cls.name}</span></div>
                     <div className="kv"><span>Rarity:</span><span style={{ fontWeight: 700, color: rarityColour(result.rarity) }}>{result.rarity}</span></div>
                     <div className="kv"><span>{statName}:</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(selected.v.value)} {unit}</span></div>
-                    <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(kind === "armour" ? Math.round(fullValue) : Math.ceil(fullValue * 100 - 1e-6) / 100)} ${unit}`}</span></div>
+                    <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted">{selected.v.speed}s · range {selected.v.range}</span></div>}
                     <div className="kv"><span>Chance:</span><span className="muted">{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</span></div>
                     <div className="kv"><span>Lock:</span><span className="muted">{selected.cls.lockable ? "Lockable with this many ores" : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
@@ -322,9 +322,9 @@ function EnhRow({ l, max, unit, delay = 0, hidden = false }: { l: { level: numbe
 function TraitsPanel({ traits, kind, dense = false }: { traits: ReturnType<typeof forge>["traits"]; kind: Kind; dense?: boolean }) {
   return (
     <section className="gp">
-      <div className="tb"><h2>Traits that transfer</h2><span className="badge der">Derived</span></div>
+      <div className="tb"><h2>Traits that transfer</h2><span className="badge ok">Confirmed in game</span></div>
       <div className="pad">
-        <p className="small muted" style={{ margin: "0 0 12px" }}>A trait needs a 10% share of the craft and reaches full strength at 30%. Signed amounts below are scaled to your share; chances and durations are shown as listed.</p>
+        <p className="small muted" style={{ margin: "0 0 12px" }}>A trait needs a 10% share of the craft and reaches full strength at 30%. Chances, damage and stat amounts below are scaled to your share, as in game. Durations and cooldowns are shown as listed.</p>
         {traits.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>No {kind} traits transfer from this mix.</p>
         ) : (

@@ -29,9 +29,9 @@ No environment variables are needed. The app reads the public, read-only Supabas
 | Class odds | Look up the total ore count (3 to 55) in the odds table; above 55 use the 55 row | Confirmed in game |
 | Variant odds | (1 ÷ N) ÷ sum(1 ÷ N) inside the class | Confirmed in game |
 | Primary ore | Largest count, ties go to the higher multiplier; sets the look and rarity | Confirmed in game |
-| Traits | Need a 10% share; strength = 0.10 + 4.5 × (share − 0.10), full at 30% | Derived |
+| Traits | Need a 10% share; strength = 0.10 + 4.5 × (share − 0.10), full at 30%. Chances, damage and stat amounts all scale; durations do not appear to | Confirmed in game |
 | Defence | round(2 × health % × M × quality) | Confirmed in game |
-| Damage | 2 × base damage × M × quality, rounded up to 2 decimals | Confirmed in game |
+| Damage | 2 × base damage × M × quality, rounded to 2 decimals | Confirmed in game |
 | Enhancement | stat × (1 + 0.05 × level), +0 to +10 | Confirmed in game |
 
 Golden tests (`tests/`) reproduce the Dark Knight Chestplate (12.51x, 626 DEF), the Hachiwari (10.88x, 179.52 DMG) and the Shogun's Leggings crafted in game.
@@ -41,7 +41,7 @@ Golden tests (`tests/`) reproduce the Dark Knight Chestplate (12.51x, 626 DEF), 
 - The quality label ranges (Broken to Masterwork) are unverified.
 - Wiki-only items (Vanguard helmet and leggings, Reaper Scythe, Batwing Reaver, Bo Staff) are marked Unverified.
 - The worlds of the 16 wiki-only ores. (Worlds 1 and 2 are treated as one world, 1–2, because they share the same pools and odds.)
-- How trait chances and durations scale. Only signed amounts (+15%, −10%) are scaled for now.
+- Whether trait durations and cooldowns scale (the item card does not show them, so they are left as listed).
 
 See [FILES.md](FILES.md) for what every file does.
 
