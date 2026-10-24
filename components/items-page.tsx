@@ -39,7 +39,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
                   ))}
                 </tbody>
               </table>
-              <p className="note">{swaps} Every class is possible from 3 ores; the number is the ore count at which the game lets you lock it.</p>
+              <p className="note">{swaps} The number is the ore count at which the game lets you lock the class; a class can already appear with fewer ores (see the odds on the calculator).</p>
               <Timeline items={names.map((n, i) => [n, locks[i]] as [string, number])} />
             </div>
           </section>

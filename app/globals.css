@@ -201,3 +201,10 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .tl-stem { width: 2px; height: 20px; background: var(--br); }
 .tl-label { font-size: 13px; font-weight: 700; color: var(--strong); white-space: nowrap; }
 .formula { margin: 10px 0; padding: 10px 14px; background: var(--well); border: 1px solid var(--bd); color: var(--strong); font-size: 18px; }
+@media (max-width: 900px) {
+  .calc .calc-mid { order: 1; flex-basis: 100%; }
+  .calc .calc-right { order: 2; flex-basis: 100%; min-width: 0; }
+  .calc .calc-left { order: 3; flex-basis: 100%; min-width: 0; }
+  .ore-grid { max-height: 380px; }
+  .header { gap: 8px 16px; }
+}
