@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
 import type { Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
@@ -8,6 +8,7 @@ import { fmt, pct, rarityColour } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { Chevron, Lock } from "./icons";
+import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, oreCategory, type OreFilterState } from "./ore-filter";
 
 type Entry = { id: string; count: number };
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
@@ -35,6 +36,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const [enhanceOpen, setEnhanceOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [allWorlds, setAllWorlds] = useState(false);
+  const [oreFilter, setOreFilter] = useState<OreFilterState>(EMPTY_FILTER);
   const loaded = useRef(false);
 
   // Restore the recipe from the URL or the last visit, once.
@@ -82,14 +84,16 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     return best;
   }, [result, pick]);
 
-  const add = (id: string, n = 1) => setEntries((cur) => {
+  // Stable so the ore tiles (memoised) only re-render when their own count changes.
+  // Recalculating re-renders most of the page, so clicks run it as a transition: the browser paints the press first.
+  const add = useCallback((id: string, n = 1) => startTransition(() => setEntries((cur) => {
     const i = cur.findIndex((e) => e.id === id);
     if (i < 0) return n > 0 ? [...cur, { id, count: n }] : cur;
     const next = [...cur];
     const count = Math.max(0, Math.min(MAX_ORES, cur[i].count + n));
     if (count === 0) next.splice(i, 1); else next[i] = { id, count };
     return next;
-  });
+  })), []);
   const setCount = (id: string, count: number) => setEntries((cur) => cur.flatMap((e) => (e.id !== id ? [e] : count > 0 ? [{ id, count: Math.min(MAX_ORES, count) }] : [])));
 
   const countOf = (id: string) => entries.find((e) => e.id === id)?.count ?? 0;
@@ -98,9 +102,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const fullValue = selected?.v.raw != null && quality > 0 ? selected.v.raw / (quality / 100) : null;
   const enhance = selected?.v.raw != null ? enhancementTable(selected.v.raw, kind) : [];
   const maxEnh = enhance.length ? Math.max(...enhance.map((l) => l.stat)) || 1 : 1;
-  const visibleOres = cat.ores
-    .filter((o) => (allWorlds || o.worlds.includes(world)) && o.name.toLowerCase().includes(search.trim().toLowerCase()))
-    .sort((a, b) => a.multiplier - b.multiplier);
+  const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
+  const visibleOres = applyOreFilter(scopeOres.filter((o) => o.name.toLowerCase().includes(search.trim().toLowerCase())), oreFilter);
 
   return (
     <div className="page calc">
@@ -124,7 +127,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       <div className="variant-tiles">
                         {c.variants.map((v) => (
                           <button key={v.id} className="tile" style={{ width: 60, height: 60, ["--rc" as string]: selected?.v.id === v.id ? "var(--acc)" : "#3a3834" }}
-                            onClick={() => setPick({ cls: c.name, id: v.id })} aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall`} title={`${v.name}: ${pct(v.chance)} in class, ${pct(v.overall, 2)} overall`}>
+                            onClick={() => startTransition(() => setPick({ cls: c.name, id: v.id }))} aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall`} title={`${v.name}: ${pct(v.chance)} in class, ${pct(v.overall, 2)} overall`}>
                             <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={20} />
                             <span className="t-br" style={{ left: 0, right: 0, textAlign: "center" }}>1/{v.weight}</span>
                           </button>
@@ -175,7 +178,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                   <div className="share-legend">{mix.map((m) => <span key={m.ore.id}>{m.ore.name} {pct((m.count / total) * 100, 0)}</span>)}</div>
                 </div>
               )}
-              {mix.length > 0 && <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={() => { setEntries([]); setPick(null); }}>Clear forge</button>}
+              {mix.length > 0 && <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={() => startTransition(() => { setEntries([]); setPick(null); })}>Clear forge</button>}
             </section>
           </Reveal>
 
@@ -206,7 +209,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
               )}
               <div className="small muted" style={{ marginTop: 16, textAlign: "center" }}>Set quality</div>
               <div className="presets">
-                {QUALITY_PRESETS.map((v) => <button key={v} className="btn" aria-pressed={quality === v} onClick={() => setQuality(v)}>{v}%</button>)}
+                {QUALITY_PRESETS.map((v) => <button key={v} className="btn" aria-pressed={quality === v} onClick={() => startTransition(() => setQuality(v))}>{v}%</button>)}
               </div>
               <label className="small muted" style={{ display: "block", marginTop: 10 }}>
                 <span className="sr-only">Quality percent</span>
@@ -226,17 +229,19 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <span className="small muted">Search ores</span>
                 <input className="input" type="search" placeholder="Try Mythril or Kitsunite" value={search} onChange={(e) => setSearch(e.target.value)} />
               </label>
-              <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", position: "relative" }}>
                 <button className="btn sm" aria-pressed={!allWorlds} onClick={() => setAllWorlds(false)}>World {worldName(world)} ores</button>
                 <button className="btn sm" aria-pressed={allWorlds} onClick={() => setAllWorlds(true)}>All ores</button>
+                <OreFilter ores={scopeOres} value={oreFilter} onChange={setOreFilter} />
               </div>
               <div className="ore-grid">
-                {visibleOres.map((o) => <OreButton key={o.id} ore={o} count={countOf(o.id)} onAdd={() => add(o.id)} onRemove={() => add(o.id, -1)} />)}
+                {visibleOres.map((o) => <OreButton key={o.id} ore={o} count={countOf(o.id)} onAdd={add} />)}
               </div>
-              <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one.</p>
+              {visibleOres.length === 0 && <p className="muted" style={{ margin: "4px 0 0" }}>No ores match these filters. Try widening the multiplier range or press Reset.</p>}
+              <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one. <span style={{ color: "#e8c27a" }}>Sword</span> = weapon trait, <span style={{ color: "#8fd0f2" }}>shield</span> = armour trait.</p>
               <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
-                <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => { setKind("armour"); setPick(null); }}>Armor</button>
-                <button className={`big-toggle ${kind === "weapon" ? "gb" : "btn"}`} aria-pressed={kind === "weapon"} onClick={() => { setKind("weapon"); setPick(null); }}>Weapon</button>
+                <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => startTransition(() => { setKind("armour"); setPick(null); })}>Armor</button>
+                <button className={`big-toggle ${kind === "weapon" ? "gb" : "btn"}`} aria-pressed={kind === "weapon"} onClick={() => startTransition(() => { setKind("weapon"); setPick(null); })}>Weapon</button>
               </div>
             </div>
           </section>
@@ -256,7 +261,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       <thead><tr><th>Variant</th><th>In class</th><th>Overall</th><th style={{ textAlign: "right" }}>{statName} at {quality}%</th></tr></thead>
                       <tbody>
                         {selected.cls.variants.map((v) => (
-                          <tr key={v.id} className={v.id === selected.v.id ? "sel" : ""} onClick={() => setPick({ cls: selected.cls.name, id: v.id })} style={{ cursor: "pointer" }}>
+                          <tr key={v.id} className={v.id === selected.v.id ? "sel" : ""} onClick={() => startTransition(() => setPick({ cls: selected.cls.name, id: v.id }))} style={{ cursor: "pointer" }}>
                             <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {!v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
                             <td>{pct(v.chance)}</td><td>{pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
                           </tr>
@@ -296,18 +301,18 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   );
 }
 
-function OreButton({ ore, count, onAdd, onRemove }: { ore: CatalogueOre; count: number; onAdd: () => void; onRemove: () => void }) {
+const OreButton = memo(function OreButton({ ore, count, onAdd }: { ore: CatalogueOre; count: number; onAdd: (id: string, n?: number) => void }) {
   return (
-    <button className="tile" style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={onAdd}
-      onContextMenu={(e) => { e.preventDefault(); onRemove(); }} aria-label={`Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${ore.traits.length ? " · has a trait" : ""}`}>
+    <button className="tile" style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={() => onAdd(ore.id)}
+      onContextMenu={(e) => { e.preventDefault(); onAdd(ore.id, -1); }} aria-label={`Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
       <GameImage src={imageUrl("ores", ore.id)} alt="" size={24} />
       <span className="t-top" style={{ right: count ? 26 : 2 }}>{ore.name}</span>
       <span className="t-br">{ore.multiplier}x</span>
-      {ore.traits.length > 0 && <span className="t-bl" aria-hidden="true">✦</span>}
+      <TraitMarks ore={ore} />
       {count > 0 && <span className="t-badge">{count}</span>}
     </button>
   );
-}
+});
 
 function EnhRow({ l, max, unit, delay = 0, hidden = false }: { l: { level: number; multiplier: number; stat: number }; max: number; unit: string; delay?: number; hidden?: boolean }) {
   return (
