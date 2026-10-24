@@ -141,6 +141,8 @@ const catalogue = {
   weapons,
   armour,
   weaponPools,
+  // Kept so sites running the previous version keep working with this data until they update.
+  weaponClasses: { early: weaponPools[2].classes, late: weaponPools[3].classes },
   armourClasses: [["Light", "helmet"], ["Light", "leggings"], ["Light", "chestplate"], ["Medium", "helmet"], ["Medium", "leggings"], ["Medium", "chestplate"], ["Heavy", "helmet"], ["Heavy", "leggings"], ["Heavy", "chestplate"]],
   odds: { weapon: oddsTable("ores,slot1_dagger,"), armour: oddsTable("ores,light_helmet,") },
   locks: { weapon: [3, 9, 14, 18, 24, 31, 50], armour: [3, 11, 15, 20, 24, 30, 35, 42, 52] },
