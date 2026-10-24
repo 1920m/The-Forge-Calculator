@@ -35,6 +35,8 @@ h1, h2, h3 { margin: 0; }
 @keyframes lift { from { top: 104%; } to { top: -4%; } }
 @keyframes sway { from { transform: translateX(-30px) rotate(-35deg); } to { transform: translateX(30px) rotate(70deg); } }
 @keyframes sway2 { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes tumble { from { transform: translateX(-18px) rotate(-40deg) rotateX(0deg); } to { transform: translateX(18px) rotate(220deg) rotateX(55deg); } }
 
 /* ---------- header ---------- */
 .header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; padding: 14px 32px; background: var(--bar); border-bottom: 1px solid var(--bd); position: relative; z-index: 3; }
