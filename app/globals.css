@@ -26,7 +26,9 @@ h1, h2, h3 { margin: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- app shell + world texture ---------- */
-.app { position: relative; min-height: 100vh; overflow-x: clip; background: var(--tex), var(--bg); transition: background-color .6s; display: flex; flex-direction: column; }
+.app { position: relative; min-height: 100vh; overflow-x: clip; background: var(--bg); display: flex; flex-direction: column; isolation: isolate; }
+/* World texture on its own fixed, screen-sized layer: page changes and scrolling don't repaint it. */
+.app::before { content: ""; position: fixed; inset: 0; z-index: -1; background: var(--tex), var(--bg); pointer-events: none; will-change: transform; }
 .app > main { flex: 1; position: relative; z-index: 2; }
 .particles { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; box-shadow: var(--glow); contain: strict; will-change: transform; }
 .particles > span { position: absolute; top: 0; will-change: transform; }
@@ -56,7 +58,7 @@ h1, h2, h3 { margin: 0; }
 @keyframes sheen { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
 /* ---------- panels with corner brackets ---------- */
-.gp { position: relative; border: 1px solid var(--bd); transition: border-color .25s;
+.gp { position: relative; border: 1px solid var(--bd); transition: border-color .25s; contain: layout paint;
   background:
     linear-gradient(var(--br), var(--br)) 0 0 / 16px 3px no-repeat, linear-gradient(var(--br), var(--br)) 0 0 / 3px 16px no-repeat,
     linear-gradient(var(--br), var(--br)) 100% 0 / 16px 3px no-repeat, linear-gradient(var(--br), var(--br)) 100% 0 / 3px 16px no-repeat,
@@ -136,7 +138,7 @@ button.tile:active { transform: translateY(0) scale(.97); }
 input[type="range"] { accent-color: var(--acc); width: 100%; }
 
 /* ---------- footer ---------- */
-.footer { padding: 24px 32px 36px; position: relative; z-index: 2; }
+.footer { padding: 24px 32px 36px; position: relative; z-index: 2; content-visibility: auto; contain-intrinsic-size: auto 560px; }
 .footer .gp { background-color: #18181b; padding: 40px 44px 0; overflow: hidden; }
 .fl { display: flex; flex-direction: column; gap: 12px; }
 .fl a { color: #8d8c92; font-size: 18px; transition: color .2s, transform .2s; display: inline-block; }

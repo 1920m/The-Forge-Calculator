@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { World } from "@/lib/engine";
 
 type Theme = { name: string; bg: string; bd: string; bd2: string; br: string; bar: string; panel: string; acc: string; tex: string; glow: string; kind: "dust" | "ember" | "snow" | "petal"; n: number };
@@ -107,7 +107,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const setWorld = useCallback((picked: World) => {
     // Worlds 1 and 2 share the same pools and odds, so they are one choice ("1–2").
     const w = (picked === 1 ? 2 : picked) as World;
-    setWorldState(w);
+    startTransition(() => setWorldState(w)); // re-themes the whole site; let the click paint first
     try {
       window.localStorage.setItem("forge.world", String(w));
       const url = new URL(window.location.href);
