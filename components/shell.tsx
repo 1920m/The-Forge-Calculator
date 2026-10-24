@@ -22,6 +22,8 @@ export const THEMES: Record<World, Theme> = {
 };
 
 const SNOWFLAKE = "M12 1v22M2.5 6.5l19 11M2.5 17.5l19-11M12 1l-2.5 2.5M12 1l2.5 2.5M12 23l-2.5-2.5M12 23l2.5-2.5M2.5 6.5l3.4.9M2.5 6.5l.9-3.4M21.5 17.5l-3.4-.9M21.5 17.5l-.9 3.4M2.5 17.5l.9 3.4M2.5 17.5l3.4-.9M21.5 6.5l-.9-3.4M21.5 6.5l-3.4.9";
+// Particles now fall across the screen (not the whole page), so travel times are shorter.
+const TRAVEL = 0.45;
 const ASH = ["#9a938b", "#b3aca4", "#837c75", "#a8a097", "#c2bbb2"];
 
 type Particle = { key: number; outer: React.CSSProperties; inner: React.CSSProperties; flake?: { size: number; spin: string } };
@@ -31,14 +33,15 @@ function particles(world: World): Particle[] {
   let s = world * 7919;
   const rnd = () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
   return Array.from({ length: t.n }, (_, i) => {
-    const x = rnd() * 100, y = rnd() * 100;
+    const x = rnd() * 100;
+    rnd(); // keeps the per-world random sequence stable
     const sd = 3 + rnd() * 4;
     if (t.kind === "snow") {
       // Six-armed snowflakes that drift down, sway and slowly turn.
       const dur = 18 + rnd() * 16, delay = -rnd() * dur, size = 7 + rnd() * 9;
       return {
         key: i,
-        outer: { left: `${x}%`, top: `${y}%`, animation: `fall ${dur}s linear ${delay}s infinite` },
+        outer: { left: `${x}%`, animation: `fall ${dur * TRAVEL}s linear ${delay * TRAVEL}s infinite` },
         inner: { opacity: 0.45 + rnd() * 0.45, animation: `sway2 ${sd}s ease-in-out ${delay}s infinite alternate`, filter: "drop-shadow(0 0 3px rgba(190,230,255,.6))" },
         flake: { size, spin: `spin ${10 + rnd() * 14}s linear ${delay}s infinite${rnd() > 0.5 ? " reverse" : ""}` },
       };
@@ -51,7 +54,7 @@ function particles(world: World): Particle[] {
       const shape = `polygon(${p()}, ${65 + Math.round(rnd() * 35)}% ${Math.round(rnd() * 30)}%, ${70 + Math.round(rnd() * 30)}% ${60 + Math.round(rnd() * 40)}%, ${Math.round(rnd() * 40)}% ${70 + Math.round(rnd() * 30)}%)`;
       return {
         key: i,
-        outer: { left: `${x}%`, top: `${y}%`, animation: `${glowing ? "lift" : "fall"} ${dur}s linear ${delay}s infinite` },
+        outer: { left: `${x}%`, animation: `${glowing ? "lift" : "fall"} ${dur * TRAVEL}s linear ${delay * TRAVEL}s infinite` },
         inner: glowing
           ? { width: size, height: size, background: "#e07a52", borderRadius: "50%", boxShadow: "0 0 6px 1px rgba(224,96,70,.8)", opacity: 0.8, animation: `sway2 ${sd}s ease-in-out ${delay}s infinite alternate` }
           : { width: size, height: size * (0.6 + rnd() * 0.5), background: ASH[Math.floor(rnd() * ASH.length)], clipPath: shape, opacity: 0.55 + rnd() * 0.35, animation: `tumble ${sd + 2}s ease-in-out ${delay}s infinite alternate` },
@@ -59,7 +62,7 @@ function particles(world: World): Particle[] {
     }
     const dur = t.kind === "dust" ? 34 + rnd() * 24 : 20 + rnd() * 16;
     const delay = -rnd() * dur, size = t.kind === "petal" ? 9 + rnd() * 8 : 1.5 + rnd() * 2;
-    const outer = { left: `${x}%`, top: `${y}%`, animation: `${t.kind === "dust" ? "lift" : "fall"} ${dur}s linear ${delay}s infinite` };
+    const outer = { left: `${x}%`, animation: `${t.kind === "dust" ? "lift" : "fall"} ${dur * TRAVEL}s linear ${delay * TRAVEL}s infinite` };
     const sway = `${t.kind === "petal" ? "sway" : "sway2"} ${sd}s ease-in-out ${delay}s infinite alternate`;
     const inner = t.kind === "petal"
       ? { width: size, height: size * 0.7, background: "#f0a8c0", borderRadius: "100% 0 100% 0", opacity: 0.7, animation: sway }

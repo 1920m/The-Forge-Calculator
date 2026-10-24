@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import type { CatalogueOre } from "@/lib/engine/forge";
 
 export { EMPTY_FILTER, applyOreFilter, multiplierBounds, oreCategory, type OreFilterState, type OreSort } from "@/lib/ore-filter";
@@ -45,39 +45,23 @@ export function OreFilter({ ores, value, onChange }: { ores: CatalogueOre[]; val
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
         </motion.span>
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="ofilter-drop"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ height: { type: "spring", stiffness: 380, damping: 36, mass: 0.8 }, opacity: { duration: 0.2 } }}
-          >
-          <motion.div
-            id={panelId}
-            className="ofilter-panel gp"
-            role="dialog"
-            aria-label="Filter ores"
-            initial={{ y: -10, scale: 0.98 }}
-            animate={{ y: 0, scale: 1 }}
-            exit={{ y: -8, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.7 }}
-          >
+      {/* Always mounted; opening only flips a class, so the click stays cheap. Height animates with CSS grid rows. */}
+      <div className={`ofilter-drop${open ? " open" : ""}`}>
+        <div className="ofilter-clip" inert={!open}>
+          <div id={panelId} className="ofilter-panel gp" role="dialog" aria-label="Filter ores" aria-hidden={!open}>
             <div className="ofilter-head">
               <span>Sort and filter</span>
               <button className="link-btn small" onClick={() => onChange(EMPTY_FILTER)} disabled={active === 0} style={{ opacity: active ? 1 : 0.4 }}>Reset</button>
             </div>
-            <motion.div className="ofilter-sorts" initial="hide" animate="show" variants={{ show: { transition: { staggerChildren: 0.04 } } }}>
+            <div className="ofilter-sorts">
               {SORTS.map(([key, label]) => (
                 <motion.button key={key} className="btn sm" aria-pressed={value.sort === key}
-                  variants={{ hide: { opacity: 0, y: -6 }, show: { opacity: 1, y: 0 } }}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => onChange({ ...value, sort: value.sort === key ? null : key })}>
                   {label}
                 </motion.button>
               ))}
-            </motion.div>
+            </div>
             <div className="ofilter-range">
               <div className="ofilter-range-head"><span className="small muted">Multiplier</span><span className="gold small" style={{ fontWeight: 700 }}>{hi.toFixed(2)}x – {lo.toFixed(2)}x</span></div>
               {/* Highest on the left, lowest on the right: the inputs run right-to-left. */}
@@ -92,10 +76,9 @@ export function OreFilter({ ores, value, onChange }: { ores: CatalogueOre[]; val
               <div className="ofilter-range-head faint small"><span>{max.toFixed(1)}x</span><span>{min.toFixed(1)}x</span></div>
             </div>
             <p className="note" style={{ margin: "8px 0 0" }}>Applies to the ores shown above ({ores.length}). &ldquo;Best for&rdquo; keeps ores whose trait helps that item, highest multiplier first.</p>
-          </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

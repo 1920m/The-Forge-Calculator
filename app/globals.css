@@ -28,11 +28,12 @@ h1, h2, h3 { margin: 0; }
 /* ---------- app shell + world texture ---------- */
 .app { position: relative; min-height: 100vh; overflow-x: clip; background: var(--tex), var(--bg); transition: background-color .6s; display: flex; flex-direction: column; }
 .app > main { flex: 1; position: relative; z-index: 2; }
-.particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; box-shadow: var(--glow); }
-.particles > span { position: absolute; }
+.particles { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 40; box-shadow: var(--glow); contain: strict; will-change: transform; }
+.particles > span { position: absolute; top: 0; will-change: transform; }
 .particles > span > span { display: block; }
-@keyframes fall { from { top: -4%; } to { top: 104%; } }
-@keyframes lift { from { top: 104%; } to { top: -4%; } }
+/* transform-only so the browser can animate particles off the main thread */
+@keyframes fall { from { transform: translateY(-6vh); } to { transform: translateY(106vh); } }
+@keyframes lift { from { transform: translateY(106vh); } to { transform: translateY(-6vh); } }
 @keyframes sway { from { transform: translateX(-30px) rotate(-35deg); } to { transform: translateX(30px) rotate(70deg); } }
 @keyframes sway2 { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -91,7 +92,7 @@ h1, h2, h3 { margin: 0; }
 .big-toggle { flex: 1; min-height: 48px; font-size: 22px; font-weight: 700; }
 
 /* ---------- tiles ---------- */
-.tile { position: relative; border: 2px solid var(--rc, #3a3834); background: repeating-linear-gradient(135deg, #1a1816, #1a1816 8px, #161412 8px, #161412 16px); overflow: hidden; display: grid; place-items: center; }
+.tile { contain: paint; position: relative; border: 2px solid var(--rc, #3a3834); background: repeating-linear-gradient(135deg, #1a1816, #1a1816 8px, #161412 8px, #161412 16px); overflow: hidden; display: grid; place-items: center; }
 .tile img { width: 78%; height: 78%; object-fit: contain; image-rendering: auto; }
 .tile .glyph { opacity: .5; }
 button.tile { padding: 0; transition: transform .2s ease, border-color .2s, filter .2s; }
@@ -217,8 +218,11 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .ofilter { display: contents; }
 .ofilter-btn { display: inline-flex; align-items: center; gap: 6px; }
 .ofilter-count { min-width: 18px; padding: 0 5px; background: var(--acc); color: #111; font-size: 12px; font-weight: 700; line-height: 18px; text-align: center; }
-.ofilter-drop { flex: 1 0 100%; overflow: hidden; }
-.ofilter-panel { margin: 4px 0 6px; padding: 14px 16px 14px; transform-origin: top center; }
+.ofilter-drop { flex: 1 0 100%; display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .45s var(--ease), opacity .3s ease; }
+.ofilter-drop.open { grid-template-rows: 1fr; opacity: 1; }
+.ofilter-clip { overflow: hidden; min-height: 0; }
+.ofilter-panel { margin: 4px 0 6px; padding: 14px 16px 14px; transform: translateY(-10px) scale(.98); transform-origin: top center; transition: transform .45s var(--ease); }
+.ofilter-drop.open .ofilter-panel { transform: none; }
 .ofilter-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; font-family: var(--sans); font-weight: 700; color: #fff; font-size: 15px; }
 .ofilter-head .link-btn { color: var(--acc); font-family: var(--serif); font-weight: 400; }
 .ofilter-sorts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
