@@ -209,3 +209,4 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
   .ore-grid { max-height: 380px; }
   .header { gap: 8px 16px; }
 }
+.table .badge { margin-left: 6px; }
