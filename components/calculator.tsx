@@ -131,6 +131,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                         ))}
                       </div>
                     )}
+                    {!off && c.incomplete && <div className="note" style={{ textAlign: "center", marginTop: 4 }}>Plus shop-blueprint weapons not listed yet, so chances inside this class may be a little high.</div>}
                   </div>
                 );
               })}

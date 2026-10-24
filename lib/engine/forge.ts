@@ -11,7 +11,8 @@ export type CatalogueWeapon = { id: string; name: string; class: string; baseDam
 export type CatalogueArmour = { id: string; name: string; weightClass: "Light" | "Medium" | "Heavy"; set: string; slot: "helmet" | "chestplate" | "leggings"; healthPct: number; price: number; weight: number; worlds: number[]; verified: boolean };
 export type Catalogue = {
   ores: CatalogueOre[]; weapons: CatalogueWeapon[]; armour: CatalogueArmour[];
-  weaponClasses: { early: string[]; late: string[] };
+  /** Per world ("2" = Worlds 1–2, "3", "4"): the weapon classes in slot order and each class's variants. */
+  weaponPools: Record<string, { classes: string[]; pools: Record<string, { shop: boolean; items: [string, number?][] }> }>;
   armourClasses: [string, string][];
   odds: { weapon: Record<string, number[]>; armour: Record<string, number[]> };
   locks: { weapon: number[]; armour: number[] };
@@ -21,8 +22,15 @@ export type Mix = { ore: CatalogueOre; count: number }[];
 
 export const armourClassName = ([weight, slot]: [string, string]) => `${weight} ${slot[0].toUpperCase()}${slot.slice(1)}`;
 
+const poolKey = (world: World) => String(world <= 2 ? 2 : world);
+
 export function classNames(cat: Catalogue, kind: Kind, world: World): string[] {
-  return kind === "weapon" ? cat.weaponClasses[world < 3 ? "early" : "late"] : cat.armourClasses.map(armourClassName);
+  return kind === "weapon" ? cat.weaponPools[poolKey(world)].classes : cat.armourClasses.map(armourClassName);
+}
+
+/** True when a weapon class in this world also has shop-blueprint weapons that are not in the data yet. */
+export function poolIncomplete(cat: Catalogue, kind: Kind, world: World, className: string): boolean {
+  return kind === "weapon" && !!cat.weaponPools[poolKey(world)].pools[className]?.shop;
 }
 
 /** Category rows for the engine's classOdds, built from the catalogue's odds table. */
@@ -34,8 +42,12 @@ export type Variant = { id: string; name: string; weight: number; chance: number
 
 /** Every variant of a class in a world, with its chance inside the class (normalised inverse weights). */
 export function classVariants(cat: Catalogue, kind: Kind, world: World, className: string): Variant[] {
+  const byId = new Map(cat.weapons.map((w) => [w.id, w]));
   const list = kind === "weapon"
-    ? cat.weapons.filter((w) => w.class === className && w.worlds.includes(world)).map((w) => ({ id: w.id, name: w.name, weight: w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, range: w.range }))
+    ? (cat.weaponPools[poolKey(world)].pools[className]?.items ?? []).flatMap(([id, weight]) => {
+        const w = byId.get(id);
+        return w ? [{ id: w.id, name: w.name, weight: weight ?? w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, range: w.range }] : [];
+      })
     : cat.armour.filter((a) => armourClassName([a.weightClass, a.slot]) === className && a.worlds.includes(world)).map((a) => ({ id: a.id, name: a.name, weight: a.weight, base: a.healthPct, verified: a.verified }));
   const odds = variantOdds(list.map((v) => v.weight));
   return list.map((v, i) => ({ ...v, chance: odds[i] }));
@@ -96,7 +108,7 @@ export function forge(cat: Catalogue, mix: Mix, kind: Kind, world: World, qualit
       const raw = multiplier == null ? null : rawStat(v.base, multiplier, quality);
       return { ...v, overall: (probability * v.chance) / 100, raw, value: raw == null ? null : roundStat(raw, kind) };
     });
-    return { name, probability, lockAt: locks[i], lockable: total >= locks[i], variants };
+    return { name, probability, lockAt: locks[i], lockable: total >= locks[i], incomplete: poolIncomplete(cat, kind, world, name), variants };
   });
   return { total, multiplier, primary, rarity: primary?.rarity ?? null, oddsStatus: odds.status, capped: odds.capped, classes, traits: transferredTraits(mix, kind) };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { classNames, classVariants, type Catalogue } from "@/lib/engine/forge";
+import { classNames, classVariants, poolIncomplete, type Catalogue } from "@/lib/engine/forge";
 import { stat, type Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, pct } from "@/lib/ui";
@@ -16,7 +16,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
   const cls = clsPick && names.includes(clsPick) ? clsPick : names[names.length - 1];
   const [mult, setMult] = useState(10);
   const variants = classVariants(cat, kind, world, cls);
-  const swaps = kind === "weapon" ? (world < 3 ? "Gauntlets, Katana and Greatsword become Mace, Axe and Spear from World 3." : "Mace, Axe and Spear replace Gauntlets, Katana and Greatsword from World 3.") : "World 4 adds the Ninja's, Rootguard, Vanguard and Shogun sets.";
+  const swaps = kind === "weapon" ? "Each world has its own classes: World 1–2 has Gauntlets, Katana and Greatsword; World 3 has Mace, Axe and Spear; World 4 has Mace, Katana and Spear." : "World 4 adds the Ninja's, Rootguard, Vanguard and Shogun sets.";
   const unit = kind === "weapon" ? "DMG" : "DEF";
 
   return (
@@ -33,7 +33,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
                     <tr key={n} className={n === cls ? "sel" : ""}>
                       <td><button className="link-btn" style={{ fontWeight: 700 }} onClick={() => setCls(n)}>{n}</button></td>
                       <td className="gold" style={{ fontWeight: 700 }}>{locks[i]} ores</td>
-                      <td className="muted">{classVariants(cat, kind, world, n).length}</td>
+                      <td className="muted">{classVariants(cat, kind, world, n).length}{poolIncomplete(cat, kind, world, n) && <span title="Plus shop-blueprint weapons not listed yet"> + shop</span>}</td>
                       <td><button className="btn sm" aria-pressed={n === cls} onClick={() => setCls(n)}>View</button></td>
                     </tr>
                   ))}
@@ -69,7 +69,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
                   ))}
                 </tbody>
               </table>
-              <p className="note">{kind === "weapon" ? "Damage = 2 × base damage × multiplier × quality, shown here at 100% quality. Speed is the index speed the game shows on the card." : "Defense = 2 × health % × multiplier × quality, rounded to a whole number, shown here at 100% quality."} Chance inside the class is 1/weight, normalised.</p>
+              <p className="note">{kind === "weapon" ? "Damage = 2 × base damage × multiplier × quality, shown here at 100% quality. Speed is the index speed the game shows on the card." : "Defense = 2 × health % × multiplier × quality, rounded to a whole number, shown here at 100% quality."} Chance inside the class is 1/weight, normalised.{poolIncomplete(cat, kind, world, cls) && " This class also has shop-blueprint weapons that are not listed yet, so these chances may be a little high."}</p>
             </div>
           </section>
         </Reveal>

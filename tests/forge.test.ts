@@ -25,6 +25,17 @@ describe("catalogue forge results match Cris's in-game crafts", () => {
     const h = r.classes[1].variants.find((v) => v.name === "Hachiwari")!;
     expect(h.value).toBe(179.52);
   });
+  it("uses each world's classes: 1–2 Gauntlets/Katana/Greatsword, 3 Mace/Axe/Spear, 4 Mace/Katana/Spear", () => {
+    const names = (w: 1 | 2 | 3 | 4) => forge(cat, mix(["Iron", 10]), "weapon", w, 1).classes.slice(2, 5).map((c) => c.name);
+    expect(names(2)).toEqual(["Gauntlets", "Katana", "Greatsword"]);
+    expect(names(3)).toEqual(["Mace", "Axe", "Spear"]);
+    expect(names(4)).toEqual(["Mace", "Katana", "Spear"]);
+  });
+  it("World 4 Katana includes the World 2 katanas plus Juto, Kurokiba and Washi-maru; Dragon Slayer is 1/1", () => {
+    expect(classVariants(cat, "weapon", 4, "Katana").map((v) => v.name)).toEqual(["Uchigatana", "Tachi", "Juto Katana", "Kurokiba-gatana", "Washi-maru"]);
+    expect(classVariants(cat, "weapon", 4, "Colossal Sword").find((v) => v.name === "Dragon Slayer")?.weight).toBe(1);
+    expect(classVariants(cat, "weapon", 2, "Colossal Sword").find((v) => v.name === "Dragon Slayer")?.weight).toBe(16);
+  });
   it("World 1 uses Gauntlets in slot 3 and hides World 4 variants", () => {
     const r = forge(cat, mix(["Iron", 7]), "weapon", 1, 1);
     expect(r.classes[2].name).toBe("Gauntlets");
