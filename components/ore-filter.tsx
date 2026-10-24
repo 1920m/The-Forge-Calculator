@@ -48,13 +48,20 @@ export function OreFilter({ ores, value, onChange }: { ores: CatalogueOre[]; val
       <AnimatePresence>
         {open && (
           <motion.div
+            className="ofilter-drop"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ height: { type: "spring", stiffness: 380, damping: 36, mass: 0.8 }, opacity: { duration: 0.2 } }}
+          >
+          <motion.div
             id={panelId}
             className="ofilter-panel gp"
             role="dialog"
             aria-label="Filter ores"
-            initial={{ opacity: 0, y: -10, scale: 0.97, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -8, scale: 0.98, filter: "blur(3px)" }}
+            initial={{ y: -10, scale: 0.98 }}
+            animate={{ y: 0, scale: 1 }}
+            exit={{ y: -8, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.7 }}
           >
             <div className="ofilter-head">
@@ -72,18 +79,20 @@ export function OreFilter({ ores, value, onChange }: { ores: CatalogueOre[]; val
               ))}
             </motion.div>
             <div className="ofilter-range">
-              <div className="ofilter-range-head"><span className="small muted">Multiplier</span><span className="gold small" style={{ fontWeight: 700 }}>{lo.toFixed(2)}x – {hi.toFixed(2)}x</span></div>
-              <div className="dual">
+              <div className="ofilter-range-head"><span className="small muted">Multiplier</span><span className="gold small" style={{ fontWeight: 700 }}>{hi.toFixed(2)}x – {lo.toFixed(2)}x</span></div>
+              {/* Highest on the left, lowest on the right: the inputs run right-to-left. */}
+              <div className="dual" dir="rtl">
                 <div className="dual-track" />
-                <div className="dual-fill" style={{ left: `${pctOf(lo)}%`, right: `${100 - pctOf(hi)}%` }} />
+                <div className="dual-fill" style={{ left: `${100 - pctOf(hi)}%`, right: `${pctOf(lo)}%` }} />
                 <input type="range" aria-label="Lowest multiplier" min={min} max={max} step={step} value={lo}
                   onChange={(e) => setRange(Math.min(Number(e.target.value), hi), hi)} style={{ zIndex: lo > max - (max - min) * 0.1 ? 4 : 3 }} />
                 <input type="range" aria-label="Highest multiplier" min={min} max={max} step={step} value={hi}
                   onChange={(e) => setRange(lo, Math.max(Number(e.target.value), lo))} style={{ zIndex: 3 }} />
               </div>
-              <div className="ofilter-range-head faint small"><span>{min.toFixed(1)}x</span><span>{max.toFixed(1)}x</span></div>
+              <div className="ofilter-range-head faint small"><span>{max.toFixed(1)}x</span><span>{min.toFixed(1)}x</span></div>
             </div>
             <p className="note" style={{ margin: "8px 0 0" }}>Applies to the ores shown above ({ores.length}). &ldquo;Best for&rdquo; keeps ores whose trait helps that item, highest multiplier first.</p>
+          </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

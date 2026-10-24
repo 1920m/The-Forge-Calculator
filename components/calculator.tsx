@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
 import type { Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
@@ -84,14 +84,15 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     return best;
   }, [result, pick]);
 
-  const add = (id: string, n = 1) => setEntries((cur) => {
+  // Stable so the ore tiles (memoised) only re-render when their own count changes.
+  const add = useCallback((id: string, n = 1) => setEntries((cur) => {
     const i = cur.findIndex((e) => e.id === id);
     if (i < 0) return n > 0 ? [...cur, { id, count: n }] : cur;
     const next = [...cur];
     const count = Math.max(0, Math.min(MAX_ORES, cur[i].count + n));
     if (count === 0) next.splice(i, 1); else next[i] = { id, count };
     return next;
-  });
+  }), []);
   const setCount = (id: string, count: number) => setEntries((cur) => cur.flatMap((e) => (e.id !== id ? [e] : count > 0 ? [{ id, count: Math.min(MAX_ORES, count) }] : [])));
 
   const countOf = (id: string) => entries.find((e) => e.id === id)?.count ?? 0;
@@ -233,8 +234,9 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <OreFilter ores={scopeOres} value={oreFilter} onChange={setOreFilter} />
               </div>
               <div className="ore-grid">
-                {visibleOres.map((o) => <OreButton key={o.id} ore={o} count={countOf(o.id)} onAdd={() => add(o.id)} onRemove={() => add(o.id, -1)} />)}
+                {visibleOres.map((o) => <OreButton key={o.id} ore={o} count={countOf(o.id)} onAdd={add} />)}
               </div>
+              {visibleOres.length === 0 && <p className="muted" style={{ margin: "4px 0 0" }}>No ores match these filters. Try widening the multiplier range or press Reset.</p>}
               <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one. <span style={{ color: "#e8c27a" }}>Sword</span> = weapon trait, <span style={{ color: "#8fd0f2" }}>shield</span> = armour trait.</p>
               <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
                 <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => { setKind("armour"); setPick(null); }}>Armor</button>
@@ -298,10 +300,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   );
 }
 
-function OreButton({ ore, count, onAdd, onRemove }: { ore: CatalogueOre; count: number; onAdd: () => void; onRemove: () => void }) {
+const OreButton = memo(function OreButton({ ore, count, onAdd }: { ore: CatalogueOre; count: number; onAdd: (id: string, n?: number) => void }) {
   return (
-    <button className="tile" style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={onAdd}
-      onContextMenu={(e) => { e.preventDefault(); onRemove(); }} aria-label={`Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
+    <button className="tile" style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={() => onAdd(ore.id)}
+      onContextMenu={(e) => { e.preventDefault(); onAdd(ore.id, -1); }} aria-label={`Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
       <GameImage src={imageUrl("ores", ore.id)} alt="" size={24} />
       <span className="t-top" style={{ right: count ? 26 : 2 }}>{ore.name}</span>
       <span className="t-br">{ore.multiplier}x</span>
@@ -309,7 +311,7 @@ function OreButton({ ore, count, onAdd, onRemove }: { ore: CatalogueOre; count: 
       {count > 0 && <span className="t-badge">{count}</span>}
     </button>
   );
-}
+});
 
 function EnhRow({ l, max, unit, delay = 0, hidden = false }: { l: { level: number; multiplier: number; stat: number }; max: number; unit: string; delay?: number; hidden?: boolean }) {
   return (
