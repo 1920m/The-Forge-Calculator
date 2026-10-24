@@ -10,3 +10,4 @@ alter table public.catalogue_releases enable row level security;
 revoke all on table public.catalogue_releases from public, anon, authenticated;
 grant select on table public.catalogue_releases to anon;
 create policy public_read_only on public.catalogue_releases for select to anon using (true);
+grant select, insert on table public.catalogue_releases to service_role;
