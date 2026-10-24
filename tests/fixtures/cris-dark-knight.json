@@ -1,0 +1,32 @@
+{
+  "source": "Cris's in-game screenshots supplied 23 October 2026",
+  "files": ["codex-clipboard-b38608c9-4405-4872-9941-bbb7aeaf1a36.png", "codex-clipboard-fa681d79-77e4-4c1b-ba60-668cf9775747.png"],
+  "recipe": [
+    { "slug": "sun-stone", "count": 9 },
+    { "slug": "lucky-cat", "count": 8 },
+    { "slug": "sealed-curse", "count": 8 },
+    { "slug": "roosite", "count": 5 }
+  ],
+  "totalOres": 30,
+  "displayedMultiplier": "12.51",
+  "item": "Dark Knight Chestplate",
+  "class": "Heavy Chestplate",
+  "qualityLabel": "Masterwork",
+  "qualityPercent": 100,
+  "rarity": "Legendary",
+  "displayedDefence": 626,
+  "visibleClassOdds": {
+    "Heavy Leggings": 49,
+    "Heavy Helmet": 28,
+    "Heavy Chestplate": 13,
+    "Medium Chestplate": 8,
+    "Medium Leggings": 1
+  },
+  "heavyChestplateTileDenominators": [1, 4, 8],
+  "limits": [
+    "The tiles do not show readable variant names; do not assign denominators to silhouettes.",
+    "Whole-number card output does not distinguish full-precision maths from rounded-multiplier maths.",
+    "The supplied images do not show an enhancement panel or the item's wiki base Health value.",
+    "The screenshot does not establish whether absent variant tiles can be rolled by another player."
+  ]
+}

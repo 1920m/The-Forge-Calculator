@@ -1,0 +1,348 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { enhancementTable, forge, qualityLabel, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
+import type { Kind } from "@/lib/engine";
+import { imageUrl } from "@/lib/data/supabase";
+import { fmt, pct, rarityColour } from "@/lib/ui";
+import { Reveal, useShell, worldName } from "./shell";
+import { GameImage } from "./game-image";
+import { Chevron, Lock } from "./icons";
+
+type Entry = { id: string; count: number };
+const QUALITY_PRESETS = [25, 50, 75, 90, 100];
+const MAX_ORES = 99;
+
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[] } {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const fromUrl = p.get("o");
+    const raw = fromUrl ?? window.localStorage.getItem("forge.recipe");
+    const kind = (p.get("k") ?? window.localStorage.getItem("forge.kind")) as Kind | null;
+    const q = Number(p.get("q") ?? window.localStorage.getItem("forge.quality"));
+    const entries = raw ? raw.split(",").map((s) => { const [id, c] = s.split(":"); return { id, count: Math.max(0, Math.min(MAX_ORES, Math.floor(Number(c)) || 0)) }; }).filter((e) => e.id && e.count > 0) : undefined;
+    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries };
+  } catch { return {}; }
+}
+
+export function Calculator({ cat }: { cat: Catalogue }) {
+  const { world } = useShell();
+  const oreById = useMemo(() => new Map(cat.ores.map((o) => [o.id, o])), [cat]);
+  const [kind, setKind] = useState<Kind>("armour");
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [quality, setQuality] = useState(100);
+  const [pick, setPick] = useState<{ cls: string; id: string } | null>(null);
+  const [enhanceOpen, setEnhanceOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [allWorlds, setAllWorlds] = useState(false);
+  const loaded = useRef(false);
+
+  // Restore the recipe from the URL or the last visit, once.
+  useEffect(() => {
+    const r = readRecipe();
+    const t = window.setTimeout(() => {
+      if (r.kind) setKind(r.kind);
+      if (r.quality) setQuality(r.quality);
+      if (r.entries) setEntries(r.entries.filter((e) => oreById.has(e.id)));
+      loaded.current = true;
+    }, 0);
+    return () => clearTimeout(t);
+  }, [oreById]);
+
+  // Keep the URL shareable and remember the recipe.
+  useEffect(() => {
+    if (!loaded.current) return;
+    const o = entries.map((e) => `${e.id}:${e.count}`).join(",");
+    try {
+      const url = new URL(window.location.href);
+      if (o) url.searchParams.set("o", o); else url.searchParams.delete("o");
+      url.searchParams.set("k", kind);
+      url.searchParams.set("q", String(quality));
+      window.history.replaceState(null, "", url);
+      window.localStorage.setItem("forge.recipe", o);
+      window.localStorage.setItem("forge.kind", kind);
+      window.localStorage.setItem("forge.quality", String(quality));
+    } catch { /* storage unavailable */ }
+  }, [entries, kind, quality]);
+
+  const mix: Mix = useMemo(() => entries.flatMap((e) => { const ore = oreById.get(e.id); return ore ? [{ ore, count: e.count }] : []; }), [entries, oreById]);
+  const result = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
+  const total = result.total;
+
+  // Selected result: the user's pick if still valid, else the most likely variant.
+  const selected = useMemo(() => {
+    const live = result.classes.filter((c) => c.probability > 0);
+    if (pick) {
+      const c = result.classes.find((x) => x.name === pick.cls);
+      const v = c?.variants.find((x) => x.id === pick.id);
+      if (c && v) return { cls: c, v };
+    }
+    let best: { cls: (typeof result.classes)[number]; v: (typeof result.classes)[number]["variants"][number] } | null = null;
+    for (const c of live) for (const v of c.variants) if (!best || v.overall > best.v.overall) best = { cls: c, v };
+    return best;
+  }, [result, pick]);
+
+  const add = (id: string, n = 1) => setEntries((cur) => {
+    const i = cur.findIndex((e) => e.id === id);
+    if (i < 0) return n > 0 ? [...cur, { id, count: n }] : cur;
+    const next = [...cur];
+    const count = Math.max(0, Math.min(MAX_ORES, cur[i].count + n));
+    if (count === 0) next.splice(i, 1); else next[i] = { id, count };
+    return next;
+  });
+  const setCount = (id: string, count: number) => setEntries((cur) => cur.flatMap((e) => (e.id !== id ? [e] : count > 0 ? [{ id, count: Math.min(MAX_ORES, count) }] : [])));
+
+  const countOf = (id: string) => entries.find((e) => e.id === id)?.count ?? 0;
+  const statName = kind === "armour" ? "Defense" : "Damage";
+  const unit = kind === "armour" ? "DEF" : "DMG";
+  const fullValue = selected?.v.raw != null && quality > 0 ? selected.v.raw / (quality / 100) : null;
+  const enhance = selected?.v.raw != null ? enhancementTable(selected.v.raw, kind) : [];
+  const maxEnh = enhance.length ? Math.max(...enhance.map((l) => l.stat)) || 1 : 1;
+  const visibleOres = cat.ores
+    .filter((o) => (allWorlds || o.worlds.includes(world)) && o.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .sort((a, b) => a.multiplier - b.multiplier);
+
+  return (
+    <div className="page calc">
+      <div className="row">
+        {/* ---------- Forge Chances ---------- */}
+        <Reveal col={1} className="calc-left">
+          <section className="gp" aria-labelledby="chances-h">
+            <div className="tb"><h2 id="chances-h">Forge Chances</h2><span className="small muted">{total} ores</span></div>
+            <div style={{ padding: "12px 14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              {total < 3 && <p className="small muted" style={{ margin: 0 }}>Add at least 3 ores to see what you can forge.</p>}
+              {result.capped && <p className="small muted" style={{ margin: 0 }}>Odds are only known up to 55 ores, so the 55-ore odds are shown.</p>}
+              {result.classes.map((c) => {
+                const off = c.probability === 0;
+                return (
+                  <div key={c.name} style={{ opacity: off ? 0.45 : 1, transition: "opacity .3s" }}>
+                    <div className="class-head">
+                      <span>{c.name} ({c.probability}%)</span>
+                      <span className="lock" title={`Lockable at ${c.lockAt} ores`} style={{ color: c.lockable ? "var(--acc)" : "var(--muted)" }}><Lock /> <small>{c.lockAt}</small></span>
+                    </div>
+                    {!off && (
+                      <div className="variant-tiles">
+                        {c.variants.map((v) => (
+                          <button key={v.id} className="tile" style={{ width: 60, height: 60, ["--rc" as string]: selected?.v.id === v.id ? "var(--acc)" : "#3a3834" }}
+                            onClick={() => setPick({ cls: c.name, id: v.id })} aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall`} title={`${v.name}: ${pct(v.chance)} in class, ${pct(v.overall, 2)} overall`}>
+                            <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={20} />
+                            <span className="t-br" style={{ left: 0, right: 0, textAlign: "center" }}>1/{v.weight}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </Reveal>
+
+        {/* ---------- Forge + result ---------- */}
+        <div className="calc-mid">
+          <Reveal col={2}>
+            <section className="gp" style={{ padding: "20px 22px 22px", textAlign: "center" }} aria-label="Forge">
+              {mix.length === 0 ? (
+                <p className="muted" style={{ margin: "8px 0" }}>Your forge is empty. Pick ores from <b>Select Ores</b>.</p>
+              ) : (
+                <div className="slots">
+                  {mix.map(({ ore, count }) => (
+                    <div key={ore.id} className="slot">
+                      <div className="tile" style={{ width: 92, height: 92, ["--rc" as string]: rarityColour(ore.rarity) }}>
+                        <GameImage src={imageUrl("ores", ore.id)} alt="" />
+                        <span className="t-top">{ore.name}</span>
+                        <span className="t-br">x{count}</span>
+                      </div>
+                      <div className="slot-ctl">
+                        <button className="btn sm" onClick={() => add(ore.id, -1)} aria-label={`Remove one ${ore.name}`}>−</button>
+                        <input className="input count" type="number" min={0} max={MAX_ORES} value={count} aria-label={`${ore.name} count`} onChange={(e) => setCount(ore.id, Math.floor(Number(e.target.value)) || 0)} />
+                        <button className="btn sm" onClick={() => add(ore.id, 1)} aria-label={`Add one ${ore.name}`}>+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: 16, fontSize: 20, fontWeight: 700, color: "#fff" }}>Multiplier: {result.multiplier == null ? "–" : `${result.multiplier.toFixed(2)}x`}</div>
+              <div className="muted" style={{ fontSize: 15 }}>
+                {total} ore{total === 1 ? "" : "s"}{result.primary && <>. Primary ore: <span style={{ color: rarityColour(result.primary.rarity) }}>{result.primary.name}</span> (sets the look and rarity)</>}
+              </div>
+              {total > 0 && (
+                <div style={{ margin: "14px auto 0", maxWidth: 460 }}>
+                  <div className="share" role="img" aria-label={mix.map((m) => `${m.ore.name} ${pct((m.count / total) * 100, 0)}`).join(", ")}>
+                    {mix.map((m) => <div key={m.ore.id} style={{ width: `${(m.count / total) * 100}%`, background: rarityColour(m.ore.rarity) }} />)}
+                  </div>
+                  <div className="share-legend">{mix.map((m) => <span key={m.ore.id}>{m.ore.name} {pct((m.count / total) * 100, 0)}</span>)}</div>
+                </div>
+              )}
+              {mix.length > 0 && <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={() => { setEntries([]); setPick(null); }}>Clear forge</button>}
+            </section>
+          </Reveal>
+
+          <Reveal col={2}>
+            <section className="gp result" aria-live="polite" aria-label="Result">
+              {selected ? (
+                <>
+                  <h2 className="result-name">{selected.v.name}{!selected.v.verified && <> <span className="badge unv">Unverified</span></>}</h2>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div className="tile" style={{ width: 110, height: 110, ["--rc" as string]: rarityColour(result.rarity) }}>
+                      <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", selected.v.id)} alt={selected.v.name} size={40} />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 14 }}>
+                    <div className="kv"><span>Craft Quality:</span><span className="gold" style={{ fontWeight: 700 }}>{qualityLabel(cat, quality)} ({quality}%)</span></div>
+                    <div className="kv"><span>Materials:</span><span className="small" style={{ color: "#cfc7b2" }}>{mix.map((m) => `${m.ore.name}(${pct((m.count / total) * 100, 0)})`).join(" + ")}</span></div>
+                    <div className="kv"><span>Class:</span><span className="muted">{selected.cls.name}</span></div>
+                    <div className="kv"><span>Rarity:</span><span style={{ fontWeight: 700, color: rarityColour(result.rarity) }}>{result.rarity}</span></div>
+                    <div className="kv"><span>{statName}:</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(selected.v.value)} {unit}</span></div>
+                    <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(kind === "armour" ? Math.round(fullValue) : Math.ceil(fullValue * 100 - 1e-6) / 100)} ${unit}`}</span></div>
+                    {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted">{selected.v.speed}s · range {selected.v.range}</span></div>}
+                    <div className="kv"><span>Chance:</span><span className="muted">{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</span></div>
+                    <div className="kv"><span>Lock:</span><span className="muted">{selected.cls.lockable ? "Lockable with this many ores" : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
+                  </div>
+                </>
+              ) : (
+                <p className="muted" style={{ textAlign: "center", margin: "18px 0" }}>Add 3 or more ores to see your result.</p>
+              )}
+              <div className="small muted" style={{ marginTop: 16, textAlign: "center" }}>Set quality</div>
+              <div className="presets">
+                {QUALITY_PRESETS.map((v) => <button key={v} className="btn" aria-pressed={quality === v} onClick={() => setQuality(v)}>{v}%</button>)}
+              </div>
+              <label className="small muted" style={{ display: "block", marginTop: 10 }}>
+                <span className="sr-only">Quality percent</span>
+                <input type="range" min={1} max={100} value={quality} onChange={(e) => setQuality(Number(e.target.value))} />
+              </label>
+              <div className="note" style={{ textAlign: "center", marginTop: 4 }}>Quality label ranges are unverified.</div>
+            </section>
+          </Reveal>
+        </div>
+
+        {/* ---------- Select ores ---------- */}
+        <Reveal col={3} className="calc-right">
+          <section className="gp" aria-labelledby="ores-h">
+            <div className="tb"><h2 id="ores-h">Forge / Select Ores</h2></div>
+            <div style={{ padding: 14 }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
+                <span className="small muted">Search ores</span>
+                <input className="input" type="search" placeholder="Try Mythril or Kitsunite" value={search} onChange={(e) => setSearch(e.target.value)} />
+              </label>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                <button className="btn sm" aria-pressed={!allWorlds} onClick={() => setAllWorlds(false)}>World {worldName(world)} ores</button>
+                <button className="btn sm" aria-pressed={allWorlds} onClick={() => setAllWorlds(true)}>All ores</button>
+              </div>
+              <div className="ore-grid">
+                {visibleOres.map((o) => <OreButton key={o.id} ore={o} count={countOf(o.id)} onAdd={() => add(o.id)} onRemove={() => add(o.id, -1)} />)}
+              </div>
+              <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one.</p>
+              <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
+                <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => { setKind("armour"); setPick(null); }}>Armor</button>
+                <button className={`big-toggle ${kind === "weapon" ? "gb" : "btn"}`} aria-pressed={kind === "weapon"} onClick={() => { setKind("weapon"); setPick(null); }}>Weapon</button>
+              </div>
+            </div>
+          </section>
+        </Reveal>
+      </div>
+
+      {/* ---------- variants + traits (left) and enhancement (right) ---------- */}
+      {selected && (
+        <>
+          <div className="row">
+            <div className="lower-left">
+              <Reveal col={4}>
+                <section className="gp">
+                  <div className="tb"><h2>{selected.cls.name} variants</h2></div>
+                  <div className="pad scroll-x">
+                    <table className="table" style={{ minWidth: 420 }}>
+                      <thead><tr><th>Variant</th><th>In class</th><th>Overall</th><th style={{ textAlign: "right" }}>{statName} at {quality}%</th></tr></thead>
+                      <tbody>
+                        {selected.cls.variants.map((v) => (
+                          <tr key={v.id} className={v.id === selected.v.id ? "sel" : ""} onClick={() => setPick({ cls: selected.cls.name, id: v.id })} style={{ cursor: "pointer" }}>
+                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {!v.verified && <span className="badge unv">Unverified</span>}</td>
+                            <td>{pct(v.chance)}</td><td>{pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </Reveal>
+              <div className={`collapse ${enhanceOpen ? "open" : ""}`}><div><div style={{ paddingTop: 24 }}>
+                <TraitsPanel traits={result.traits} kind={kind} dense />
+              </div></div></div>
+            </div>
+
+            <Reveal col={4} className="lower-right">
+              <section className="gp">
+                <button className="enh-head" aria-expanded={enhanceOpen} aria-controls="enh-rest" onClick={() => setEnhanceOpen((o) => !o)}>
+                  <Chevron open={enhanceOpen} /><span>Enhance Equipment</span><span className="small" style={{ marginLeft: "auto", color: "#cfc7e6" }}>{enhanceOpen ? "Show less" : "Show +1 to +10"}</span>
+                </button>
+                <div className="pad">
+                  <div className="stat-head">Stat Improvement:</div>
+                  {enhance.slice(0, 1).map((l) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} />)}
+                  <div id="enh-rest" className={`collapse ${enhanceOpen ? "open" : ""}`}><div>
+                    {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
+                  </div></div>
+                  <p className="note">Every stat rises 5% per level, from +0 to +10. Values use your quality setting.</p>
+                </div>
+              </section>
+            </Reveal>
+          </div>
+          <div className={`collapse ${enhanceOpen ? "" : "open"}`}><div>
+            <Reveal col={4}><TraitsPanel traits={result.traits} kind={kind} /></Reveal>
+          </div></div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function OreButton({ ore, count, onAdd, onRemove }: { ore: CatalogueOre; count: number; onAdd: () => void; onRemove: () => void }) {
+  return (
+    <button className="tile" style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={onAdd}
+      onContextMenu={(e) => { e.preventDefault(); onRemove(); }} aria-label={`Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${ore.traits.length ? " · has a trait" : ""}`}>
+      <GameImage src={imageUrl("ores", ore.id)} alt="" size={24} />
+      <span className="t-top" style={{ right: count ? 26 : 2 }}>{ore.name}</span>
+      <span className="t-br">{ore.multiplier}x</span>
+      {ore.traits.length > 0 && <span className="t-bl" aria-hidden="true">✦</span>}
+      {count > 0 && <span className="t-badge">{count}</span>}
+    </button>
+  );
+}
+
+function EnhRow({ l, max, unit, delay = 0, hidden = false }: { l: { level: number; multiplier: number; stat: number }; max: number; unit: string; delay?: number; hidden?: boolean }) {
+  return (
+    <div className="enh-row" style={{ opacity: hidden ? 0 : 1, transform: hidden ? "translateY(-8px)" : "none", transition: `opacity .4s ease ${delay}ms, transform .4s ease ${delay}ms` }}>
+      <span className="enh-l">+{l.level}</span>
+      <span className="enh-m">1.00x → {l.multiplier.toFixed(2)}x</span>
+      <span className="bar"><span style={{ width: `${Math.max(1, (l.stat / max) * 100)}%`, background: "#8fb86a" }} /></span>
+      <span className="num enh-v" title={unit}>{fmt(l.stat)}</span>
+    </div>
+  );
+}
+
+function TraitsPanel({ traits, kind, dense = false }: { traits: ReturnType<typeof forge>["traits"]; kind: Kind; dense?: boolean }) {
+  return (
+    <section className="gp">
+      <div className="tb"><h2>Traits that transfer</h2><span className="badge der">Derived</span></div>
+      <div className="pad">
+        <p className="small muted" style={{ margin: "0 0 12px" }}>A trait needs a 10% share of the craft and reaches full strength at 30%. Signed amounts below are scaled to your share; chances and durations are shown as listed.</p>
+        {traits.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>No {kind} traits transfer from this mix.</p>
+        ) : (
+          <div className="trait-grid" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${dense ? 240 : 280}px, 1fr))` }}>
+            {traits.map((t) => (
+              <div key={t.ore.id} className="trait" style={{ opacity: t.strength === 0 ? 0.55 : 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+                  <span style={{ fontWeight: 700, color: "#fff", fontSize: 19 }}>{t.ore.name}</span>
+                  <span className="small muted">{pct(t.share * 100)} share</span>
+                </div>
+                <div className="bar" style={{ height: 8, margin: "8px 0 4px" }}><span style={{ width: `${t.strength * 100}%`, background: "#8a5cc9" }} /></div>
+                <div className="small muted" style={{ marginBottom: 6 }}>{t.strength === 0 ? "Inactive: needs at least a 10% share" : `Strength ${pct(t.strength * 100, 0)}`}</div>
+                {t.lines.map((l, i) => <div key={i} style={{ fontSize: 16, color: "var(--strong)" }}>{l}</div>)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

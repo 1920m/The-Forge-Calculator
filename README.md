@@ -1,0 +1,48 @@
+# Forge Calculator
+
+A free, no-login calculator for the Roblox game **The Forge**. Pick your ores and see which weapon or armour classes and variants you can forge and how likely each one is. It also shows the traits that transfer, the damage or defence at any craft quality, and the stat at every enhancement level from +0 to +10.
+
+Built with Next.js (App Router, TypeScript), hosted on Vercel, with game data and images in Supabase.
+
+## Run it locally
+
+```sh
+npm ci
+npm run dev        # http://localhost:3000
+npm run check      # lint, typecheck, tests and a production build
+```
+
+No environment variables are needed. The app reads the public, read-only Supabase project by default and falls back to the bundled `data/catalogue.json` if Supabase can't be reached. To point it at another project, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (see `.env.example`).
+
+## How the data flows
+
+1. `docs/PRD.md` is the source of truth for every ore, trait, weapon, armour piece and odds table.
+2. `npm run data:build` turns it into `data/catalogue.json`.
+3. The same JSON is published as a row in the Supabase table `catalogue_releases`. The site uses the newest row, cached for an hour.
+4. Images live in the Supabase Storage bucket `forge-images` (`ores/<id>.png`, `weapons/<id>.png`, `armour/<id>.png`). `data/images.json` lists the ones that exist; anything missing shows the striped placeholder tile.
+
+## The rules the calculator uses
+
+| Rule | Formula | Status |
+| --- | --- | --- |
+| Multiplier | M = sum(multiplier × count) ÷ total ores | Confirmed in game |
+| Class odds | Look up the total ore count (3 to 55) in the odds table; above 55 use the 55 row | Confirmed in game |
+| Variant odds | (1 ÷ N) ÷ sum(1 ÷ N) inside the class | Confirmed in game |
+| Primary ore | Largest count, ties go to the higher multiplier; sets the look and rarity | Confirmed in game |
+| Traits | Need a 10% share; strength = 0.10 + 4.5 × (share − 0.10), full at 30% | Derived |
+| Defence | round(2 × health % × M × quality) | Confirmed in game |
+| Damage | 2 × base damage × M × quality, rounded up to 2 decimals | Confirmed in game |
+| Enhancement | stat × (1 + 0.05 × level), +0 to +10 | Confirmed in game |
+
+Golden tests (`tests/`) reproduce the Dark Knight Chestplate (12.51x, 626 DEF), the Hachiwari (10.88x, 179.52 DMG) and the Shogun's Leggings crafted in game.
+
+## Still to confirm in game
+
+- The quality label ranges (Broken to Masterwork) are unverified.
+- Wiki-only items (Vanguard helmet and leggings, Reaper Scythe, Batwing Reaver, Bo Staff) are marked Unverified.
+- The worlds of the 16 wiki-only ores. (Worlds 1 and 2 are treated as one world, 1–2, because they share the same pools and odds.)
+- How trait chances and durations scale. Only signed amounts (+15%, −10%) are scaled for now.
+
+See [FILES.md](FILES.md) for what every file does.
+
+Fan-made. Not affiliated with the game's developers or Roblox. Game data from the community wiki (CC BY-SA 4.0).

@@ -1,0 +1,25 @@
+{
+  "source": "Cris's in-game screenshots supplied 23 October 2026",
+  "files": ["codex-clipboard-10518e59-5cc7-4b31-85da-28ef2b8dab6d.png", "codex-clipboard-4c9e4cac-9841-427b-b769-8da7f8b06b31.png"],
+  "recipe": [
+    { "slug": "sun-stone", "count": 2 },
+    { "slug": "yeti-heart", "count": 2 },
+    { "slug": "golem-heart", "count": 1 },
+    { "slug": "meteorite", "count": 2 }
+  ],
+  "totalOres": 7,
+  "displayedMultiplier": "10.88",
+  "item": "Hachiwari",
+  "class": "Straight Sword",
+  "qualityLabel": "Masterwork",
+  "qualityPercent": 100,
+  "rarity": "Mythic",
+  "displayedDamage": 179.52,
+  "displayedAttackSpeedSeconds": 0.59,
+  "visibleClassOdds": { "Straight Sword": 74, "Mace": 20, "Dagger": 6, "Spear": 0 },
+  "limits": [
+    "The card's 0.59s attack speed does not establish actual swing timing.",
+    "Unlabelled silhouettes and Missing Recipe tiles do not establish variant-name-to-weight mappings.",
+    "No enhancement result is shown."
+  ]
+}

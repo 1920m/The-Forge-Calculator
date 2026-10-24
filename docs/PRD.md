@@ -1,5 +1,7 @@
 # The Forge Calculator: PRD and Build Plan
 
+> **Cris's correction, 23 Oct 2026:** Armour defence rounds to the **nearest whole number**, not upward and not to two decimals. Weapon damage keeps two decimals; the weapon ceiling rule below remains the documented default. Apply the category-specific rounding once after quality and enhancement, retaining the exact weighted multiplier internally. Whether the game itself rounds before enhancement still needs a direct enhancement measurement. This correction supersedes historical rounding assumptions and the old decimal armour enhancement example.
+
 > **Errata (added when the folder was packed, 23 Oct 2026).** Three older lines were corrected: the ore count is 3 to 55 (not "up to four"), and the rarity tag colours now live in `Handoff-Guide.md` (the old list used orange). Wherever this document and `Handoff-Guide.md` differ, the Handoff Guide wins. Everything in the "Measured mechanics", "Rules confirmed in game", class-odds and enhancement sections is the latest. Older guide-based ore tables further down may be stale: compare them with the "Ore traits" table and the wiki before seeding.
 
 Oct 22, 2026 · @Albert Einstein
@@ -68,7 +70,7 @@ D\_base is the wiki's base damage for the weapon, q is the quality fraction (1.0
 **3. Armour defence (derived)**
 
 ```latex
-\text{Defence} = \left\lceil 2 \cdot H_{\text{piece}} \cdot M \cdot q \right\rceil
+\text{Defence} = \operatorname{round}\left(2 \cdot H_{\text{piece}} \cdot M \cdot q\right)
 ```
 
 Base values are twice the wiki's "Health %" number for the piece (Dark Knight Chestplate 25 gives a base of 50). Confirmed against two in-game items; see Defence formula, solved. Quality is a straight percentage multiplier.
@@ -96,10 +98,13 @@ No closed formula is known, but the full table now exists for 3 to 55 ores (see 
 **7. Enhancement stage (structure known, gains unknown)**
 
 ```latex
-\text{Stat}_L = \left\lceil 100 \cdot V_{100} \cdot q \cdot (1 + 0.05\,L) \right\rceil / 100, \qquad L = 0,\dots,10
+U_L = V_{100} \cdot q \cdot (1 + 0.05\,L), \qquad L = 0,\dots,10
+\\
+\text{Armour}_L = \operatorname{round}(U_L), \qquad
+\text{Weapon}_L = \left\lceil 100 \cdot U_L \right\rceil / 100
 ```
 
-`V_100` is the item's value at 100% quality (damage or defence), `q` is the quality fraction, and `L` is the enhancement level. The 5% per level is confirmed in game. Whether rounding happens before or after the enhancement multiplier is not yet known; the engine rounds once at the end until you tell me otherwise.
+`V_100` is the item's unrounded value at 100% quality (damage or defence), `q` is the quality fraction, and `L` is the enhancement level. The 5% per level is confirmed in game. Armour uses nearest-integer rounding; weapons round upward to two decimals under the existing weapon default. Whether rounding happens before or after the enhancement multiplier is not yet known; the engine rounds once at the end until Cris confirms otherwise. For the exact Dark Knight recipe, the calculated armour display at +10 is 938 DEF; the older 938.25 decimal expectation is superseded, and the enhancement sequence still needs an in-game check.
 
 ## Game data to seed the database
 
@@ -124,7 +129,7 @@ This is the starting dataset, collected from guides and the Fandom and BloxInfor
 | Mushroomite | Rare | 0.80 | 22 | None |
 | Platinum | Rare | 0.80 | 28 | None |
 | Diamond | Rare | 2.00 | 192 | None |
-| Aite | Epic | 1.00 | 44 | None |
+| Aite | Epic | 1.10 | 44 | None |
 | Poopite | Epic | 1.20 | 131 | Poison aura below 35% HP, fears enemies (both) |
 | Obsidian | Epic | 2.35 | 333 | +30% defence (armour) |
 | Emerald | Epic | 2.55 | 363 | None |
@@ -139,7 +144,7 @@ This is the starting dataset, collected from guides and the Fandom and BloxInfor
 | Rainbow Crystal | Legendary | 5.25 | not found | None listed |
 | Demonite | Mythical | 5.50 | 3,666 | 15% on-hit burn, Demon's Backfire on armour (both) |
 | Darkryte | Mythical | 6.30 | 5,555 | 15% chance to dodge a hit (armour) |
-| Arcane Crystal | Mythical | 7.50 | 100,000 (one source) | None listed |
+| Arcane Crystal | Mythical | 9.00 | 100,000 (one source) | None listed |
 
 ### World 3 ores (from your in-game index screenshots)
 
@@ -642,7 +647,7 @@ These come from you playing the game, so they outrank anything I inferred from t
 | --- | --- | --- |
 | Appearance (primary ore) | The ore with the largest count takes the item's appearance. If every ore has the same count, the ore with the highest multiplier wins. Example: 1 + 1 + 2 means the ore with 2 wins. | `primary = argmax(count)`, ties broken by `argmax(multiplier)`. A tie between two top counts with a third lower is not yet confirmed; I assume the same tie-break. |
 | Locking | A weapon or armour piece can be locked once you have enough total ores. The small black text next to the lock on each piece shows the number. The lock thresholds I recorded earlier are those numbers. | Each result shows "lockable at N ores" and whether the current mix meets it. |
-| Quality | The game computes the item's value at 100% quality, then multiplies by your quality percentage. 100% value 100 at 25% quality gives 25. 100% value 823 at 85% gives 699.55. Values keep two decimals and always round up. | `final = ceil(full_value × quality% × 100) / 100`. The calculator shows the 100% value and a quality slider. |
+| Quality | The game computes the item's value at 100% quality, then multiplies by your quality percentage. Apply category-specific rounding afterward: armour to the nearest whole number; weapons to two decimals. A raw value of 699.55 displays as 700 DEF for armour and 699.55 DMG for a weapon. | Armour: `round(full_value × quality)`. Weapon: `ceil(full_value × quality × 100) / 100`. The calculator shows the 100% value and a quality slider. |
 | Enhancement multiplier | Level L multiplies all stats (damage or defence) by 1 + 0.05 × L, from +0 (1.00×) to +10 (1.50×). | Table of 11 levels. This replaces the +7 cap from the Fandom wiki. |
 
 ### Enhancement levels
@@ -670,7 +675,7 @@ Recipe: 4 Meteorite (14.44×), 12 Roosite (14×), 12 Heat Steel (11.5×), 13 Sak
 
 | Reading of the data | Implied base for Shogun's Leggings | Verdict |
 | --- | --- | --- |
-| Quality is ignored: 803 / 13.375 | 60.04 (60 × 13.375 = 802.5, which rounds up to 803) | Fits neatly, but contradicts your rule that quality scales the value |
+| Quality is ignored: 803 / 13.375 | 60.04 (60 × 13.375 = 802.5, which rounds to the nearest integer, 803) | Fits neatly, but contradicts your rule that quality scales the value |
 | Quality applies as a straight percentage: 803 / (0.86 × 13.375) | 69.81, or exactly 70 if the true quality is 85.8% (it is shown rounded) | Fits your rule if the base is 70 |
 | Wiki Health % (36) used as the base | 36 × 13.375 = 481.5 | Does not fit. The wiki's Health % is the in-game index display, not the defence base |
 
@@ -680,13 +685,13 @@ Your crafting screenshot gives a clean second data point: Sun Stone x9 (13.39×)
 
 | Check | Calculation | Result |
 | --- | --- | --- |
-| Dark Knight Chestplate, 100% quality | 2 × 25 × 12.51 = 625.5, rounded up | 626, exact match |
+| Dark Knight Chestplate, 100% quality | Exact recipe: 2 × 25 × (375.31 / 30) = 625.516666…; nearest integer is 626. Using displayed M = 12.51 gives 625.5, also rounding to 626. | 626, exact match |
 | Shogun's Leggings (wiki Health % 36) | 2 × 36 × 13.375 = 963 at 100% quality; 803 / 963 | quality of 83.4%, which is "Great" (75 to 84%), matching the label on your screenshot |
 | Earlier Heavy chestplate figures | 166 / 3.33 and 280 / 5.6 both gave 50 | 2 × 25 = 50, so they were Dark Knight chestplates at full quality |
 
 So the defence base of a piece is exactly twice its wiki Health %, and the rest of your rule holds:
 
-DEF = ceil( 2 × Health% × M × quality ), rounded up to two decimals (whole numbers shown in game for armour).
+DEF = round( 2 × Health% × M × quality ), rounded to the nearest whole number. Cris confirmed this correction on 23 Oct 2026; armour does not use the weapon's upward two-decimal rounding rule.
 
 The 2× also explains the third-party calculator's high estimate, which was exactly twice its low one. One loose end: the leggings screenshot showed "\[86\]%" beside "Great", but the numbers need quality 83.4%. The 86 may be a different stat on that card (it is not the quality), so the app will trust the quality percentage you enter and not that number.
 
@@ -701,7 +706,7 @@ Your weapon screenshot: Sun Stone x2 (13.39×), Yeti Heart x2 (6×), Golem Heart
 | Variant odds | Hachiwari is 1/2 in the Straight Sword class | Matches the 1/2 shown |
 | Rarity | Mythic | Meteorite is a Mythic ore, and it ties for the largest count (2 each with Sun Stone and Yeti Heart) but has the top multiplier, so it is the primary ore |
 
-So weapons follow the same rule as armour: **Damage = 2 × base damage × M × quality**, rounded up to two decimals. The armour piece earlier was Legendary with Sun Stone (Legendary) the largest count, so **an item's rarity is the rarity of its primary ore**.
+Weapons use the same underlying 2× formula as armour but different final rounding: **Damage = 2 × base damage × M × quality**, rounded up to two decimals under the documented weapon default. Armour instead rounds to the nearest whole number. The armour piece earlier was Legendary with Sun Stone (Legendary) the largest count, so **an item's rarity is the rarity of its primary ore**.
 
 Two details from the screenshots for the app:
 
