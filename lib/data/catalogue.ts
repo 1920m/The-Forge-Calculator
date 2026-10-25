@@ -11,7 +11,12 @@ function looksValid(c: unknown): c is Catalogue {
   return !!x && Array.isArray(x.ores) && x.ores.length > 50 && Array.isArray(x.weapons) && Array.isArray(x.armour) && !!x.odds?.weapon?.["55"] && !!x.odds?.armour?.["55"] && !!x.weaponPools?.["4"];
 }
 
-/** Newest game-data release from Supabase (cached for an hour), or the bundled copy if Supabase is unreachable. */
+const revisionOf = (c: unknown) => Number((c as { revision?: number })?.revision) || 0;
+
+/**
+ * Newest game data: the latest Supabase release (cached for an hour), unless the copy bundled with this
+ * deploy is newer (a deploy can land before its data is published) or Supabase is unreachable.
+ */
 export async function getCatalogue(): Promise<Catalogue> {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/catalogue_releases?select=data&order=id.desc&limit=1`, {
@@ -21,7 +26,8 @@ export async function getCatalogue(): Promise<Catalogue> {
     });
     if (res.ok) {
       const rows = (await res.json()) as { data: unknown }[];
-      if (looksValid(rows[0]?.data)) return rows[0].data;
+      const remote = rows[0]?.data;
+      if (looksValid(remote) && revisionOf(remote) >= revisionOf(bundled)) return remote;
     }
   } catch { /* fall back */ }
   return bundledCatalogue;

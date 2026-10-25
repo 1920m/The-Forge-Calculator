@@ -271,7 +271,7 @@ Kitsunite is the highest multiplier in the index at 27.5×. Crafted ores (Crafti
 
 ### Ore traits (read from each ore's wiki page)
 
-These are the trait lines from the [ore pages](https://forgewiki.org/wiki/Ores) for 64 of the 150 ores; the other 86 show no trait. The wiki gives the effect at full strength only, so the 10% / 30% activation scaling is still unmeasured. Where the wiki and your screenshots disagree, recheck in game.
+These are the trait lines from the [ore pages](https://forgewiki.org/wiki/Ores) for 68 of the 150 ores; the others show no trait. Rechecked against every ore page on 25 Oct 2026 (Wolfarite, Yin-Yang, Marblite, Ceyite and Sentira were missing, and Fierce Jade, Vanegos and Bismuth were incomplete). The wiki gives the effect at full strength only, so the 10% / 30% activation scaling is still unmeasured. Where the wiki and your screenshots disagree, recheck in game.
 
 | Ore | Applies to | Trait effect (as listed) |
 | --- | --- | --- |
@@ -325,16 +325,21 @@ These are the trait lines from the [ore pages](https://forgewiki.org/wiki/Ores) 
 | Yin | Armour | +8% Vitality; below 35% HP +25% physical damage and move speed for 8s |
 | Kokorite | Weapon and Armour | Armour: below 35% HP +25% damage and speed for 8s. Both: +30% Lethality, -5% Vitality, -5% Endurance, -5% Swiftness |
 | Sakurite | Armour | +6% jump, +12% dash distance, +10% invincibility, +15% dash cooldown reduction |
+| Ceyite | Armour | 40% chance to dodge attacks and gain a small move speed boost |
 | Takenokoishi | Armour | -10% Swiftness, +15% Vitality, +5 regen, 70% chance to cut damage by 25% |
+| Sentira | Armour | +5% Vitality, +10 regen/s, 50% chance to cut damage by 50%, +3% thorns |
+| Wolfarite | Weapon | +8% attack speed, +15% Lethality, +6% Swiftness, -8% Vitality |
+| Yin-Yang | Weapon and Armour | +45% crit chance, +20% crit damage, +8% Vitality; below 35% HP +25% physical damage and move speed for 8s |
+| Marblite | Weapon | 40% chance of lightning for 60% weapon damage to up to 3 enemies within 20 studs (5s cooldown) |
 | Galaxite | Weapon / Armour | Weapon: 30% chance of a black hole (60% weapon damage AoE), +45% crit chance, +20% crit damage. Armour: +8% Vitality, +8 regen, 50% chance to cut damage by 50%, +2% thorns |
 | Starite | Armour | +4% luck, +6% yield chance |
 | Supermassive Black Hole | Weapon | 45% chance of AoE explosion for 65% weapon damage; 45% chance of fire for 50% weapon damage/s over 5s |
-| Fierce Jade | Weapon / Both | +15% attack speed; below 35% HP +35% damage and speed for 10s; +35% crit chance, +20% crit damage, +20% physical damage |
-| Vanegos | Armour / Both | Below 35% HP +35% damage and speed for 15s, +5% thorns; both: +40% Lethality, -20% Vitality, -10% stamina, -10% speed |
+| Fierce Jade | Weapon / Both | Weapon: +15% attack speed. Both: below 35% HP +35% physical damage and move speed for 10s, +35% crit chance, +20% crit damage, +20% physical damage |
+| Vanegos | Armour / Both | Armour: below 35% HP +35% physical damage and move speed for 15s, +5% thorns. Both: +40% Lethality, -20% Vitality, -10% stamina, -10% move speed |
 | Vooite | Armour / Both | Armour: +8% thorns, venom cloud below 35% HP (30% weapon damage/s, 12s, 25s cooldown). Both: poison cloud (40%/s, 10s) and 4% max HP AoE per second in combat |
 | Fichilliumorite | Both | Takes the average multiplier of the other ores when forging |
 | Kitsunite | Weapon / Armour | Weapon: lightning 60% for 80% damage, Smite 50% for 50%, Burn 50% (5s, 40%/s), explosion 40% for 70%. Armour: +25% Vitality, +15 regen, +6% thorns, +9% yield, +7% luck |
-| Bismuth | Weapon / Armour | Weapon: +18% attack speed, random T3 attack rune on hit, rainbow wave of 125% weapon damage on Galaxite black hole. Armour: +15% crit chance, +15% crit damage, +15% Lethality, regen 6/s (end of text cut off in my read) |
+| Bismuth | Weapon / Armour | Weapon: +18% attack speed, random T3 attack rune on hit, rainbow wave of 125% weapon damage on Galaxite black hole. Armour: +15% crit chance, +15% crit damage, +15% Lethality, fire, poison, black hole and resonance damage +1% per 500 HP (up to +20%), +6 regen/s, heal 2.5% max HP when a Galaxite black hole triggers |
 | Aether Lotus | Armour | +30% Vitality; 60% chance to cut damage by 65%; +18 regen/s |
 | Zephyte | Armour | +30% move speed, +12.5% jump, +12.5% dash distance, +12.5% invincibility |
 

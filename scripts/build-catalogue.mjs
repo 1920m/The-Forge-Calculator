@@ -1,6 +1,7 @@
 // Builds data/catalogue.json from docs/PRD.md (the source of truth) plus the
 // short list of wiki-only ores below. Run: npm run data:build
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 
 const prd = readFileSync(new URL("../docs/PRD.md", import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const slug = (s) => s.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -50,8 +51,10 @@ for (const r of tablesIn(between("### Ore traits", "## Measured mechanics"))[0].
   const applies = r["Applies to"].toLowerCase();
   const text = r["Trait effect (as listed)"];
   const kinds = applies.includes("weapon") && applies.includes("armour") || applies === "both" ? ["weapon", "armour"] : applies.includes("weapon") ? ["weapon"] : ["armour"];
-  const parts = [...text.matchAll(/(Weapon|Armour|Both):\s*([^]*?)(?=(?:Weapon|Armour|Both):|$)/g)];
-  if (parts.length) for (const [, k, t] of parts) ore.traits.push({ kinds: k === "Both" ? ["weapon", "armour"] : [k.toLowerCase()], text: t.trim().replace(/\.$/, "") });
+  const parts = [...text.matchAll(/\b(Weapon|Armour|Both):\s*([^]*?)(?=\b(?:Weapon|Armour|Both):|$)/gi)];
+  // "Weapon / Both" style rows must say which part goes where, or every line would land on one kind.
+  if (!parts.length && applies.includes("/")) throw new Error(`${r["Ore"]}: "${r["Applies to"]}" needs Weapon:/Armour:/Both: sections in the trait text`);
+  if (parts.length) for (const [, k, t] of parts) ore.traits.push({ kinds: k.toLowerCase() === "both" ? ["weapon", "armour"] : [k.toLowerCase()], text: t.trim().replace(/\.$/, "") });
   else ore.traits.push({ kinds, text });
 }
 const fichi = ores.get("Fichilliumorite"); if (fichi) { fichi.rule = "average"; fichi.traits = [{ kinds: ["weapon", "armour"], text: "Takes the average multiplier of the other ores" }]; }
@@ -165,7 +168,14 @@ const catalogue = {
   locks: { weapon: [3, 9, 14, 18, 24, 31, 50], armour: [3, 11, 15, 20, 24, 30, 35, 42, 52] },
   qualityTiers: [["Broken", 0], ["Poor", 25], ["Rough", 40], ["Average", 50], ["Good", 65], ["Great", 75], ["Excellent", 85], ["Perfect", 90], ["Masterwork", 95]],
 };
-writeFileSync(new URL("../data/catalogue.json", import.meta.url), JSON.stringify(catalogue) + "\n");
+// Revision goes up by one whenever the data changes, so the site can tell which copy is newer:
+// the bundled file or the latest Supabase release.
+const out = new URL("../data/catalogue.json", import.meta.url);
+const hash = createHash("sha256").update(JSON.stringify(catalogue)).digest("hex").slice(0, 16);
+const prev = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : {};
+const revision = prev.contentHash === hash ? prev.revision : (prev.revision ?? 6) + 1;
+writeFileSync(out, JSON.stringify({ revision, contentHash: hash, ...catalogue }) + "\n");
+console.log(`revision ${revision} (${hash})`);
 console.log(`shop: ${weapons.filter((w) => w.tag === "shop").map((w) => w.name).join(", ")}`);
 console.log(`halloween: ${weapons.filter((w) => w.tag === "halloween").map((w) => w.name).join(", ")}`);
 console.log(`no world: ${weapons.filter((w) => !w.worlds.length).map((w) => w.name).join(", ")}`);
