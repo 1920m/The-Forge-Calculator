@@ -66,7 +66,8 @@ export function GoogleButton({ onToken, disabled }: { onToken: (token: string, n
           auto_select: false,
           cancel_on_tap_outside: true,
           itp_support: true,
-          use_fedcm_for_button: true,
+          // Google's classic popup works in every browser; the newer browser-native dialog fails in some.
+          use_fedcm_for_button: false,
         });
         gis.renderButton(box.current, {
           type: "standard", theme: "filled_black", size: "large", text: "continue_with", shape: "rectangular",
