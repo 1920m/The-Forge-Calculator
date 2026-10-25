@@ -53,15 +53,15 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
               </label>
             </div>
             <div className="pad scroll-x">
-              <table className="table" style={{ minWidth: 520 }}>
-                <thead><tr><th>Variant</th>{kind === "weapon" ? <><th>Base dmg</th><th>Speed</th><th>Range</th></> : <th>Health %</th>}<th>Weight</th><th>In class</th><th style={{ textAlign: "right" }}>{unit} at {mult}x</th></tr></thead>
+              <table className="table" style={{ minWidth: 580 }}>
+                <thead><tr><th>Variant</th>{kind === "weapon" ? <><th>Base dmg</th><th title="Real time between swings">Swing</th><th title="The number the game's item card shows">Card speed</th><th>Range</th></> : <th>Health %</th>}<th>Weight</th><th>In class</th><th style={{ textAlign: "right" }}>{unit} at {mult}x</th></tr></thead>
                 <tbody>
                   {variants.map((v) => (
                     <tr key={v.id}>
                       <td><span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                         <span className="tile" style={{ width: 34, height: 34, borderWidth: 1 }}><GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={16} /></span>
                         {v.name}</span> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
-                      {kind === "weapon" ? <><td>{v.base}</td><td>{v.speed}s</td><td>{v.range}</td></> : <td>{v.base}</td>}
+                      {kind === "weapon" ? <><td>{v.base}</td><td>{v.interval}s</td><td className="muted">{v.speed}s</td><td>{v.range}</td></> : <td>{v.base}</td>}
                       <td className="muted">1/{v.weight}</td>
                       <td>{pct(v.chance)}</td>
                       <td className="num">{fmt(stat(v.base, mult, 1, kind))}</td>
@@ -69,7 +69,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
                   ))}
                 </tbody>
               </table>
-              <p className="note">{kind === "weapon" ? "Damage = base damage × multiplier × (1 + quality), shown here at 100% quality. Speed is the index speed the game shows on the card." : "Defense = health % × multiplier × (1 + quality), rounded to a whole number, shown here at 100% quality."} Chance inside the class is 1/weight, normalised.{poolIncomplete(cat, kind, world, cls) && " This class also has shop-blueprint weapons that are not listed yet, so these chances may be a little high."}</p>
+              <p className="note">{kind === "weapon" ? "Damage = base damage × multiplier × (1 + quality), shown here at 100% quality. Swing is the real time between attacks, used for DPS. Card speed is the game's index value, which the item card shows but which isn't the real speed." : "Defense = health % × multiplier × (1 + quality), rounded to a whole number, shown here at 100% quality."} Chance inside the class is 1/weight, normalised.{poolIncomplete(cat, kind, world, cls) && " This class also has shop-blueprint weapons that are not listed yet, so these chances may be a little high."}</p>
             </div>
           </section>
         </Reveal>
