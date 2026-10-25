@@ -37,6 +37,7 @@ export function AccountMenu() {
       {open && (
         <div className="account-menu gp" id={menuId} role="menu">
           <div className="account-name">{name}</div>
+          <Link role="menuitem" href="/forger" onClick={() => setOpen(false)}>Forger page</Link>
           <Link role="menuitem" href="/settings" onClick={() => setOpen(false)}>Settings</Link>
           <button role="menuitem" className="link-btn" onClick={() => { setOpen(false); void signOut(); }}>Sign out</button>
         </div>
