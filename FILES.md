@@ -3,13 +3,18 @@
 ## App (`app/`)
 | File | Purpose |
 | --- | --- |
-| `layout.tsx` | Page frame on every route: world theme shell, header, footer, page titles. |
+| `layout.tsx` | Page frame on every route: sign-in and saved-forge state, world theme shell, header, footer, page titles. |
 | `globals.css` | All styling: game-style panels with corner brackets, tiles, tables, skeleton shimmer, footer wordmark, mobile layout. |
 | `page.tsx` | The calculator (home page). |
 | `ores/page.tsx` | Ore browser with search, world filter and trait details. |
 | `weapons/page.tsx`, `armour/page.tsx` | Class lists, lock thresholds and variant stats. |
 | `builds/page.tsx` | Recommended ore mixes per world and stage. |
 | `how-it-works/page.tsx` | The formulas explained, with the trait-strength chart. |
+| `forger/page.tsx` | Forger page: the player's saved forges (private, not indexed). |
+| `login/page.tsx` | Sign in with Google or Discord. |
+| `auth/callback/page.tsx` | Where Google and Discord send players back after signing in. |
+| `settings/page.tsx` | Change display name, delete account. |
+| `privacy/page.tsx` | What the site stores and how to delete it. |
 | `not-found.tsx` | 404 page. |
 | `error.tsx` | Error screen with "Start with an empty forge", shown instead of a blank page if anything fails. |
 | `icon.svg` | Browser tab icon. |
@@ -25,6 +30,12 @@
 | `ore-filter.tsx` | The ore picker's Filter dropdown: sort buttons, two-handle multiplier slider, trait marks on ore tiles. |
 | `items-page.tsx` | Shared weapons/armour page. |
 | `builds-page.tsx` | Builds page: weapon/armour toggle, one section per area, recipe cards worked out with the forge engine and linked to the calculator. |
+| `auth.tsx` | Sign-in state for the whole site: the player, their profile, sign in and sign out. |
+| `account-menu.tsx` | Header "Sign in" button, or the player's avatar with Forger page, Settings and Sign out. |
+| `login-page.tsx`, `auth-callback.tsx`, `settings-page.tsx` | The sign-in, return-from-sign-in and settings screens. |
+| `saved-forges.tsx` | Loads the player's saved forges once and shares them between pages; save, rename, delete. |
+| `save-star.tsx` | The ☆ in the forge panel's corner: saves or unsaves the current forge, or sends signed-out players to sign in. |
+| `forger-page.tsx` | Forger page: filters, search, sort and a card per saved forge with ore tiles and stats worked out from today's data. |
 | `game-image.tsx` | Shows an image from Supabase Storage, or the striped placeholder tile. |
 | `icons.tsx` | Anvil, lock and chevron icons. |
 
@@ -39,6 +50,9 @@
 | `lib/data/supabase.ts` | Public Supabase URL and key, and image URLs. |
 | `lib/ore-filter.ts` | Sorting and filtering rules for the ore picker. |
 | `lib/forge-slots.ts` | Forge slot limits (4 ore types, 99 of each) and adding ores. |
+| `lib/supabase/browser.ts` | The browser's Supabase client (sign-in session kept in a cookie). |
+| `lib/safe-next.ts` | Keeps "go back to" links after sign-in on this site; cleans display names. |
+| `lib/saved-forges.ts` | Saved-forge rows: checking them, names, matching a save to the current forge, calculator links. |
 | `lib/ui.ts` | Rarity colours and number formatting. |
 | `data/catalogue.json` | Generated game data (do not edit by hand; edit `docs/PRD.md` and run `npm run data:build`). |
 | `data/dps-stats.json` | Each ore's DPS stats at a 10% and a 30% share, from the wiki's `Data:Ores.json`. |
@@ -62,6 +76,8 @@
 | `20261023231538_restrict_auto_rls_function.sql` | Locks down a Supabase helper function. |
 | `20261024190000_catalogue_releases.sql` | `catalogue_releases`: the published game data the site reads. |
 | `20261025100000_security_hardening.sql` | Drops `pg_net`; anonymous visitors can read only the newest catalogue release. |
+| `20261025120000_accounts.sql` | `profiles` (name and picture, made on first sign-in) and `delete_my_account`. Owner-only access. |
+| `20261025140000_saved_forges.sql` | `saved_forges`: owner-only, at most 200 per player, ores and names checked by the database. |
 
 ## Tests (`tests/`)
 | File | Purpose |
@@ -74,6 +90,8 @@
 | `armour.test.ts` | The armour score: Vitality, shields, dodge and the 10% trait threshold. |
 | `builds.test.ts` | Every recommended recipe uses real ores from its world, at most 4 types, and valid classes. |
 | `forge.test.ts` | Full forge results against the real catalogue (odds, variants, values, traits). |
+| `safe-next.test.ts` | Sign-in return links can't leave the site; display-name cleaning. |
+| `saved-forges.test.ts` | Reading untrusted saved rows, names, matching saves and calculator links. |
 | `fixtures/*.json` | What the in-game screenshots showed for the Dark Knight Chestplate and the Hachiwari. |
 
 ## Docs (`docs/`)

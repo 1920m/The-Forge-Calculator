@@ -12,6 +12,8 @@ import { Chevron, Lock } from "./icons";
 import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, oreCategory, type OreFilterState } from "./ore-filter";
 
 import { MAX_ORES, MAX_TYPES, addOre, parseRecipe, type Entry } from "@/lib/forge-slots";
+import type { NewForge } from "@/lib/saved-forges";
+import { SaveStar } from "./save-star";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
@@ -103,6 +105,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const enhance = selected?.v.raw != null ? enhancementTable(selected.v.raw, kind) : [];
   const maxEnh = enhance.length ? Math.max(...enhance.map((l) => l.stat)) || 1 : 1;
   const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
+  const toSave = useMemo<NewForge | null>(() => selected && total >= 3 ? {
+    name: selected.v.name, kind, world, class_name: selected.cls.name, variant_id: selected.v.id, quality, ores: entries,
+    catalogue_revision: Number((cat as { revision?: number }).revision) || null,
+  } : null, [selected, total, kind, world, quality, entries, cat]);
   const visibleOres = applyOreFilter(scopeOres.filter((o) => o.name.toLowerCase().includes(search.trim().toLowerCase())), oreFilter);
 
   return (
@@ -145,7 +151,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
         {/* ---------- Forge + result ---------- */}
         <div className="calc-mid">
           <Reveal col={2}>
-            <section className="gp" style={{ padding: "20px 22px 22px", textAlign: "center" }} aria-label="Forge">
+            <section className="gp forge-panel" style={{ padding: "20px 22px 22px", textAlign: "center" }} aria-label="Forge">
+              <SaveStar forge={toSave} />
               <div className="slots">
                   {mix.map(({ ore, count }) => (
                     <div key={ore.id} className="slot">
