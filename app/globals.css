@@ -288,8 +288,9 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .account-name { padding: 6px 10px 8px; border-bottom: 1px solid var(--bd); margin-bottom: 4px; color: #fff; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .login { max-width: 520px; width: 100%; margin: 24px auto; }
 .login-lead { margin-top: 0; color: #cfc7b2; }
-.login-buttons { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 6px; }
-.login-btn { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; font-size: 18px; font-weight: 700; }
+/* Google draws its own button (at most 400 px wide, 40 px tall), so the Discord button copies its size and shape. */
+.login-buttons { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 18px 0 6px; }
+.login-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 400px; height: 40px; padding: 0 12px; border-radius: 4px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; font-weight: 500; }
 .login-btn.discord { background: #5865f2; border-color: #5865f2; color: #fff; }
 .login-btn.discord:hover { background: #4752c4; }
 .login-btn:disabled { opacity: .6; cursor: progress; }
@@ -407,7 +408,7 @@ body.dragging, body.dragging * { cursor: grabbing !important; user-select: none 
 }
 
 /* Google's sign-in button (drawn by Google inside a frame) */
-.google-slot { position: relative; min-height: 44px; display: flex; flex-direction: column; align-items: center; }
+.google-slot { position: relative; width: 100%; max-width: 400px; min-height: 40px; display: flex; flex-direction: column; align-items: center; }
 .google-btn { width: 100%; max-width: 400px; display: flex; justify-content: center; color-scheme: normal; }
-.google-skeleton { position: absolute; inset: 0 auto auto 50%; transform: translateX(-50%); width: min(400px, 100%); height: 44px; background: linear-gradient(90deg, var(--row), var(--bd), var(--row)); background-size: 200% 100%; animation: sweep 1.4s linear infinite; }
+.google-skeleton { position: absolute; inset: 0 auto auto 50%; transform: translateX(-50%); width: 100%; height: 40px; border-radius: 4px; background: linear-gradient(90deg, var(--row), var(--bd), var(--row)); background-size: 200% 100%; animation: sweep 1.4s linear infinite; }
 .login-buttons .login-error { margin-top: 6px; text-align: center; }
