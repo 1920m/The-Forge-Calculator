@@ -21,6 +21,7 @@
 | `footer.tsx` | Footer with links, partner-badge slot and the dotted FORGE wordmark. |
 | `calculator.tsx` | The calculator: Forge Chances, forge slots, result card, quality, ore picker, variants, collapsible Enhance Equipment, traits. |
 | `ores-page.tsx` | Ore browser. |
+| `ore-filter.tsx` | The ore picker's Filter dropdown: sort buttons, two-handle multiplier slider, trait marks on ore tiles. |
 | `items-page.tsx` | Shared weapons/armour page. |
 | `builds-page.tsx` | Builds page: weapon/armour toggle, one section per area, recipe cards worked out with the forge engine and linked to the calculator. |
 | `game-image.tsx` | Shows an image from Supabase Storage, or the striped placeholder tile. |
@@ -33,6 +34,8 @@
 | `lib/engine/forge.ts` | Combines the maths with the catalogue: world pools, variants per class, transferred traits, the full forge result. |
 | `lib/data/catalogue.ts` | Loads the newest catalogue from Supabase on the server, with the bundled copy as fallback. |
 | `lib/data/supabase.ts` | Public Supabase URL and key, and image URLs. |
+| `lib/ore-filter.ts` | Sorting and filtering rules for the ore picker. |
+| `lib/forge-slots.ts` | Forge slot limits (4 ore types, 99 of each) and adding ores. |
 | `lib/ui.ts` | Rarity colours and number formatting. |
 | `data/catalogue.json` | Generated game data (do not edit by hand; edit `docs/PRD.md` and run `npm run data:build`). |
 | `data/builds.ts` | Recommended recipes by area, stage and item, from the wiki's Guide page. |
@@ -50,6 +53,8 @@
 | File | Purpose |
 | --- | --- |
 | `engine.test.ts` | Golden in-game crafts and edge cases for the pure maths. |
+| `ore-filter.test.ts` | Ore sorting, "best for" and the multiplier range. |
+| `forge-slots.test.ts` | The 4-ore-type limit and count caps. |
 | `builds.test.ts` | Every recommended recipe uses real ores from its world, at most 4 types, and valid classes. |
 | `forge.test.ts` | Full forge results against the real catalogue (odds, variants, values, traits). |
 | `fixtures/*.json` | What the in-game screenshots showed for the Dark Knight Chestplate and the Hachiwari. |
