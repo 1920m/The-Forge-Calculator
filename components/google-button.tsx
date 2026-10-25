@@ -71,7 +71,7 @@ export function GoogleButton({ onToken, disabled }: { onToken: (token: string, n
         });
         gis.renderButton(box.current, {
           type: "standard", theme: "filled_black", size: "large", text: "continue_with", shape: "rectangular",
-          logo_alignment: "center", width: Math.min(400, Math.max(220, Math.floor(box.current.clientWidth))),
+          logo_alignment: "center", width: Math.min(400, Math.max(200, Math.floor(box.current.clientWidth))), // same width as the Discord button
         });
         setState("ready");
       } catch {
