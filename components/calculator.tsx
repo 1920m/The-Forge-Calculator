@@ -11,7 +11,7 @@ import { GameImage } from "./game-image";
 import { Chevron, Lock } from "./icons";
 import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, oreCategory, type OreFilterState } from "./ore-filter";
 
-import { MAX_ORES, MAX_TYPES, addOre, type Entry } from "@/lib/forge-slots";
+import { MAX_ORES, MAX_TYPES, addOre, parseRecipe, type Entry } from "@/lib/forge-slots";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
@@ -22,8 +22,9 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
     const raw = fromUrl ?? window.localStorage.getItem("forge.recipe");
     const kind = (p.get("k") ?? window.localStorage.getItem("forge.kind")) as Kind | null;
     const q = Number(p.get("q") ?? window.localStorage.getItem("forge.quality"));
-    const entries = raw ? raw.split(",").map((s) => { const [id, c] = s.split(":"); return { id, count: Math.max(0, Math.min(MAX_ORES, Math.floor(Number(c)) || 0)) }; }).filter((e) => e.id && e.count > 0).slice(0, MAX_TYPES) : undefined;
-    const cls = p.get("c"), id = p.get("v");
+    const entries = raw ? parseRecipe(raw) : undefined;
+    // Pre-selection from the Builds page: short, plain values only.
+    const cls = p.get("c")?.slice(0, 60) ?? null, id = p.get("v")?.slice(0, 60) ?? null;
     return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined };
   } catch { return {}; }
 }

@@ -20,6 +20,8 @@
   "dependencies": {
     "@fontsource/alegreya": "5.3.0",
     "@fontsource/montserrat": "5.3.0",
+    "@vercel/analytics": "2.0.1",
+    "@vercel/speed-insights": "2.0.0",
     "motion": "12.23.12",
     "next": "16.4.3",
     "react": "19.3.1",
