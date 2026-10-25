@@ -5,6 +5,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Shell } from "@/components/shell";
 import { Header } from "@/components/chrome";
 import { Footer } from "@/components/footer";
+import { AuthProvider } from "@/components/auth";
+import { SavedForgesProvider } from "@/components/saved-forges";
 
 export const metadata: Metadata = {
   title: { default: "Forge Calculator: weapon and armour odds, stats and traits", template: "%s | Forge Calculator" },
@@ -17,12 +19,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
-        <Shell>
-          <a href="#main" className="sr-only">Skip to content</a>
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
-        </Shell>
+        <AuthProvider>
+          <SavedForgesProvider>
+            <Shell>
+              <a href="#main" className="sr-only">Skip to content</a>
+              <Header />
+              <main id="main">{children}</main>
+              <Footer />
+            </Shell>
+          </SavedForgesProvider>
+        </AuthProvider>
         <Analytics />
         <SpeedInsights />
       </body>

@@ -13,7 +13,7 @@ export function Footer() {
               <span className="tile" style={{ width: 44, height: 44, borderWidth: 1, borderColor: "#4a4850" }}><Anvil size={26} /></span>
               <span className="shine" style={{ fontSize: 28 }}>Forge Calculator</span>
             </div>
-            <p style={{ margin: "14px 0 0", color: "#8d8c92", fontSize: 18 }}>Plan every craft before you smelt it.<br />Free. No login. Built for The Forge.</p>
+            <p style={{ margin: "14px 0 0", color: "#8d8c92", fontSize: 18 }}>Plan every craft before you smelt it.<br />Free. Sign in only to save forges. Built for The Forge.</p>
           </div>
           <nav style={{ display: "flex", flexWrap: "wrap", gap: "28px 64px" }} aria-label="Footer">
             <div><div className="footer-h">Calculator</div>
@@ -25,7 +25,7 @@ export function Footer() {
           </nav>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", marginTop: 30, fontSize: 15, color: "#8d8c92" }}>
-          <span>Data as of {DATA_DATE}. Fan-made tool, not affiliated with the game&apos;s developers or Roblox. Game data from the community wiki (CC BY-SA).</span>
+          <span>Data as of {DATA_DATE}. <Link href="/privacy" style={{ textDecoration: "underline" }}>Privacy</Link>. Fan-made tool, not affiliated with the game&apos;s developers or Roblox. Game data from the community wiki (CC BY-SA).</span>
           {SHOW_STATUS_LABELS && <span style={{ border: "1px dashed #4a4850", padding: "2px 12px" }}>Official partner badge: reserved</span>}
         </div>
         {SHOW_STATUS_LABELS && (
