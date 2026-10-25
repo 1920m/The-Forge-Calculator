@@ -8,7 +8,7 @@ const uploaded = new Set<string>(available as string[]);
 export const DATA_DATE = "24 Oct 2026";
 
 /** Public image in the `forge-images` bucket (listed in data/images.json), or null to show the placeholder tile. */
-export function imageUrl(folder: "ores" | "weapons" | "armour", id: string): string | null {
+export function imageUrl(folder: "ores" | "weapons" | "armour" | "pickaxes", id: string): string | null {
   const key = `${folder}/${id}.png`;
   return uploaded.has(key) ? `${SUPABASE_URL}/storage/v1/object/public/forge-images/${key}` : null;
 }

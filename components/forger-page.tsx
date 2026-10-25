@@ -1,16 +1,19 @@
 "use client";
 
-import { memo, startTransition, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
+import { memo, startTransition, useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { forge, qualityLabel, type Catalogue, type CatalogueOre } from "@/lib/engine/forge";
+import { qualityLabel, type Catalogue } from "@/lib/engine/forge";
+import { work } from "@/lib/forge-stats";
+import { SLOT_LABEL, slotFor, type ForgeSlot, type Slot } from "@/lib/loadout";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, rarityColour } from "@/lib/ui";
-import { MAX_NAME, MAX_SAVED, calculatorHref, type SavedForge } from "@/lib/saved-forges";
+import { MAX_NAME, MAX_SAVED, calculatorHref } from "@/lib/saved-forges";
 import { useAuth } from "./auth";
 import { useSavedForges } from "./saved-forges";
 import { Avatar } from "./account-menu";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
+import { DragGhost, LoadoutPanel, SlotPicker, useForgeDrag, useLoadout, type Card } from "./loadout";
 
 type KindFilter = "all" | "weapon" | "armour";
 type Sort = "new" | "old" | "stat" | "name";
@@ -25,7 +28,16 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
   const oreById = useMemo(() => new Map(cat.ores.map((o) => [o.id, o])), [cat]);
 
   // Work each forge out once from the current game data.
-  const cards = useMemo(() => forges.map((f) => ({ f, r: work(cat, oreById, f) })), [forges, cat, oreById]);
+  const cards = useMemo<Card[]>(() => forges.map((f) => ({ f, r: work(cat, oreById, f) })), [forges, cat, oreById]);
+  const byId = useMemo(() => new Map(cards.map((c) => [c.f.id, c])), [cards]);
+  const { loadout, error: loadoutError, set } = useLoadout(byId, !loading);
+  const [picking, setPicking] = useState<Slot | null>(null);
+  const { drag, start } = useForgeDrag(useCallback((c: Card, slot: ForgeSlot) => { void set(slot, c.f.id); }, [set]));
+  const equippedIn = useCallback((id: string) => (["helmet", "chestplate", "leggings", "weapon"] as const).find((s) => loadout[s] === id) ?? null, [loadout]);
+  const toggleEquip = useCallback((c: Card) => {
+    const slot = slotFor(c.f);
+    if (slot) void set(slot, loadout[slot] === c.f.id ? null : c.f.id);
+  }, [set, loadout]);
   const shown = useMemo(() => {
     const list = cards.filter(({ f, r }) => (kind === "all" || f.kind === kind)
       && (!query || f.name.toLowerCase().includes(query) || (r.variantName ?? "").toLowerCase().includes(query) || r.mix.some((m) => m.ore.name.toLowerCase().includes(query))));
@@ -57,10 +69,22 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
   return (
     <div className="page">
       <Reveal col={1}>
+        <div className="forger-who">
+          <Avatar name={name} url={profile?.avatar_url ?? null} size={44} />
+          <h1 className="title">{name}</h1>
+        </div>
+      </Reveal>
+
+      <Reveal col={2}>
+        <LoadoutPanel name={name} loadout={loadout} byId={byId} drag={drag} onOpen={setPicking} onClear={(s) => void set(s, null)} />
+      </Reveal>
+      {loadoutError && <p className="login-error" role="alert">{loadoutError}</p>}
+
+      <Reveal col={3}>
         <section className="gp">
           <div className="tb forger-head">
-            <span className="forger-who"><Avatar name={name} url={profile?.avatar_url ?? null} size={40} /><h1 className="title">{name}</h1></span>
-            <span className="small muted">{loading ? "Loading…" : `${forges.length} of ${MAX_SAVED} forges saved`}</span>
+            <h2>Saved forges</h2>
+            <span className="small muted">{loading ? "Loading…" : `${forges.length} of ${MAX_SAVED} saved`}</span>
           </div>
           <div className="pad forger-tools">
             <div className="forger-kinds" role="group" aria-label="Show">
@@ -101,30 +125,24 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
 
       {shown.length > 0 && (
         <div className="forge-grid">
-          {shown.map(({ f, r }) => <ForgeCard key={f.id} f={f} r={r} cat={cat} />)}
+          {shown.map((c) => <ForgeCard key={c.f.id} card={c} cat={cat} equipped={equippedIn(c.f.id)} onEquip={toggleEquip} onDragStart={start} />)}
         </div>
       )}
+
+      {picking && (
+        <SlotPicker slot={picking} cards={cards} current={loadout[picking]} onClose={() => setPicking(null)}
+          onPick={(id) => { void set(picking, id); setPicking(null); }} />
+      )}
+      <DragGhost drag={drag} />
     </div>
   );
 }
 
-type Worked = ReturnType<typeof work>;
+type CardProps = { card: Card; cat: Catalogue; equipped: ForgeSlot | null; onEquip: (c: Card) => void; onDragStart: (c: Card, e: React.PointerEvent) => void };
 
-/** Stats for a save from today's game data. The item can vanish if the game data changes; the card says so. */
-function work(cat: Catalogue, oreById: Map<string, CatalogueOre>, f: SavedForge) {
-  const mix = f.ores.flatMap((e) => { const ore = oreById.get(e.id); return ore ? [{ ore, count: e.count }] : []; });
-  const r = forge(cat, mix, f.kind, f.world, f.quality / 100);
-  const cls = r.classes.find((c) => c.name === f.class_name);
-  const v = cls?.variants.find((x) => x.id === f.variant_id);
-  return {
-    mix, missingOres: mix.length < f.ores.length,
-    rarity: r.rarity, multiplier: r.multiplier, traits: r.traits.filter((t) => t.strength > 0).map((t) => t.ore.name),
-    variantName: v?.name ?? null, value: v?.value ?? null, dps: v?.dps?.total ?? null, speed: v?.speed ?? null,
-    chance: cls ? (cls.lockable ? "Guaranteed" : `${cls.probability}% class`) : null,
-  };
-}
-
-const ForgeCard = memo(function ForgeCard({ f, r, cat }: { f: SavedForge; r: Worked; cat: Catalogue }) {
+const ForgeCard = memo(function ForgeCard({ card, cat, equipped, onEquip, onDragStart }: CardProps) {
+  const { f, r } = card;
+  const fits = slotFor(f);
   const { setWorld } = useShell();
   const { rename, remove } = useSavedForges();
   const [editing, setEditing] = useState(false);
@@ -173,8 +191,10 @@ const ForgeCard = memo(function ForgeCard({ f, r, cat }: { f: SavedForge; r: Wor
       </div>
 
       <div className="forge-card-top">
-        <div className="tile" style={{ width: 84, height: 84, ["--rc" as string]: rarityColour(r.rarity) }}>
+        <div className={`tile${fits ? " drag-handle" : ""}`} style={{ width: 84, height: 84, ["--rc" as string]: rarityColour(r.rarity) }}
+          onPointerDown={fits ? (e) => onDragStart(card, e) : undefined} title={fits ? `Drag onto the ${SLOT_LABEL[fits]} slot` : undefined}>
           <GameImage src={imageUrl(f.kind === "weapon" ? "weapons" : "armour", f.variant_id)} alt={r.variantName ?? ""} size={32} />
+          {equipped && <span className="equipped-mark" title={`Equipped as ${SLOT_LABEL[equipped]}`}>✓</span>}
         </div>
         <div className="forge-card-id">
           {r.variantName && r.variantName !== f.name && <div style={{ color: "#fff", fontWeight: 700 }}>{r.variantName}</div>}
@@ -215,6 +235,7 @@ const ForgeCard = memo(function ForgeCard({ f, r, cat }: { f: SavedForge; r: Wor
 
       <div className="forge-card-actions">
         <Link className="btn sm gb" href={calculatorHref(f)} onClick={() => setWorld(f.world)}>Open in calculator</Link>
+        {fits && <button className="btn sm" aria-pressed={!!equipped} onClick={() => onEquip(card)} disabled={busy} title={equipped ? "Take it off your loadout" : `Put it in your ${SLOT_LABEL[fits]} slot`}>{equipped ? "Equipped" : "Equip"}</button>}
         {!editing && <button className="btn sm" onClick={() => { setDraft(f.name); setEditing(true); }} disabled={busy}>Rename</button>}
         <button className={`btn sm danger-btn${confirm ? " confirm" : ""}`} onClick={del} disabled={busy} aria-label={confirm ? `Confirm delete ${f.name}` : `Delete ${f.name}`}>
           {confirm ? "Delete?" : "Delete"}
