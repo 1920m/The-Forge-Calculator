@@ -25,6 +25,7 @@ No environment variables are needed. The app reads the public, read-only Supabas
 
 | Rule | Formula | Status |
 | --- | --- | --- |
+| Forge slots | Up to 4 different ore types per craft, any amount of each | Confirmed in game |
 | Multiplier | M = sum(multiplier × count) ÷ total ores | Confirmed in game |
 | Class odds | Look up the total ore count (3 to 55) in the odds table; above 55 use the 55 row | Confirmed in game |
 | Variant odds | (1 ÷ N) ÷ sum(1 ÷ N) inside the class | Confirmed in game |

@@ -10,9 +10,8 @@ import { GameImage } from "./game-image";
 import { Chevron, Lock } from "./icons";
 import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, oreCategory, type OreFilterState } from "./ore-filter";
 
-type Entry = { id: string; count: number };
+import { MAX_ORES, MAX_TYPES, addOre, type Entry } from "@/lib/forge-slots";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
-const MAX_ORES = 99;
 
 function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[] } {
   try {
@@ -21,7 +20,7 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[] } {
     const raw = fromUrl ?? window.localStorage.getItem("forge.recipe");
     const kind = (p.get("k") ?? window.localStorage.getItem("forge.kind")) as Kind | null;
     const q = Number(p.get("q") ?? window.localStorage.getItem("forge.quality"));
-    const entries = raw ? raw.split(",").map((s) => { const [id, c] = s.split(":"); return { id, count: Math.max(0, Math.min(MAX_ORES, Math.floor(Number(c)) || 0)) }; }).filter((e) => e.id && e.count > 0) : undefined;
+    const entries = raw ? raw.split(",").map((s) => { const [id, c] = s.split(":"); return { id, count: Math.max(0, Math.min(MAX_ORES, Math.floor(Number(c)) || 0)) }; }).filter((e) => e.id && e.count > 0).slice(0, MAX_TYPES) : undefined;
     return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries };
   } catch { return {}; }
 }
@@ -86,17 +85,12 @@ export function Calculator({ cat }: { cat: Catalogue }) {
 
   // Stable so the ore tiles (memoised) only re-render when their own count changes.
   // Recalculating re-renders most of the page, so clicks run it as a transition: the browser paints the press first.
-  const add = useCallback((id: string, n = 1) => startTransition(() => setEntries((cur) => {
-    const i = cur.findIndex((e) => e.id === id);
-    if (i < 0) return n > 0 ? [...cur, { id, count: n }] : cur;
-    const next = [...cur];
-    const count = Math.max(0, Math.min(MAX_ORES, cur[i].count + n));
-    if (count === 0) next.splice(i, 1); else next[i] = { id, count };
-    return next;
-  })), []);
+  const add = useCallback((id: string, n = 1) => startTransition(() => setEntries((cur) => addOre(cur, id, n))), []);
   const setCount = (id: string, count: number) => setEntries((cur) => cur.flatMap((e) => (e.id !== id ? [e] : count > 0 ? [{ id, count: Math.min(MAX_ORES, count) }] : [])));
 
   const countOf = (id: string) => entries.find((e) => e.id === id)?.count ?? 0;
+  const full = entries.length >= MAX_TYPES;
+  const removeAll = useCallback((id: string) => startTransition(() => setEntries((cur) => cur.filter((e) => e.id !== id))), []);
   const statName = kind === "armour" ? "Defense" : "Damage";
   const unit = kind === "armour" ? "DEF" : "DMG";
   const fullValue = selected?.v.raw != null && quality > 0 ? selected.v.raw / (quality / 100) : null;
@@ -146,17 +140,14 @@ export function Calculator({ cat }: { cat: Catalogue }) {
         <div className="calc-mid">
           <Reveal col={2}>
             <section className="gp" style={{ padding: "20px 22px 22px", textAlign: "center" }} aria-label="Forge">
-              {mix.length === 0 ? (
-                <p className="muted" style={{ margin: "8px 0" }}>Your forge is empty. Pick ores from <b>Select Ores</b>.</p>
-              ) : (
-                <div className="slots">
+              <div className="slots">
                   {mix.map(({ ore, count }) => (
                     <div key={ore.id} className="slot">
-                      <div className="tile" style={{ width: 92, height: 92, ["--rc" as string]: rarityColour(ore.rarity) }}>
+                      <HoldToRemove label={ore.name} onRemove={() => removeAll(ore.id)} colour={rarityColour(ore.rarity)}>
                         <GameImage src={imageUrl("ores", ore.id)} alt="" />
                         <span className="t-top">{ore.name}</span>
                         <span className="t-br">x{count}</span>
-                      </div>
+                      </HoldToRemove>
                       <div className="slot-ctl">
                         <button className="btn sm" onClick={() => add(ore.id, -1)} aria-label={`Remove one ${ore.name}`}>−</button>
                         <input className="input count" type="number" min={0} max={MAX_ORES} value={count} aria-label={`${ore.name} count`} onChange={(e) => setCount(ore.id, Math.floor(Number(e.target.value)) || 0)} />
@@ -164,8 +155,15 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       </div>
                     </div>
                   ))}
+                  {Array.from({ length: MAX_TYPES - mix.length }, (_, i) => (
+                    <div key={`empty-${i}`} className="slot">
+                      <div className="tile slot-empty" style={{ width: 92, height: 92 }}><span className="small faint">Empty</span></div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              <p className="small muted" style={{ margin: "10px 0 0" }}>
+                {mix.length === 0 ? <>Your forge is empty. Pick up to {MAX_TYPES} ore types from <b>Select Ores</b>.</> : full ? <>The forge is full: {MAX_TYPES} ore types. Press and hold an ore to remove it.</> : <>Up to {MAX_TYPES} ore types. Press and hold an ore to remove it.</>}
+              </p>
               <div style={{ marginTop: 16, fontSize: 20, fontWeight: 700, color: "#fff" }}>Multiplier: {result.multiplier == null ? "–" : `${result.multiplier.toFixed(2)}x`}</div>
               <div className="muted" style={{ fontSize: 15 }}>
                 {total} ore{total === 1 ? "" : "s"}{result.primary && <>. Primary ore: <span style={{ color: rarityColour(result.primary.rarity) }}>{result.primary.name}</span> (sets the look and rarity)</>}
@@ -235,7 +233,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <OreFilter ores={scopeOres} value={oreFilter} onChange={setOreFilter} />
               </div>
               <div className="ore-grid">
-                {visibleOres.map((o) => <OreButton key={o.id} ore={o} count={countOf(o.id)} onAdd={add} />)}
+                {visibleOres.map((o) => { const c = countOf(o.id); return <OreButton key={o.id} ore={o} count={c} locked={full && c === 0} onAdd={add} />; })}
               </div>
               {visibleOres.length === 0 && <p className="muted" style={{ margin: "4px 0 0" }}>No ores match these filters. Try widening the multiplier range or press Reset.</p>}
               <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one. <span style={{ color: "#e8c27a" }}>Sword</span> = weapon trait, <span style={{ color: "#8fd0f2" }}>shield</span> = armour trait.</p>
@@ -301,10 +299,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   );
 }
 
-const OreButton = memo(function OreButton({ ore, count, onAdd }: { ore: CatalogueOre; count: number; onAdd: (id: string, n?: number) => void }) {
+const OreButton = memo(function OreButton({ ore, count, locked, onAdd }: { ore: CatalogueOre; count: number; locked: boolean; onAdd: (id: string, n?: number) => void }) {
   return (
-    <button className="tile" style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={() => onAdd(ore.id)}
-      onContextMenu={(e) => { e.preventDefault(); onAdd(ore.id, -1); }} aria-label={`Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
+    <button className={`tile${locked ? " locked" : ""}`} style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={() => onAdd(ore.id)} aria-disabled={locked}
+      onContextMenu={(e) => { e.preventDefault(); onAdd(ore.id, -1); }} aria-label={locked ? `${ore.name}: the forge already has ${MAX_TYPES} ore types` : `Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
       <GameImage src={imageUrl("ores", ore.id)} alt="" size={24} />
       <span className="t-top" style={{ right: count ? 26 : 2 }}>{ore.name}</span>
       <span className="t-br">{ore.multiplier}x</span>
@@ -313,6 +311,37 @@ const OreButton = memo(function OreButton({ ore, count, onAdd }: { ore: Catalogu
     </button>
   );
 });
+
+/** Forge slot that removes the whole ore after a press-and-hold: a ring fills round a bin icon, red fading to grey. */
+function HoldToRemove({ label, colour, onRemove, children }: { label: string; colour: string; onRemove: () => void; children: React.ReactNode }) {
+  const [holding, setHolding] = useState(false);
+  const timer = useRef<number | null>(null);
+  const HOLD_MS = 700;
+  const stop = () => { if (timer.current) window.clearTimeout(timer.current); timer.current = null; setHolding(false); };
+  const start = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    setHolding(true);
+    timer.current = window.setTimeout(() => { timer.current = null; setHolding(false); onRemove(); }, HOLD_MS);
+  };
+  useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
+  return (
+    <button className={`tile hold${holding ? " holding" : ""}`} style={{ width: 92, height: 92, ["--rc" as string]: colour, ["--hold" as string]: `${HOLD_MS}ms` }}
+      onPointerDown={start} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={(e) => e.preventDefault()}
+      onKeyDown={(e) => { if (e.key === "Delete" || e.key === "Backspace") onRemove(); }}
+      aria-label={`${label}. Press and hold, or press Delete, to remove all ${label}`}>
+      {children}
+      <span className="hold-ring" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="62" height="62">
+          <circle cx="24" cy="24" r="20" className="hold-track" />
+          <circle cx="24" cy="24" r="20" className="hold-fill" pathLength={100} />
+          <g className="hold-bin" transform="translate(14 13) scale(0.85)" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 10v8M14 10v8" />
+          </g>
+        </svg>
+      </span>
+    </button>
+  );
+}
 
 function EnhRow({ l, max, unit, delay = 0, hidden = false }: { l: { level: number; multiplier: number; stat: number }; max: number; unit: string; delay?: number; hidden?: boolean }) {
   return (
