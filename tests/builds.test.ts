@@ -40,3 +40,20 @@ describe("recommended builds", () => {
     expect(r.multiplier).toBeCloseTo((12 * 6.3 + 10 * 5 + 8 * 5.5 + 10 * 4) / 40, 5);
   });
 });
+
+describe("computed armour builds", () => {
+  it("use exactly the Heavy lock counts, so the class is guaranteed", () => {
+    const lock = { "Heavy Chestplate": 52, "Heavy Helmet": 35, "Heavy Leggings": 42 } as Record<string, number>;
+    for (const a of BUILDS) for (const row of a.armour.rows) row.items.forEach((it, i) => {
+      expect(it!.reduce((n, [, c]) => n + c, 0), `${a.name} ${row.stage} ${a.armour.columns[i]}`).toBe(lock[a.armour.columns[i]]);
+    });
+  });
+
+  it("are guaranteed in the calculator at that count", () => {
+    for (const a of BUILDS) for (const row of a.armour.rows) row.items.forEach((it, i) => {
+      const mix = it!.map(([n, count]) => ({ ore: byName.get(n.toLowerCase())!, count }));
+      const c = forge(cat, mix, "armour", a.world, 1).classes.find((x) => x.name === a.armour.columns[i]);
+      expect(c?.lockable, `${a.name} ${row.stage} ${a.armour.columns[i]}`).toBe(true);
+    });
+  });
+});

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { classNames, classVariants, poolIncomplete, type Catalogue } from "@/lib/engine/forge";
 import { stat, type Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
-import { fmt, pct } from "@/lib/ui";
+import { SHOW_STATUS_LABELS, fmt, pct } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 
@@ -60,7 +60,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
                     <tr key={v.id}>
                       <td><span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                         <span className="tile" style={{ width: 34, height: 34, borderWidth: 1 }}><GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={16} /></span>
-                        {v.name}</span> {!v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
+                        {v.name}</span> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
                       {kind === "weapon" ? <><td>{v.base}</td><td>{v.speed}s</td><td>{v.range}</td></> : <td>{v.base}</td>}
                       <td className="muted">1/{v.weight}</td>
                       <td>{pct(v.chance)}</td>

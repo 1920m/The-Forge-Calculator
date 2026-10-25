@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Reveal } from "@/components/shell";
+import { SHOW_STATUS_LABELS } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "How it works", description: "The formulas behind The Forge: multiplier, class and variant odds, traits, defence, damage, quality and enhancement." };
 
@@ -25,13 +26,13 @@ export default function Page() {
         {cards.map((c, i) => (
           <Reveal key={c.title} col={Math.min(4, 1 + Math.floor(i / 2))} style={{ flex: "1 1 400px", minWidth: 0, display: "flex" }}>
             <article className="gp" id={c.id} style={{ flex: 1 }}>
-              <div className="tb"><h2 style={{ display: "flex", gap: 12, alignItems: "baseline" }}><span style={{ color: "var(--acc)" }}>{i + 1}</span>{c.title}</h2><span className={`badge ${c.badge}`}>{c.badge === "ok" ? "Confirmed in game" : c.badge === "der" ? "Derived" : "Unverified"}</span></div>
+              <div className="tb"><h2 style={{ display: "flex", gap: 12, alignItems: "baseline" }}><span style={{ color: "var(--acc)" }}>{i + 1}</span>{c.title}</h2>{SHOW_STATUS_LABELS && <span className={`badge ${c.badge}`}>{c.badge === "ok" ? "Confirmed in game" : c.badge === "der" ? "Derived" : "Unverified"}</span>}</div>
               <div className="pad" style={{ color: "#cfc7b2" }}>{c.body}</div>
             </article>
           </Reveal>
         ))}
       </div>
-      <p className="note">Confirmed rules match crafts checked in the game. Derived rules were measured with controlled ore mixes. Quality label names and ranges are still unverified.</p>
+      {SHOW_STATUS_LABELS && <p className="note">Confirmed rules match crafts checked in the game. Derived rules were measured with controlled ore mixes. Quality label names and ranges are still unverified.</p>}
     </div>
   );
 }

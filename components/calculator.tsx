@@ -5,7 +5,7 @@ import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type 
 import type { Kind } from "@/lib/engine";
 import type { DpsResult } from "@/lib/engine/dps";
 import { imageUrl } from "@/lib/data/supabase";
-import { fmt, pct, rarityColour } from "@/lib/ui";
+import { SHOW_STATUS_LABELS, fmt, pct, rarityColour } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { Chevron, Lock } from "./icons";
@@ -14,7 +14,8 @@ import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, oreCategory, type 
 import { MAX_ORES, MAX_TYPES, addOre, type Entry } from "@/lib/forge-slots";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
-function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[] } {
+/** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string } } {
   try {
     const p = new URLSearchParams(window.location.search);
     const fromUrl = p.get("o");
@@ -22,7 +23,8 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[] } {
     const kind = (p.get("k") ?? window.localStorage.getItem("forge.kind")) as Kind | null;
     const q = Number(p.get("q") ?? window.localStorage.getItem("forge.quality"));
     const entries = raw ? raw.split(",").map((s) => { const [id, c] = s.split(":"); return { id, count: Math.max(0, Math.min(MAX_ORES, Math.floor(Number(c)) || 0)) }; }).filter((e) => e.id && e.count > 0).slice(0, MAX_TYPES) : undefined;
-    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries };
+    const cls = p.get("c"), id = p.get("v");
+    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined };
   } catch { return {}; }
 }
 
@@ -46,6 +48,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.kind) setKind(r.kind);
       if (r.quality) setQuality(r.quality);
       if (r.entries) setEntries(r.entries.filter((e) => oreById.has(e.id)));
+      if (r.pick) setPick(r.pick);
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
@@ -60,6 +63,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (o) url.searchParams.set("o", o); else url.searchParams.delete("o");
       url.searchParams.set("k", kind);
       url.searchParams.set("q", String(quality));
+      url.searchParams.delete("c"); url.searchParams.delete("v"); // one-time pre-selection
       window.history.replaceState(null, "", url);
       window.localStorage.setItem("forge.recipe", o);
       window.localStorage.setItem("forge.kind", kind);
@@ -185,7 +189,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
             <section className="gp result" aria-live="polite" aria-label="Result">
               {selected ? (
                 <>
-                  <h2 className="result-name">{selected.v.name}{!selected.v.verified && <> <span className="badge unv">Unverified</span></>}</h2>
+                  <h2 className="result-name">{selected.v.name}{SHOW_STATUS_LABELS && !selected.v.verified && <> <span className="badge unv">Unverified</span></>}</h2>
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     <div className="tile" style={{ width: 110, height: 110, ["--rc" as string]: rarityColour(result.rarity) }}>
                       <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", selected.v.id)} alt={selected.v.name} size={40} />
@@ -215,7 +219,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <span className="sr-only">Quality percent</span>
                 <input type="range" min={1} max={100} value={quality} onChange={(e) => setQuality(Number(e.target.value))} />
               </label>
-              <div className="note" style={{ textAlign: "center", marginTop: 4 }}>Quality label ranges are unverified.</div>
+              {SHOW_STATUS_LABELS && <div className="note" style={{ textAlign: "center", marginTop: 4 }}>Quality label ranges are unverified.</div>}
             </section>
           </Reveal>
         </div>
@@ -262,7 +266,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       <tbody>
                         {selected.cls.variants.map((v) => (
                           <tr key={v.id} className={v.id === selected.v.id ? "sel" : ""} onClick={() => startTransition(() => setPick({ cls: selected.cls.name, id: v.id }))} style={{ cursor: "pointer" }}>
-                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {!v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
+                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
                             <td>{pct(v.chance)}</td><td>{pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
                           </tr>
                         ))}
@@ -359,7 +363,7 @@ function EnhRow({ l, max, unit, delay = 0, hidden = false }: { l: { level: numbe
 function TraitsPanel({ traits, kind, dense = false }: { traits: ReturnType<typeof forge>["traits"]; kind: Kind; dense?: boolean }) {
   return (
     <section className="gp">
-      <div className="tb"><h2>Traits that transfer</h2><span className="badge ok">Confirmed in game</span></div>
+      <div className="tb"><h2>Traits that transfer</h2>{SHOW_STATUS_LABELS && <span className="badge ok">Confirmed in game</span>}</div>
       <div className="pad">
         <p className="small muted" style={{ margin: "0 0 12px" }}>A trait needs a 10% share of the craft and reaches full strength at 30%. Chances, damage and stat amounts below are scaled to your share, as in game. Durations and cooldowns are shown as listed.</p>
         {traits.length === 0 ? (

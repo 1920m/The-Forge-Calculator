@@ -36,14 +36,19 @@ addOres(between("### Ores\n", "### World 3 ores"), [1, 2]);
 addOres(between("### World 3 ores", "### World 4 ores"), [3]);
 addOres(between("### World 4 ores", "### Ore traits"), [4]);
 
-// Wiki-only ores (forgewiki.org All Ores, 23 Oct 2026). World not confirmed in game.
+// Wiki-only ores (forgewiki.org Module:Ore/Data, rechecked 25 Oct 2026): [name, rarity, multiplier, worlds, drop 1/N, source].
+const W12 = [1, 2];
 const wikiOnly = [
-  ["Grass", "Common", 0.1], ["Boneite", "Rare", 1.2], ["Quartz", "Rare", 1.5], ["Volcanic Rock Ore", "Rare", 1.55],
-  ["Amethyst", "Rare", 1.65], ["Topaz", "Rare", 1.75], ["Slimite", "Epic", 2.25], ["Sapphire", "Rare", 2.25],
-  ["Dark Boneite", "Rare", 2.25], ["Cuprite", "Epic", 2.43], ["Orange Crystal Ore", "Epic", 3], ["Magenta Crystal Ore", "Epic", 3.1],
-  ["Green Crystal Ore", "Epic", 3.2], ["Crimson Crystal Ore", "Epic", 3.3], ["Blue Crystal Ore", "Epic", 3.4], ["Zephyte", "Legendary", 18.5],
+  ["Grass", "Common", 0.1, [3], 23, "Quest"], ["Boneite", "Rare", 1.2, W12, 222, "Skeleton drops"], ["Quartz", "Rare", 1.5, W12, 90, null],
+  ["Volcanic Rock Ore", "Rare", 1.55, W12, 55, null], ["Amethyst", "Rare", 1.65, W12, 115, null], ["Topaz", "Rare", 1.75, W12, 143, null],
+  ["Slimite", "Epic", 2.25, W12, 247, "Slime drops"], ["Sapphire", "Rare", 2.25, W12, 247, null], ["Dark Boneite", "Rare", 2.25, W12, 555, "Elite enemy drops"],
+  ["Cuprite", "Epic", 2.43, W12, 303, null], ["Orange Crystal Ore", "Epic", 3, W12, 255, "Goblin Cave"], ["Magenta Crystal Ore", "Epic", 3.1, W12, 255, "Goblin Cave"],
+  ["Green Crystal Ore", "Epic", 3.2, W12, 255, "Goblin Cave"], ["Crimson Crystal Ore", "Epic", 3.3, W12, 255, "Goblin Cave"], ["Blue Crystal Ore", "Epic", 3.4, W12, 255, "Goblin Cave"],
+  ["Zephyte", "Legendary", 18.5, [4], 15, "Tower of Hell"],
 ];
-for (const [name, rarity, multiplier] of wikiOnly) if (!ores.has(name)) ores.set(name, { id: slug(name), name, rarity, multiplier, worlds: [1, 2], drop: null, source: null, traits: [], verified: false });
+for (const [name, rarity, multiplier, worlds, drop, source] of wikiOnly) if (!ores.has(name)) ores.set(name, { id: slug(name), name, rarity, multiplier, worlds, drop, source, traits: [], verified: false });
+// Goblin Cave crystals: the drop rates were missing from the PRD table.
+for (const [name, drop] of [["Rainbow Crystal", 5000], ["Arcane Crystal", 100000]]) { const o = ores.get(name); if (o && o.drop == null) { o.drop = drop; o.source = "Goblin Cave"; } }
 
 // Traits: "Weapon: x. Armour: y. Both: z" segments, otherwise the whole text applies to the listed kinds.
 for (const r of tablesIn(between("### Ore traits", "## Measured mechanics"))[0].rows) {

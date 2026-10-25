@@ -7,6 +7,7 @@ import type { Kind, World } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, rarityColour } from "@/lib/ui";
 import { BUILDS, BUILD_SOURCE, type BuildArea, type Recipe } from "@/data/builds";
+import { armourScore } from "@/lib/engine/armour";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 
@@ -48,7 +49,7 @@ export function BuildsPage({ cat }: { cat: Catalogue }) {
       ))}
 
       <p className="note" style={{ margin: 0 }}>
-        Recipes from <a href={BUILD_SOURCE.url} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>{BUILD_SOURCE.title}</a> (edited {BUILD_SOURCE.edited}, CC BY-SA 4.0). They are community advice, not official, and newer ores may beat them. Stats and DPS are at 100% quality with no enhancement; DPS counts the traits the mix transfers (crits, lethality, attack speed, burns and other procs).
+        Armour mixes are worked out by this calculator: for each world and stage it tries every mix of up to 4 ores you can realistically get by then (ores from earlier worlds included) and keeps the one with the most effective health, from defence, Vitality, damage-reduction shields and dodge. They use the ore count that lets you lock the Heavy class, so the piece is guaranteed. Weapon recipes are from <a href={BUILD_SOURCE.url} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>{BUILD_SOURCE.title}</a> (edited {BUILD_SOURCE.edited}, CC BY-SA 4.0), community advice that newer ores may beat. Stats and DPS are at 100% quality with no enhancement; DPS counts the traits the mix transfers (crits, lethality, attack speed, burns and other procs).
       </p>
     </div>
   );
@@ -88,8 +89,11 @@ function RecipeCard({ recipe, cls, kind, world, cat, byName }: { recipe: Recipe;
   const c = r.classes.find((x) => x.name === cls);
   const values = (c?.variants ?? []).map((v) => v.value).filter((v): v is number => v != null);
   const dps = (c?.variants ?? []).flatMap((v) => (v.dps ? [v.dps.total] : []));
+  // The calculator opens on this class and variant: Dark Knight's Gauntlets for gauntlets, otherwise the most likely one.
+  const variant = c?.variants.find((v) => cls === "Gauntlets" && v.id === "dark-knights-gauntlets")
+    ?? [...(c?.variants ?? [])].sort((a, b) => b.chance - a.chance)[0];
   const unit = kind === "weapon" ? "DMG" : "DEF";
-  const href = `/?o=${mix.map((m) => `${m.ore.id}:${m.count}`).join(",")}&k=${kind}&world=${at}`;
+  const href = `/?o=${mix.map((m) => `${m.ore.id}:${m.count}`).join(",")}&k=${kind}&world=${at}${variant ? `&c=${encodeURIComponent(cls)}&v=${variant.id}` : ""}`;
   return (
     <article className="build-card">
       <div className="build-card-h">
@@ -109,9 +113,10 @@ function RecipeCard({ recipe, cls, kind, world, cat, byName }: { recipe: Recipe;
       </div>
       <div className="build-stats">
         <div className="kv"><span>Multiplier</span><span className="gold" style={{ fontWeight: 700 }}>{r.multiplier == null ? "–" : `${fmt(r.multiplier)}x`}</span></div>
-        <div className="kv"><span>Class chance</span><span className="strong" style={{ fontWeight: 700 }}>{c ? `${c.probability}%` : "–"}</span></div>
+        <div className="kv"><span>Class chance</span><span className="strong" style={{ fontWeight: 700 }}>{!c ? "–" : c.lockable ? <>Guaranteed <span className="muted small" style={{ fontWeight: 400 }}>(lock from {c.lockAt} ores)</span></> : `${c.probability}%`}</span></div>
         <div className="kv"><span>{unit}</span><span className="strong">{range(values)}</span></div>
         {kind === "weapon" && <div className="kv"><span>DPS</span><span className="strong">{range(dps)}</span></div>}
+        {kind === "armour" && <ArmourLine mix={mix} />}
         <div className="kv"><span>Traits</span><span className="muted">{r.traits.length ? r.traits.map((t) => t.ore.name).join(", ") : "None"}</span></div>
       </div>
       <Link className="btn sm build-open" href={href} onClick={() => { if (at !== world) setWorld(at); }}>Open in calculator</Link>
@@ -124,3 +129,14 @@ const range = (v: number[]) => {
   const lo = Math.min(...v), hi = Math.max(...v);
   return lo === hi ? fmt(lo) : `${fmt(lo)}–${fmt(hi)}`;
 };
+
+/** Why an armour mix scores well: the survivability its traits add on top of the multiplier. */
+function ArmourLine({ mix }: { mix: { ore: CatalogueOre; count: number }[] }) {
+  const a = armourScore(mix);
+  const bits = [
+    a.vitality !== 0 && `${a.vitality > 0 ? "+" : ""}${fmt(a.vitality * 100, 1)}% Vitality`,
+    a.shieldChance > 0 && `${fmt(a.shieldChance * 100, 0)}% chance to cut ${fmt(a.shieldCut * 100, 0)}%`,
+    a.dodge > 0 && `${fmt(a.dodge * 100, 0)}% dodge`,
+  ].filter(Boolean);
+  return <div className="kv"><span>Survival</span><span className="muted">{bits.length ? bits.join(" · ") : "Defence only"}</span></div>;
+}
