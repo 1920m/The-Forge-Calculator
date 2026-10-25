@@ -42,7 +42,7 @@ This site takes the guesswork out. Put in the ores you are thinking of using and
 <td width="46%" valign="top"><img src="docs/readme/result-dps.png" alt="Result card with damage, DPS and chance"></td>
 <td valign="top">
 
-### <img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/weapons/dragon-slayer.png" width="26" alt=""> The forge, exactly like the game
+<h3><img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/weapons/dragon-slayer.png" width="26" alt=""> The forge, exactly like the game</h3>
 
 - **Up to 4 ore types**, any amount of each, just like the in-game forge. Press and hold an ore to remove all of it at once.
 - **Forge chances** for every class from 3 to 55 ores, with the ore count where you can lock each class.
@@ -50,7 +50,7 @@ This site takes the guesswork out. Put in the ores you are thinking of using and
 - **Damage or defence** at any craft quality (25% to 100%), plus a table for every enhancement level.
 - **Rarity and primary ore**, which set how the item looks.
 
-### <img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/kyubite.png" width="26" alt=""> DPS that counts your traits
+<h3><img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/kyubite.png" width="26" alt=""> DPS that counts your traits</h3>
 
 Every weapon shows **damage per second**, and it counts what the ores add: crit chance and crit damage, lethality, attack speed, explosions, burn, poison, smite, Galaxite black holes and lightning. The card lists what each one adds, so you can see why one mix beats another.
 
@@ -59,11 +59,11 @@ Every weapon shows **damage per second**, and it counts what the ores add: crit 
 <tr>
 <td valign="top">
 
-### <img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/galaxite.png" width="26" alt=""> Traits at their real strength
+<h3><img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/galaxite.png" width="26" alt=""> Traits at their real strength</h3>
 
 A trait only carries over when its ore is at least **10%** of the craft, and it only reaches full strength at **30%**. The calculator scales every number in the trait to your mix, so a Sun Stone at a 20% share shows its real 19.3% burn, not the 35% printed on the ore.
 
-### <img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/kitsunite.png" width="26" alt=""> A quick ore picker
+<h3><img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/kitsunite.png" width="26" alt=""> A quick ore picker</h3>
 
 - Shows the ores of the world you are in, or all 149.
 - Search by name, sort by **highest or lowest multiplier**, or keep only ores that are **best for armour** or **best for weapons**.
@@ -75,7 +75,7 @@ A trait only carries over when its ore is at least **10%** of the craft, and it 
 </tr>
 </table>
 
-### <img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/aether-lotus.png" width="26" alt=""> Builds: what to craft in each world
+<h3><img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/aether-lotus.png" width="26" alt=""> Builds: what to craft in each world</h3>
 
 The **Builds** page recommends a weapon and a full set of Heavy armour for every world and stage of the game, from early game to the Tower of Hell.
 
@@ -90,7 +90,7 @@ The **Builds** page recommends a weapon and a full set of Heavy armour for every
   <img src="docs/readme/builds-weapons.png" alt="Crimson Sakura end-game weapon builds with DPS" width="88%">
 </p>
 
-### <img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/sun-stone.png" width="26" alt=""> One site, three worlds
+<h3><img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/sun-stone.png" width="26" alt=""> One site, three worlds</h3>
 
 Pick your world at the top and the whole site follows: the ores, the weapon classes (World 1–2 has Gauntlets, Katana and Greatsword; World 3 has Mace, Axe and Spear; World 4 has Mace, Katana and Spear), the variants, the Funguy shop blueprints and the World 4 Halloween weapons. Each world has its own look, too.
 
@@ -98,7 +98,7 @@ Pick your world at the top and the whole site follows: the ores, the weapon clas
   <img src="docs/readme/worlds.png" alt="The three world themes: embers and ash, snowfall, sakura" width="100%">
 </p>
 
-### <img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/heavenly-orb.png" width="26" alt=""> And more
+<h3><img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/heavenly-orb.png" width="26" alt=""> And more</h3>
 
 - **Share any craft.** The ores, item type, quality and world are saved in the address, so a link opens the exact same forge. Your last craft is remembered too.
 - **Ores, Weapons and Armour pages** list every item with its world, unlock count, variants, stats and traits.
