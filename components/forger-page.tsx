@@ -222,7 +222,7 @@ const ForgeCard = memo(function ForgeCard({ card, cat, equipped, onEquip, onDrag
           <>
             <div className="kv"><span>{unit}</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(r.value ?? 0)}</span></div>
             {f.kind === "weapon" && r.dps != null && <div className="kv"><span>DPS</span><span className="strong">{fmt(r.dps)}</span></div>}
-            {f.kind === "weapon" && r.speed != null && <div className="kv"><span>ATK Speed</span><span className="muted">{r.speed}s</span></div>}
+            {f.kind === "weapon" && r.speed != null && <div className="kv"><span>ATK Speed</span><span className="muted">{r.speed}s per swing</span></div>}
             <div className="kv"><span>Quality</span><span className="gold">{qualityLabel(cat, f.quality)} ({f.quality}%)</span></div>
             <div className="kv"><span>Multiplier</span><span className="muted">{r.multiplier == null ? "–" : `${fmt(r.multiplier)}x`}</span></div>
             <div className="kv"><span>Class</span><span className="muted">{r.chance ?? "–"}</span></div>
