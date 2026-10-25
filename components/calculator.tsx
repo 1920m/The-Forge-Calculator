@@ -14,7 +14,8 @@ import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, oreCategory, type 
 import { MAX_ORES, MAX_TYPES, addOre, type Entry } from "@/lib/forge-slots";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
-function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[] } {
+/** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string } } {
   try {
     const p = new URLSearchParams(window.location.search);
     const fromUrl = p.get("o");
@@ -22,7 +23,8 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[] } {
     const kind = (p.get("k") ?? window.localStorage.getItem("forge.kind")) as Kind | null;
     const q = Number(p.get("q") ?? window.localStorage.getItem("forge.quality"));
     const entries = raw ? raw.split(",").map((s) => { const [id, c] = s.split(":"); return { id, count: Math.max(0, Math.min(MAX_ORES, Math.floor(Number(c)) || 0)) }; }).filter((e) => e.id && e.count > 0).slice(0, MAX_TYPES) : undefined;
-    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries };
+    const cls = p.get("c"), id = p.get("v");
+    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined };
   } catch { return {}; }
 }
 
@@ -46,6 +48,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.kind) setKind(r.kind);
       if (r.quality) setQuality(r.quality);
       if (r.entries) setEntries(r.entries.filter((e) => oreById.has(e.id)));
+      if (r.pick) setPick(r.pick);
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
@@ -60,6 +63,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (o) url.searchParams.set("o", o); else url.searchParams.delete("o");
       url.searchParams.set("k", kind);
       url.searchParams.set("q", String(quality));
+      url.searchParams.delete("c"); url.searchParams.delete("v"); // one-time pre-selection
       window.history.replaceState(null, "", url);
       window.localStorage.setItem("forge.recipe", o);
       window.localStorage.setItem("forge.kind", kind);
