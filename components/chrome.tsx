@@ -10,6 +10,7 @@ const NAV = [
   ["/ores", "Ores"],
   ["/weapons", "Weapons"],
   ["/armour", "Armour"],
+  ["/builds", "Builds"],
   ["/how-it-works", "How it works"],
 ] as const;
 

@@ -8,6 +8,7 @@
 | `page.tsx` | The calculator (home page). |
 | `ores/page.tsx` | Ore browser with search, world filter and trait details. |
 | `weapons/page.tsx`, `armour/page.tsx` | Class lists, lock thresholds and variant stats. |
+| `builds/page.tsx` | Recommended ore mixes per world and stage. |
 | `how-it-works/page.tsx` | The formulas explained, with the trait-strength chart. |
 | `not-found.tsx` | 404 page. |
 | `icon.svg` | Browser tab icon. |
@@ -21,6 +22,7 @@
 | `calculator.tsx` | The calculator: Forge Chances, forge slots, result card, quality, ore picker, variants, collapsible Enhance Equipment, traits. |
 | `ores-page.tsx` | Ore browser. |
 | `items-page.tsx` | Shared weapons/armour page. |
+| `builds-page.tsx` | Builds page: weapon/armour toggle, one section per area, recipe cards worked out with the forge engine and linked to the calculator. |
 | `game-image.tsx` | Shows an image from Supabase Storage, or the striped placeholder tile. |
 | `icons.tsx` | Anvil, lock and chevron icons. |
 
@@ -33,6 +35,7 @@
 | `lib/data/supabase.ts` | Public Supabase URL and key, and image URLs. |
 | `lib/ui.ts` | Rarity colours and number formatting. |
 | `data/catalogue.json` | Generated game data (do not edit by hand; edit `docs/PRD.md` and run `npm run data:build`). |
+| `data/builds.ts` | Recommended recipes by area, stage and item, from the wiki's Guide page. |
 | `data/images.json` | Which images exist in the `forge-images` bucket. |
 | `scripts/build-catalogue.mjs` | Builds `data/catalogue.json` from the PRD, including the world assignments. |
 
@@ -47,6 +50,7 @@
 | File | Purpose |
 | --- | --- |
 | `engine.test.ts` | Golden in-game crafts and edge cases for the pure maths. |
+| `builds.test.ts` | Every recommended recipe uses real ores from its world, at most 4 types, and valid classes. |
 | `forge.test.ts` | Full forge results against the real catalogue (odds, variants, values, traits). |
 | `fixtures/*.json` | What the in-game screenshots showed for the Dark Knight Chestplate and the Hachiwari. |
 

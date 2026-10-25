@@ -260,3 +260,17 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .tile.holding .hold-bin { animation: hold-fade var(--hold) linear forwards; }
 @keyframes hold-fill { to { stroke-dashoffset: 0; } }
 @keyframes hold-fade { from { stroke: rgba(224, 72, 72, .85); } to { stroke: rgba(170, 170, 170, .75); } }
+/* Builds page */
+.builds { display: flex; flex-direction: column; gap: 18px; }
+.build-stage-h { margin: 0 0 8px; font-family: var(--sans); font-size: 17px; font-weight: 700; color: var(--acc); }
+.build-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.build-card { background: var(--row); border: 1px solid var(--bd); display: flex; flex-direction: column; transition: border-color .2s; }
+.build-card:hover { border-color: var(--bd2); }
+.build-card-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--bd); }
+.build-ores { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px 6px; }
+.build-ore { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 58px; }
+.build-ore-name { font-size: 11px; line-height: 1.15; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+.build-stats { padding: 0 2px 8px; font-size: 14px; }
+.build-stats .kv { padding: 4px 10px; }
+.build-stats .kv > :first-child { flex-basis: 108px; }
+.build-open { margin: auto 12px 12px; display: inline-flex; align-items: center; justify-content: center; }
