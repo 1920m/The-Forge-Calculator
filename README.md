@@ -159,8 +159,8 @@ See [FILES.md](FILES.md) for what every file does, and [SECURITY.md](SECURITY.md
 | World pools | Slots 3–5 are Gauntlets/Katana/Greatsword in World 1–2, Mace/Axe/Spear in World 3, Mace/Katana/Spear in World 4; each world has its own variants, plus Funguy shop blueprints and the World 4 Halloween weapons |
 | Primary ore | Largest count; ties go to the higher multiplier. Sets the look and rarity |
 | Traits | Need a 10% share; strength = 0.10 + 4.5 × (share − 0.10), full at 30%. Chances, damage and stat amounts all scale |
-| Defence | round(2 × health % × M × quality) |
-| Damage | 2 × base damage × M × quality, rounded to 2 decimals |
+| Defence | round(health % × M × (1 + quality)) |
+| Damage | base damage × M × (1 + quality), rounded to 2 decimals |
 | Enhancement | stat × (1 + 0.05 × level), +0 to +10 |
 | DPS | damage × (1 + lethality) × crit blend × hits per second, plus explosion, burn, poison, smite, black hole and lightning. Hits per second = (1 + attack speed) ÷ swing time; crit blend = chance × (1.45 + crit damage) + (1 − chance) |
 | Armour score | multiplier × (1 + Vitality) ÷ (1 − shield chance × cut) ÷ (1 − dodge), using the best shield and the best dodge |

@@ -69,7 +69,7 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
                   ))}
                 </tbody>
               </table>
-              <p className="note">{kind === "weapon" ? "Damage = 2 × base damage × multiplier × quality, shown here at 100% quality. Speed is the index speed the game shows on the card." : "Defense = 2 × health % × multiplier × quality, rounded to a whole number, shown here at 100% quality."} Chance inside the class is 1/weight, normalised.{poolIncomplete(cat, kind, world, cls) && " This class also has shop-blueprint weapons that are not listed yet, so these chances may be a little high."}</p>
+              <p className="note">{kind === "weapon" ? "Damage = base damage × multiplier × (1 + quality), shown here at 100% quality. Speed is the index speed the game shows on the card." : "Defense = health % × multiplier × (1 + quality), rounded to a whole number, shown here at 100% quality."} Chance inside the class is 1/weight, normalised.{poolIncomplete(cat, kind, world, cls) && " This class also has shop-blueprint weapons that are not listed yet, so these chances may be a little high."}</p>
             </div>
           </section>
         </Reveal>

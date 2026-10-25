@@ -59,13 +59,19 @@ export function roundStat(value: number, kind: Kind): number {
   return kind === "armour" ? Math.round(value) : Math.round(value * 100 + 1e-7) / 100;
 }
 
-/** Keep the underlying value available so enhancement never compounds display rounding. */
+/**
+ * Unrounded damage or defence: base × multiplier × (1 + quality). Quality adds on top of a full 1×, so a 0%
+ * craft keeps half of a 100% craft. Confirmed in game: Dark Knight's Gauntlets, base 10, 26.25× at "92%"
+ * shows 504.46 (= 262.5 × 1.9218, the game's 92.18%), where 2 × base × M × quality would give 483.
+ * At 100% this equals the old 2 × base × M, which the Hachiwari and Dark Knight Chestplate checks confirmed.
+ * Keep the unrounded value so enhancement never compounds display rounding.
+ */
 export function rawStat(base: number, multiplier: number, quality: number): number {
   nonNegative(base, "Base stat");
   nonNegative(multiplier, "Multiplier");
   nonNegative(quality, "Quality");
   if (quality > 1) throw new RangeError("Quality must be between zero and one.");
-  return 2 * base * multiplier * quality;
+  return base * multiplier * (1 + quality);
 }
 
 export function stat(base: number, multiplier: number, quality: number, kind: Kind): number {

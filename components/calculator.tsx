@@ -101,7 +101,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const removeAll = useCallback((id: string) => startTransition(() => setEntries((cur) => cur.filter((e) => e.id !== id))), []);
   const statName = kind === "armour" ? "Defense" : "Damage";
   const unit = kind === "armour" ? "DEF" : "DMG";
-  const fullValue = selected?.v.raw != null && quality > 0 ? selected.v.raw / (quality / 100) : null;
+  // The same item at 100% quality: raw = base × M × (1 + q), so scale by 2 / (1 + q).
+  const fullValue = selected?.v.raw != null ? (selected.v.raw * 2) / (1 + quality / 100) : null;
   const enhance = selected?.v.raw != null ? enhancementTable(selected.v.raw, kind) : [];
   const maxEnh = enhance.length ? Math.max(...enhance.map((l) => l.stat)) || 1 : 1;
   const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
