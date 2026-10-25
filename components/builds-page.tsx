@@ -81,6 +81,7 @@ function AreaSection({ area, kind, world, cat, byName }: { area: BuildArea; kind
 }
 
 function RecipeCard({ recipe, cls, kind, world, cat, byName }: { recipe: Recipe; cls: string; kind: Kind; world: World; cat: Catalogue; byName: Map<string, CatalogueOre> }) {
+  const { setWorld } = useShell();
   const mix = recipe.flatMap(([name, count]) => { const ore = byName.get(name.toLowerCase()); return ore ? [{ ore, count }] : []; });
   const at = forgeWorld(cat, kind, world, cls);
   const r = forge(cat, mix, kind, at, 1);
@@ -113,7 +114,7 @@ function RecipeCard({ recipe, cls, kind, world, cat, byName }: { recipe: Recipe;
         {kind === "weapon" && <div className="kv"><span>DPS</span><span className="strong">{range(dps)}</span></div>}
         <div className="kv"><span>Traits</span><span className="muted">{r.traits.length ? r.traits.map((t) => t.ore.name).join(", ") : "None"}</span></div>
       </div>
-      <Link className="btn sm build-open" href={href}>Open in calculator</Link>
+      <Link className="btn sm build-open" href={href} onClick={() => { if (at !== world) setWorld(at); }}>Open in calculator</Link>
     </article>
   );
 }
