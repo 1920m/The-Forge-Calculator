@@ -27,8 +27,9 @@ describe("golden in-game examples and exact arithmetic", () => {
     const mix = [ingredient("meteorite", 14.44, 4), ingredient("roosite", 14, 12), ingredient("heat-steel", 11.5, 12), ingredient("sakurite", 14.2, 13)];
     const multiplier = averageMultiplier(mix)!;
     expect(multiplier.toFixed(3)).toBe("13.375");
-    const quality = 803 / (2 * 36 * multiplier);
-    expect(quality * 100).toBeCloseTo(83.4, 1);
+    // Implied quality under base × M × (1 + q). The card's "86" still doesn't fit, so Shogun's base of 36 is unconfirmed.
+    const quality = 803 / (36 * multiplier) - 1;
+    expect(quality * 100).toBeCloseTo(66.8, 1);
     expect(stat(36, multiplier, quality, "armour")).toBe(803);
   });
   it("shows whole-number armour enhancements under Cris's updated rounding rule", () => {
@@ -37,6 +38,26 @@ describe("golden in-game examples and exact arithmetic", () => {
     expect(levels[0].stat).toBe(626);
     expect(levels[1].stat).toBe(657);
     expect(levels[10].stat).toBe(938);
+  });
+});
+
+describe("quality", () => {
+  // In game (HiiCharlot's video, 25 Oct 2026): 5 Kitsunite, 5 Galaxite, 4 Fichilliumorite shows 26.25×,
+  // and Dark Knight's Gauntlets (base 10) at "Excellent (92)%" shows 504.46 DMG.
+  const dk: Ingredient[] = [ingredient("kitsunite", 27.5, 5), ingredient("galaxite", 25, 5), { ore: { slug: "fichilliumorite", multiplier: 1, rarity: "Divine", multiplierRule: "average-other-ores" as const }, count: 4 }];
+  it("matches Dark Knight's Gauntlets at 92% quality", () => {
+    const m = averageMultiplier(dk)!;
+    expect(m.toFixed(2)).toBe("26.25");
+    // The card shows quality rounded to a whole percent, so anything from 91.5% to 92.5% is possible.
+    expect(rawStat(10, m, 0.915)).toBeLessThan(504.46);
+    expect(rawStat(10, m, 0.925)).toBeGreaterThan(504.46);
+    // The game's exact quality was about 92.18%.
+    expect((504.46 / (10 * m) - 1) * 100).toBeCloseTo(92.18, 1);
+  });
+  it("adds quality on top of a full 1×, so 100% is 2× and 0% is 1×", () => {
+    expect(rawStat(10, 10, 1)).toBe(200);
+    expect(rawStat(10, 10, 0.5)).toBe(150);
+    expect(rawStat(10, 10, 0)).toBe(100);
   });
 });
 
@@ -56,9 +77,9 @@ describe("traits and rounding boundaries", () => {
     expect(stat(25, 12.51, 1, "armour")).toBe(626);
     expect(stat(8.25, 10.88, 1, "weapon")).toBe(179.52);
     expect(stat(1, 1.000001, 1, "weapon")).toBe(2);
-    expect(stat(25, 12.51, 0, "armour")).toBe(0);
-    expect(stat(25, 12.51, 0.25, "armour")).toBe(156);
-    expect(stat(25, 12.51, 0.25, "weapon")).toBe(156.38);
+    expect(stat(25, 12.51, 0, "armour")).toBe(313);
+    expect(stat(25, 12.51, 0.25, "armour")).toBe(391);
+    expect(stat(25, 12.51, 0.25, "weapon")).toBe(390.94);
   });
   it("rounds armour below and above the half-point to the nearest integer", () => {
     expect(stat(1, 78.05, 1, "armour")).toBe(156);
