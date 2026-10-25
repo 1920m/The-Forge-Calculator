@@ -33,7 +33,7 @@
 | `lib/engine/index.ts` | Pure maths: multiplier, primary ore, trait strength, stats and rounding, enhancement, variant and class odds. No React or network code. |
 | `lib/engine/forge.ts` | Combines the maths with the catalogue: world pools, variants per class, transferred traits, the full forge result. |
 | `lib/engine/dps.ts` | Weapon DPS with trait effects (crit, lethality, attack speed, procs, damage over time), ported from the wiki's DPS calculator. |
-| `lib/data/catalogue.ts` | Loads the newest catalogue from Supabase on the server, with the bundled copy as fallback. |
+| `lib/data/catalogue.ts` | Loads the newest catalogue: the latest Supabase release, unless the bundled copy has a higher `revision` or Supabase is unreachable. |
 | `lib/data/supabase.ts` | Public Supabase URL and key, and image URLs. |
 | `lib/ore-filter.ts` | Sorting and filtering rules for the ore picker. |
 | `lib/forge-slots.ts` | Forge slot limits (4 ore types, 99 of each) and adding ores. |
@@ -57,6 +57,7 @@
 | `engine.test.ts` | Golden in-game crafts and edge cases for the pure maths. |
 | `ore-filter.test.ts` | Ore sorting, "best for" and the multiplier range. |
 | `forge-slots.test.ts` | The 4-ore-type limit and count caps. |
+| `traits.test.ts` | Every ore with weapon stats lists a weapon trait; mixed weapon/armour traits split correctly. |
 | `dps.test.ts` | DPS against results from the wiki's own calculator. |
 | `builds.test.ts` | Every recommended recipe uses real ores from its world, at most 4 types, and valid classes. |
 | `forge.test.ts` | Full forge results against the real catalogue (odds, variants, values, traits). |
