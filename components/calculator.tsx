@@ -5,7 +5,7 @@ import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type 
 import type { Kind } from "@/lib/engine";
 import type { DpsResult } from "@/lib/engine/dps";
 import { imageUrl } from "@/lib/data/supabase";
-import { fmt, pct, rarityColour } from "@/lib/ui";
+import { SHOW_STATUS_LABELS, fmt, pct, rarityColour } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { Chevron, Lock } from "./icons";
@@ -185,7 +185,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
             <section className="gp result" aria-live="polite" aria-label="Result">
               {selected ? (
                 <>
-                  <h2 className="result-name">{selected.v.name}{!selected.v.verified && <> <span className="badge unv">Unverified</span></>}</h2>
+                  <h2 className="result-name">{selected.v.name}{SHOW_STATUS_LABELS && !selected.v.verified && <> <span className="badge unv">Unverified</span></>}</h2>
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     <div className="tile" style={{ width: 110, height: 110, ["--rc" as string]: rarityColour(result.rarity) }}>
                       <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", selected.v.id)} alt={selected.v.name} size={40} />
@@ -215,7 +215,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <span className="sr-only">Quality percent</span>
                 <input type="range" min={1} max={100} value={quality} onChange={(e) => setQuality(Number(e.target.value))} />
               </label>
-              <div className="note" style={{ textAlign: "center", marginTop: 4 }}>Quality label ranges are unverified.</div>
+              {SHOW_STATUS_LABELS && <div className="note" style={{ textAlign: "center", marginTop: 4 }}>Quality label ranges are unverified.</div>}
             </section>
           </Reveal>
         </div>
@@ -262,7 +262,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       <tbody>
                         {selected.cls.variants.map((v) => (
                           <tr key={v.id} className={v.id === selected.v.id ? "sel" : ""} onClick={() => startTransition(() => setPick({ cls: selected.cls.name, id: v.id }))} style={{ cursor: "pointer" }}>
-                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {!v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
+                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
                             <td>{pct(v.chance)}</td><td>{pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
                           </tr>
                         ))}
@@ -359,7 +359,7 @@ function EnhRow({ l, max, unit, delay = 0, hidden = false }: { l: { level: numbe
 function TraitsPanel({ traits, kind, dense = false }: { traits: ReturnType<typeof forge>["traits"]; kind: Kind; dense?: boolean }) {
   return (
     <section className="gp">
-      <div className="tb"><h2>Traits that transfer</h2><span className="badge ok">Confirmed in game</span></div>
+      <div className="tb"><h2>Traits that transfer</h2>{SHOW_STATUS_LABELS && <span className="badge ok">Confirmed in game</span>}</div>
       <div className="pad">
         <p className="small muted" style={{ margin: "0 0 12px" }}>A trait needs a 10% share of the craft and reaches full strength at 30%. Chances, damage and stat amounts below are scaled to your share, as in game. Durations and cooldowns are shown as listed.</p>
         {traits.length === 0 ? (

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Catalogue } from "@/lib/engine/forge";
 import { imageUrl } from "@/lib/data/supabase";
-import { RARITY_ORDER, rarityColour, worldLabel } from "@/lib/ui";
+import { RARITY_ORDER, SHOW_STATUS_LABELS, rarityColour, worldLabel } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, type OreFilterState } from "./ore-filter";
@@ -69,7 +69,7 @@ export function OresPage({ cat }: { cat: Catalogue }) {
         <Reveal col={2} style={{ flex: "0 1 420px", minWidth: 300 }}>
           {sel && (
             <section className="gp" aria-live="polite">
-              <div className="tb"><h2>{sel.name}</h2>{!sel.verified && <span className="badge unv">Wiki only</span>}</div>
+              <div className="tb"><h2>{sel.name}</h2>{SHOW_STATUS_LABELS && !sel.verified && <span className="badge unv">Wiki only</span>}</div>
               <div className="pad">
                 <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 12 }}>
                   <div className="tile" style={{ width: 96, height: 96, ["--rc" as string]: rarityColour(sel.rarity) }}><GameImage src={imageUrl("ores", sel.id)} alt={sel.name} size={36} /></div>

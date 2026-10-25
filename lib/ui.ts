@@ -7,3 +7,9 @@ export const rarityColour = (r: string | null | undefined) => (r && RARITY_COLOU
 export const pct = (v: number, d = 1) => `${Number(v.toFixed(d))}%`;
 export const fmt = (v: number | null | undefined, d = 2) => (v == null ? "–" : v.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: d }));
 export const worldLabel = (worlds: number[]) => (worlds.length >= 4 ? "All" : worlds.join(" and "));
+
+/**
+ * Verification labels ("Confirmed in game", "Derived", "Unverified", "Wiki only") and the partner-badge slot.
+ * Hidden until the site partners with the game's developers; set to true to bring them all back.
+ */
+export const SHOW_STATUS_LABELS = false;

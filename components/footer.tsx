@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Anvil } from "./icons";
 import { DATA_DATE } from "@/lib/data/supabase";
+import { SHOW_STATUS_LABELS } from "@/lib/ui";
 
 export function Footer() {
   return (
@@ -25,11 +26,13 @@ export function Footer() {
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", marginTop: 30, fontSize: 15, color: "#8d8c92" }}>
           <span>Data as of {DATA_DATE}. Fan-made tool, not affiliated with the game&apos;s developers or Roblox. Game data from the community wiki (CC BY-SA).</span>
-          <span style={{ border: "1px dashed #4a4850", padding: "2px 12px" }}>Official partner badge: reserved</span>
+          {SHOW_STATUS_LABELS && <span style={{ border: "1px dashed #4a4850", padding: "2px 12px" }}>Official partner badge: reserved</span>}
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-          <span className="badge ok">Confirmed in game</span><span className="badge der">Derived</span><span className="badge unv">Unverified</span>
-        </div>
+        {SHOW_STATUS_LABELS && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+            <span className="badge ok">Confirmed in game</span><span className="badge der">Derived</span><span className="badge unv">Unverified</span>
+          </div>
+        )}
         <div className="dotword" aria-hidden="true">FORGE</div>
       </div>
     </footer>
