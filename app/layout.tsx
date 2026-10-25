@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Shell } from "@/components/shell";
 import { Header } from "@/components/chrome";
 import { Footer } from "@/components/footer";
@@ -21,6 +23,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <main id="main">{children}</main>
           <Footer />
         </Shell>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

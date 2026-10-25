@@ -144,7 +144,7 @@ npm run check      # lint, typecheck, tests and a production build
 
 No environment variables are needed: the app reads the public, read-only Supabase project, and falls back to the bundled `data/catalogue.json` if Supabase can't be reached. To use another project, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (see `.env.example`).
 
-See [FILES.md](FILES.md) for what every file does.
+See [FILES.md](FILES.md) for what every file does, and [SECURITY.md](SECURITY.md) for how the site and its data are protected.
 
 <p align="center"><img src="docs/readme/divider.svg" width="100%" alt=""></p>
 

@@ -11,6 +11,7 @@
 | `builds/page.tsx` | Recommended ore mixes per world and stage. |
 | `how-it-works/page.tsx` | The formulas explained, with the trait-strength chart. |
 | `not-found.tsx` | 404 page. |
+| `error.tsx` | Error screen with "Start with an empty forge", shown instead of a blank page if anything fails. |
 | `icon.svg` | Browser tab icon. |
 
 ## Components (`components/`)
@@ -60,6 +61,7 @@
 | `20261023230836_forge_catalogue.sql` | First schema: read-only game tables and the public `forge-images` bucket. |
 | `20261023231538_restrict_auto_rls_function.sql` | Locks down a Supabase helper function. |
 | `20261024190000_catalogue_releases.sql` | `catalogue_releases`: the published game data the site reads. |
+| `20261025100000_security_hardening.sql` | Drops `pg_net`; anonymous visitors can read only the newest catalogue release. |
 
 ## Tests (`tests/`)
 | File | Purpose |
@@ -81,4 +83,4 @@
 | `design-reference/` | The approved design boards (`.dc.html`, read as source) and `DESIGN-NOTES.md` with colours and motion values. |
 
 ## Config
-`package.json` (scripts and dependencies), `next.config.ts` (security headers), `tsconfig.json`, `eslint.config.mjs` (blocks framework imports in the engine), `vitest.config.ts`, `.github/workflows/ci.yml` (checks every pull request), `.nvmrc` (Node 24), `.env.example`.
+`package.json` (scripts and dependencies), `next.config.ts` (security headers and Content Security Policy), `tsconfig.json`, `eslint.config.mjs` (blocks framework imports in the engine), `vitest.config.ts`, `.github/workflows/ci.yml` (checks every pull request), `.github/workflows/codeql.yml` (CodeQL security scan), `.github/dependabot.yml` (weekly dependency updates), `SECURITY.md` (how to report a problem and how the site is protected), `.nvmrc` (Node 24), `.env.example`.
