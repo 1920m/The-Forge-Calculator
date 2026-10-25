@@ -50,8 +50,10 @@ for (const r of tablesIn(between("### Ore traits", "## Measured mechanics"))[0].
   const applies = r["Applies to"].toLowerCase();
   const text = r["Trait effect (as listed)"];
   const kinds = applies.includes("weapon") && applies.includes("armour") || applies === "both" ? ["weapon", "armour"] : applies.includes("weapon") ? ["weapon"] : ["armour"];
-  const parts = [...text.matchAll(/(Weapon|Armour|Both):\s*([^]*?)(?=(?:Weapon|Armour|Both):|$)/g)];
-  if (parts.length) for (const [, k, t] of parts) ore.traits.push({ kinds: k === "Both" ? ["weapon", "armour"] : [k.toLowerCase()], text: t.trim().replace(/\.$/, "") });
+  const parts = [...text.matchAll(/\b(Weapon|Armour|Both):\s*([^]*?)(?=\b(?:Weapon|Armour|Both):|$)/gi)];
+  // "Weapon / Both" style rows must say which part goes where, or every line would land on one kind.
+  if (!parts.length && applies.includes("/")) throw new Error(`${r["Ore"]}: "${r["Applies to"]}" needs Weapon:/Armour:/Both: sections in the trait text`);
+  if (parts.length) for (const [, k, t] of parts) ore.traits.push({ kinds: k.toLowerCase() === "both" ? ["weapon", "armour"] : [k.toLowerCase()], text: t.trim().replace(/\.$/, "") });
   else ore.traits.push({ kinds, text });
 }
 const fichi = ores.get("Fichilliumorite"); if (fichi) { fichi.rule = "average"; fichi.traits = [{ kinds: ["weapon", "armour"], text: "Takes the average multiplier of the other ores" }]; }
