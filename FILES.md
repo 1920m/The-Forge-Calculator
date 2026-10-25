@@ -105,6 +105,7 @@
 | --- | --- |
 | `PRD.md` | Product requirements and the full game dataset. Source of truth for the data. |
 | `design-reference/` | The approved design boards (`.dc.html`, read as source) and `DESIGN-NOTES.md` with colours and motion values. |
+| `BRANCH-ARCHIVE.md` | What each deleted feature branch was and four ways to bring any of them back. |
 
 ## Config
 `package.json` (scripts and dependencies), `next.config.ts` (security headers and Content Security Policy), `tsconfig.json`, `eslint.config.mjs` (blocks framework imports in the engine), `vitest.config.ts`, `.github/workflows/ci.yml` (checks every pull request), `.github/workflows/codeql.yml` (CodeQL security scan), `.github/dependabot.yml` (weekly dependency updates), `SECURITY.md` (how to report a problem and how the site is protected), `.nvmrc` (Node 24), `.env.example`.
