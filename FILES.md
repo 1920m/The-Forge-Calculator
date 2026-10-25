@@ -33,6 +33,7 @@
 | `auth.tsx` | Sign-in state for the whole site: the player, their profile, sign in and sign out. |
 | `account-menu.tsx` | Header "Sign in" button, or the player's avatar with Forger page, Settings and Sign out. |
 | `login-page.tsx`, `auth-callback.tsx`, `settings-page.tsx` | The sign-in, return-from-sign-in and settings screens. |
+| `google-button.tsx` | Google's own sign-in button, so Google's window names this site instead of the database; its token is checked by Supabase. |
 | `saved-forges.tsx` | Loads the player's saved forges once and shares them between pages; save, rename, delete. |
 | `save-star.tsx` | The ☆ in the forge panel's corner: saves or unsaves the current forge, or sends signed-out players to sign in. |
 | `forger-page.tsx` | Forger page: the loadout, then filters, search, sort and a card per saved forge (drag handle, Equip, Rename, Delete). |

@@ -4,6 +4,8 @@ const SUPABASE = (process.env.NEXT_PUBLIC_SUPABASE_URL || "https://jzvdmthbcmdww
 const isDev = process.env.NODE_ENV !== "production";
 const isPreview = process.env.VERCEL_ENV === "preview"; // preview deployments show Vercel's comment toolbar
 
+const GIS = "https://accounts.google.com/gsi/"; // Google's sign-in button
+
 /**
  * Content Security Policy. Everything comes from the site itself, except game images (Supabase Storage) and
  * Vercel's own analytics script. 'unsafe-inline' scripts are needed by Next.js on statically generated pages
@@ -12,12 +14,12 @@ const isPreview = process.env.VERCEL_ENV === "preview"; // preview deployments s
  */
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com${isDev ? " 'unsafe-eval'" : ""}${isPreview ? " https://vercel.live" : ""}`,
-  `style-src 'self' 'unsafe-inline'${isPreview ? " https://vercel.live" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com ${GIS}client${isDev ? " 'unsafe-eval'" : ""}${isPreview ? " https://vercel.live" : ""}`,
+  `style-src 'self' 'unsafe-inline' ${GIS}style${isPreview ? " https://vercel.live" : ""}`,
   `img-src 'self' data: blob: ${SUPABASE} https://lh3.googleusercontent.com https://cdn.discordapp.com${isPreview ? " https://vercel.live https://vercel.com" : ""}`,
   `font-src 'self' data:${isPreview ? " https://vercel.live" : ""}`,
-  `connect-src 'self' ${SUPABASE} https://va.vercel-scripts.com${isDev ? " ws:" : ""}${isPreview ? " https://vercel.live wss://ws-us3.pusher.com" : ""}`,
-  `frame-src ${isPreview ? "https://vercel.live" : "'none'"}`,
+  `connect-src 'self' ${SUPABASE} https://va.vercel-scripts.com ${GIS}${isDev ? " ws:" : ""}${isPreview ? " https://vercel.live wss://ws-us3.pusher.com" : ""}`,
+  `frame-src ${GIS}${isPreview ? " https://vercel.live" : ""}`,
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
@@ -36,7 +38,8 @@ const config: NextConfig = {
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()" },
-      { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+      // Google's sign-in popup has to talk back to the page that opened it.
+      { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
       { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
     ] }];
   },

@@ -405,3 +405,9 @@ body.dragging, body.dragging * { cursor: grabbing !important; user-select: none 
   .loadout-stats { grid-template-columns: 1fr 1fr; }
   .lo-ores { padding-left: 8px; }
 }
+
+/* Google's sign-in button (drawn by Google inside a frame) */
+.google-slot { position: relative; min-height: 44px; display: flex; flex-direction: column; align-items: center; }
+.google-btn { width: 100%; max-width: 400px; display: flex; justify-content: center; color-scheme: normal; }
+.google-skeleton { position: absolute; inset: 0 auto auto 50%; transform: translateX(-50%); width: min(400px, 100%); height: 44px; background: linear-gradient(90deg, var(--row), var(--bd), var(--row)); background-size: 200% 100%; animation: sweep 1.4s linear infinite; }
+.login-buttons .login-error { margin-top: 6px; text-align: center; }
