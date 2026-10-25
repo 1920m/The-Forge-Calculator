@@ -14,13 +14,15 @@ type AuthState = {
   /** True until the first session check finishes, so buttons don't flash "Sign in" for signed-in players. */
   loading: boolean;
   signIn: (provider: Provider, next?: string) => Promise<string | null>;
+  /** Google's button gives an ID token; Supabase checks it (and the nonce) and starts a session. */
+  signInWithGoogleToken: (token: string, nonce: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   reloadProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState>({
   user: null, profile: null, loading: true,
-  signIn: async () => "Not ready", signOut: async () => {}, reloadProfile: async () => {},
+  signIn: async () => "Not ready", signInWithGoogleToken: async () => "Not ready", signOut: async () => {}, reloadProfile: async () => {},
 });
 export const useAuth = () => useContext(AuthContext);
 
@@ -59,6 +61,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return error ? error.message : null;
   }, []);
 
+  const signInWithGoogleToken = useCallback(async (token: string, nonce: string) => {
+    const { error } = await supabase().auth.signInWithIdToken({ provider: "google", token, nonce });
+    return error ? error.message : null;
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase().auth.signOut();
     setUser(null);
@@ -67,6 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const reloadProfile = useCallback(() => loadProfile(user), [loadProfile, user]);
 
-  const value = useMemo(() => ({ user, profile, loading, signIn, signOut, reloadProfile }), [user, profile, loading, signIn, signOut, reloadProfile]);
+  const value = useMemo(() => ({ user, profile, loading, signIn, signInWithGoogleToken, signOut, reloadProfile }), [user, profile, loading, signIn, signInWithGoogleToken, signOut, reloadProfile]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
