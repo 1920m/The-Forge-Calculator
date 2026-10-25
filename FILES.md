@@ -32,12 +32,14 @@
 | --- | --- |
 | `lib/engine/index.ts` | Pure maths: multiplier, primary ore, trait strength, stats and rounding, enhancement, variant and class odds. No React or network code. |
 | `lib/engine/forge.ts` | Combines the maths with the catalogue: world pools, variants per class, transferred traits, the full forge result. |
+| `lib/engine/dps.ts` | Weapon DPS with trait effects (crit, lethality, attack speed, procs, damage over time), ported from the wiki's DPS calculator. |
 | `lib/data/catalogue.ts` | Loads the newest catalogue from Supabase on the server, with the bundled copy as fallback. |
 | `lib/data/supabase.ts` | Public Supabase URL and key, and image URLs. |
 | `lib/ore-filter.ts` | Sorting and filtering rules for the ore picker. |
 | `lib/forge-slots.ts` | Forge slot limits (4 ore types, 99 of each) and adding ores. |
 | `lib/ui.ts` | Rarity colours and number formatting. |
 | `data/catalogue.json` | Generated game data (do not edit by hand; edit `docs/PRD.md` and run `npm run data:build`). |
+| `data/dps-stats.json` | Each ore's DPS stats at a 10% and a 30% share, from the wiki's `Data:Ores.json`. |
 | `data/builds.ts` | Recommended recipes by area, stage and item, from the wiki's Guide page. |
 | `data/images.json` | Which images exist in the `forge-images` bucket. |
 | `scripts/build-catalogue.mjs` | Builds `data/catalogue.json` from the PRD, including the world assignments. |
@@ -55,6 +57,7 @@
 | `engine.test.ts` | Golden in-game crafts and edge cases for the pure maths. |
 | `ore-filter.test.ts` | Ore sorting, "best for" and the multiplier range. |
 | `forge-slots.test.ts` | The 4-ore-type limit and count caps. |
+| `dps.test.ts` | DPS against results from the wiki's own calculator. |
 | `builds.test.ts` | Every recommended recipe uses real ores from its world, at most 4 types, and valid classes. |
 | `forge.test.ts` | Full forge results against the real catalogue (odds, variants, values, traits). |
 | `fixtures/*.json` | What the in-game screenshots showed for the Dark Knight Chestplate and the Hachiwari. |

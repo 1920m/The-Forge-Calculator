@@ -1,5 +1,6 @@
 /** Higher-level forge maths built on the pure functions in ./index. No framework or network imports. */
 import { averageMultiplier, classOdds, primaryOre, rawStat, roundStat, enhancementTable, traitStrength, variantOdds, type CategoryRow, type Kind, type World } from "./index";
+import { weaponDps } from "./dps";
 
 export type Rarity = "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary" | "Mythic" | "Relic" | "Exotic" | "Divine";
 export type CatalogueOre = {
@@ -38,7 +39,7 @@ export function categoryRows(cat: Catalogue, kind: Kind): CategoryRow[] {
   return Object.entries(cat.odds[kind]).flatMap(([n, cells]) => cells.map((probability, i) => ({ kind, oreCount: Number(n), slot: i + 1, probability })));
 }
 
-export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; range?: number; tag?: "shop" | "halloween" | null };
+export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; interval?: number; range?: number; tag?: "shop" | "halloween" | null };
 
 /** Every variant of a class in a world, with its chance inside the class (normalised inverse weights). */
 export function classVariants(cat: Catalogue, kind: Kind, world: World, className: string): Variant[] {
@@ -46,7 +47,7 @@ export function classVariants(cat: Catalogue, kind: Kind, world: World, classNam
   const list = kind === "weapon"
     ? (cat.weaponPools[poolKey(world)].pools[className]?.items ?? []).flatMap(([id, weight]) => {
         const w = byId.get(id);
-        return w ? [{ id: w.id, name: w.name, weight: weight ?? w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, range: w.range, tag: w.tag ?? null }] : [];
+        return w ? [{ id: w.id, name: w.name, weight: weight ?? w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, interval: w.trueSpeed, range: w.range, tag: w.tag ?? null }] : [];
       })
     : cat.armour.filter((a) => armourClassName([a.weightClass, a.slot]) === className && a.worlds.includes(world)).map((a) => ({ id: a.id, name: a.name, weight: a.weight, base: a.healthPct, verified: a.verified }));
   const odds = variantOdds(list.map((v) => v.weight));
@@ -102,11 +103,13 @@ export function forge(cat: Catalogue, mix: Mix, kind: Kind, world: World, qualit
   const names = classNames(cat, kind, world);
   const odds = classOdds(kind, world, total, categoryRows(cat, kind));
   const locks = cat.locks[kind];
+  const dpsOres = mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count }));
   const classes = names.map((name, i) => {
     const probability = odds.status === "available" ? odds.classes[i].probability : 0;
     const variants = classVariants(cat, kind, world, name).map((v) => {
       const raw = multiplier == null ? null : rawStat(v.base, multiplier, quality);
-      return { ...v, overall: (probability * v.chance) / 100, raw, value: raw == null ? null : roundStat(raw, kind) };
+      const dps = kind === "weapon" && raw != null && v.interval ? weaponDps({ ores: dpsOres, damage: raw, interval: v.interval }) : null;
+      return { ...v, overall: (probability * v.chance) / 100, raw, value: raw == null ? null : roundStat(raw, kind), dps };
     });
     return { name, probability, lockAt: locks[i], lockable: total >= locks[i], incomplete: poolIncomplete(cat, kind, world, name), variants };
   });

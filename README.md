@@ -35,6 +35,7 @@ No environment variables are needed. The app reads the public, read-only Supabas
 | Defence | round(2 × health % × M × quality) | Confirmed in game |
 | Damage | 2 × base damage × M × quality, rounded to 2 decimals | Confirmed in game |
 | Enhancement | stat × (1 + 0.05 × level), +0 to +10 | Confirmed in game |
+| DPS | damage × (1 + lethality) × crit blend × hits per second, plus explosion, burn, poison, smite, black hole and lightning. Hits per second = (1 + attack speed) ÷ true swing time; crit blend = chance × (1.45 + crit damage) + (1 − chance). Ported from the wiki's DPS calculator; ores only (no race, runes or achievements) | From the wiki calculator |
 
 Golden tests (`tests/`) reproduce the Dark Knight Chestplate (12.51x, 626 DEF), the Hachiwari (10.88x, 179.52 DMG) and the Shogun's Leggings crafted in game.
 

@@ -3,6 +3,7 @@
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
 import type { Kind } from "@/lib/engine";
+import type { DpsResult } from "@/lib/engine/dps";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, pct, rarityColour } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
@@ -198,6 +199,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>{statName}:</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(selected.v.value)} {unit}</span></div>
                     <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted">{selected.v.speed}s · range {selected.v.range}</span></div>}
+                    {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} />}
                     <div className="kv"><span>Chance:</span><span className="muted">{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</span></div>
                     <div className="kv"><span>Lock:</span><span className="muted">{selected.cls.lockable ? "Lockable with this many ores" : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
                   </div>
@@ -379,5 +381,26 @@ function TraitsPanel({ traits, kind, dense = false }: { traits: ReturnType<typeo
         )}
       </div>
     </section>
+  );
+}
+
+/** DPS with every trait the mix transfers: crits and lethality on each hit, plus procs and damage over time. */
+function DpsRow({ dps }: { dps: DpsResult }) {
+  const bits = [
+    dps.critChance > 0 && `${pct(dps.critChance * 100)} crit chance, crits hit ${fmt(145 + dps.critDamage * 100, 1)}%`,
+    dps.lethality > 0 && `+${pct(dps.lethality * 100)} lethality`,
+    dps.atkSpeed > 0 && `+${pct(dps.atkSpeed * 100)} attack speed`,
+    ...dps.parts.map((p) => `${p.label} ${fmt(p.dps)}`),
+  ].filter(Boolean);
+  return (
+    <div className="kv">
+      <span>DPS:</span>
+      <span>
+        <span className="strong" style={{ fontWeight: 700 }}>{fmt(dps.total)}</span>
+        <span className="muted small"> · {fmt(dps.attacksPerSecond)} hits/s</span>
+        {bits.length > 0 && <span className="small faint" style={{ display: "block" }}>{bits.join(" · ")}</span>}
+        {dps.night != null && <span className="small faint" style={{ display: "block" }}>At night (Moon Stone): {fmt(dps.night)}</span>}
+      </span>
+    </div>
   );
 }
