@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LoadBar, WorldSwitch } from "./shell";
 import { Anvil } from "./icons";
+import { AccountMenu } from "./account-menu";
 
 const NAV = [
   ["/", "Calculator"],
@@ -29,6 +30,7 @@ export function Header() {
           ))}
         </nav>
         <WorldSwitch />
+        <AccountMenu />
       </header>
       <LoadBar />
     </>

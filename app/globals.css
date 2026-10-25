@@ -274,3 +274,32 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .build-stats .kv { padding: 4px 10px; }
 .build-stats .kv > :first-child { flex-basis: 108px; }
 .build-open { margin: auto 12px 12px; display: inline-flex; align-items: center; justify-content: center; }
+
+/* ---------- accounts ---------- */
+.account-slot { width: 36px; height: 36px; }
+.account { position: relative; }
+.account-btn { background: none; border: 1px solid var(--bd2); padding: 2px; border-radius: 50%; display: grid; place-items: center; }
+.account-btn:hover, .account-btn[aria-expanded="true"] { border-color: var(--acc); }
+.avatar { border-radius: 50%; object-fit: cover; display: block; background: var(--well); }
+.avatar-letter { display: grid; place-items: center; background: var(--panel); border: 1px solid var(--bd2); color: var(--strong); font-family: var(--sans); font-weight: 700; }
+.account-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 190px; padding: 8px; z-index: 20; display: flex; flex-direction: column; background: var(--panel); }
+.account-menu a, .account-menu button { padding: 8px 10px; text-align: left; color: var(--text); }
+.account-menu a:hover, .account-menu button:hover { background: var(--row); color: #fff; }
+.account-name { padding: 6px 10px 8px; border-bottom: 1px solid var(--bd); margin-bottom: 4px; color: #fff; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.login { max-width: 520px; width: 100%; margin: 24px auto; }
+.login-lead { margin-top: 0; color: #cfc7b2; }
+.login-buttons { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 6px; }
+.login-btn { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; font-size: 18px; font-weight: 700; }
+.login-btn.discord { background: #5865f2; border-color: #5865f2; color: #fff; }
+.login-btn.discord:hover { background: #4752c4; }
+.login-btn:disabled { opacity: .6; cursor: progress; }
+.login-error { color: #f0a0a0; margin: 10px 0 0; }
+.settings { max-width: 760px; width: 100%; margin: 0 auto; }
+.settings-who { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.settings-form { display: flex; flex-direction: column; gap: 6px; }
+.settings-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.settings-row .input { flex: 1 1 220px; width: auto; }
+.danger { border-color: #6a3a3a; }
+.danger-btn { border-color: #a04848; color: #ffd0d0; }
+.danger-btn:not(:disabled):hover { background: #5a2424; }
+.danger-btn:disabled { opacity: .45; }
