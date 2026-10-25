@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="44" viewBox="0 0 1200 44">
+<defs><linearGradient id="l" x1="0" x2="1"><stop offset="0" stop-color="#f0a8c0" stop-opacity="0"/><stop offset=".5" stop-color="#e8c27a"/><stop offset="1" stop-color="#f0a8c0" stop-opacity="0"/></linearGradient></defs>
+<rect x="60" y="21" width="1080" height="2" fill="url(#l)"/>
+<g transform="translate(560 22)"><rect x="-5" y="-5" width="10" height="10" transform="rotate(45)" fill="#e8c27a"/></g>
+<g transform="translate(640 22)"><rect x="-5" y="-5" width="10" height="10" transform="rotate(45)" fill="#e8c27a"/></g>
+<rect x="582" y="2" width="36" height="40" fill="#160e12" opacity="0"/>
+<ellipse cx="0" cy="-8.2" rx="6.3" ry="8.2" fill="#f7c3d2" transform="translate(600 22) rotate(0)" opacity="1"/><ellipse cx="0" cy="-8.2" rx="6.3" ry="8.2" fill="#f7c3d2" transform="translate(600 22) rotate(72)" opacity="1"/><ellipse cx="0" cy="-8.2" rx="6.3" ry="8.2" fill="#f7c3d2" transform="translate(600 22) rotate(144)" opacity="1"/><ellipse cx="0" cy="-8.2" rx="6.3" ry="8.2" fill="#f7c3d2" transform="translate(600 22) rotate(216)" opacity="1"/><ellipse cx="0" cy="-8.2" rx="6.3" ry="8.2" fill="#f7c3d2" transform="translate(600 22) rotate(288)" opacity="1"/><circle cx="600" cy="22" r="3.3" fill="#e2557a" opacity="1"/>
+</svg>

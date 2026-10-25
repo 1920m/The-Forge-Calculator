@@ -47,6 +47,13 @@
 | `scripts/best-armour.ts` | Tries every mix of up to 4 ores per world and stage and writes the best armour (`npm run builds:armour`). |
 | `scripts/build-catalogue.mjs` | Builds `data/catalogue.json` from the PRD, including the world assignments. |
 
+## README art (`docs/readme/`)
+| File | Purpose |
+| --- | --- |
+| `banner.png` | README banner (World 4 sakura, moon and torii). |
+| `divider.svg` | Section divider. |
+| `*.png` | Framed screenshots of the site used in the README. |
+
 ## Database (`supabase/migrations/`)
 | File | Purpose |
 | --- | --- |
