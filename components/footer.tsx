@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Anvil } from "./icons";
 import { DATA_DATE } from "@/lib/data/supabase";
 import { SHOW_STATUS_LABELS } from "@/lib/ui";
+import { FeedbackLink } from "./feedback";
 
 export function Footer() {
   return (
@@ -21,7 +22,7 @@ export function Footer() {
             <div><div className="footer-h">Game data</div>
               <div className="fl"><Link href="/ores">Ore traits</Link><Link href="/how-it-works#odds">Forge odds</Link><Link href="/how-it-works#enhancement">Enhancement</Link></div></div>
             <div><div className="footer-h">Community</div>
-              <div className="fl"><a href="https://www.roblox.com/discover?Keyword=The%20Forge" target="_blank" rel="noopener noreferrer">Roblox game page</a><a href="https://discord.com/invite/theforgers" target="_blank" rel="noopener noreferrer">Forge Discord</a><a href="https://forgewiki.org/wiki/The_Forge_wiki" target="_blank" rel="noopener noreferrer">Forge Wiki</a><a href="https://github.com/1920m/Forge-Calculator/issues" target="_blank" rel="noopener noreferrer">Report a mistake</a></div></div>
+              <div className="fl"><a href="https://www.roblox.com/discover?Keyword=The%20Forge" target="_blank" rel="noopener noreferrer">Roblox game page</a><a href="https://discord.com/invite/theforgers" target="_blank" rel="noopener noreferrer">Forge Discord</a><a href="https://forgewiki.org/wiki/The_Forge_wiki" target="_blank" rel="noopener noreferrer">Forge Wiki</a><FeedbackLink className="footer-link">Send feedback</FeedbackLink></div></div>
           </nav>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", marginTop: 30, fontSize: 15, color: "#8d8c92" }}>
