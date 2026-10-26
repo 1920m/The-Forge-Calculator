@@ -522,3 +522,18 @@ body.modal-open { overflow: hidden; }
 .race-card li b { color: var(--strong); }
 @media (max-width: 520px) { .spin-pct { font-size: 36px; } .spin-says { font-size: 16px; } }
 
+/* ---------- DPS target ---------- */
+.target-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px 28px; align-items: start; }
+.target-grid .spin-result { margin-top: 0; }
+.target-input { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+.target-input .input { width: 150px; text-align: center; font-weight: 700; font-size: 20px; padding: 6px; color: var(--gold); }
+.level-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.level-row .btn { min-width: 44px; }
+.target-table td.mark { width: 28px; text-align: center; font-weight: 700; }
+.target-table tr.hit td.mark { color: var(--green-br); }
+.target-table tr.miss td.mark { color: #b0574f; }
+.target-table tr.miss td:not(.mark) { opacity: .5; }
+@media (max-width: 860px) { .target-grid { grid-template-columns: 1fr; } }
+.target-table { min-width: 520px; }
+@media (max-width: 560px) { .target-table { min-width: 0; } .target-table .cls { display: none; } }
+

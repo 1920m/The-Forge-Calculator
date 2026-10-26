@@ -17,6 +17,7 @@ import { SaveStar } from "./save-star";
 import { FeedbackLink } from "./feedback";
 import Link from "next/link";
 import { averageTries, triesFor } from "@/lib/engine/odds";
+import { DpsTarget } from "./dps-target";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
@@ -313,6 +314,12 @@ export function Calculator({ cat }: { cat: Catalogue }) {
               </section>
             </Reveal>
           </div>
+          {kind === "weapon" && (
+            <Reveal col={4}>
+              <DpsTarget classes={result.classes} pickedDps={selected.v.dps?.total ?? null} pickedId={selected.v.id} ores={total} quality={quality}
+                onPick={(cls, id) => { startTransition(() => setPick({ cls, id })); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+            </Reveal>
+          )}
           <div className={`collapse ${enhanceOpen ? "" : "open"}`}><div>
             <Reveal col={4}><TraitsPanel traits={result.traits} kind={kind} /></Reveal>
           </div></div>
