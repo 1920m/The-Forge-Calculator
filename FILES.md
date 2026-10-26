@@ -34,6 +34,7 @@
 | `account-menu.tsx` | Header "Sign in" button, or the player's avatar with Forger page, Settings and Sign out. |
 | `login-page.tsx`, `auth-callback.tsx`, `settings-page.tsx` | The sign-in, return-from-sign-in and settings screens. |
 | `google-button.tsx` | Google's own sign-in button, so Google's window names this site instead of the database; its token is checked by Supabase. |
+| `feedback.tsx` | The "Send feedback" window (Bug, Feature, Other, Praise; message; page context; up to 3 images), opened from the footer and the result card. |
 | `saved-forges.tsx` | Loads the player's saved forges once and shares them between pages; save, rename, delete. |
 | `save-star.tsx` | The ☆ in the forge panel's corner: saves or unsaves the current forge, or sends signed-out players to sign in. |
 | `forger-page.tsx` | Forger page: the loadout, then filters, search, sort and a card per saved forge (drag handle, Equip, Rename, Delete). |
@@ -56,6 +57,7 @@
 | `lib/safe-next.ts` | Keeps "go back to" links after sign-in on this site; cleans display names. |
 | `lib/saved-forges.ts` | Saved-forge rows: checking them, names, matching a save to the current forge, calculator links. |
 | `lib/loadout.ts` | Loadout slots, which slot a forge goes in, and reading the saved loadout safely. |
+| `lib/feedback.ts` | Feedback types, image limits, message cleaning and friendly error messages. |
 | `lib/forge-stats.ts` | Works out a saved forge's stats from today's game data (used by cards and the loadout). |
 | `lib/ui.ts` | Rarity colours and number formatting. |
 | `data/catalogue.json` | Generated game data (do not edit by hand; edit `docs/PRD.md` and run `npm run data:build`). |
@@ -84,6 +86,7 @@
 | `20261025120000_accounts.sql` | `profiles` (name and picture, made on first sign-in) and `delete_my_account`. Owner-only access. |
 | `20261025140000_saved_forges.sql` | `saved_forges`: owner-only, at most 200 per player, ores and names checked by the database. |
 | `20261025160000_loadouts.sql` | `loadouts`: one per player, owner-only; each slot must hold the player's own forge of the right kind. |
+| `20261026000000_feedback.sql` | `feedback` (anyone can send, nobody can read through the API; 5 an hour per connection, 300 a day) and the private `feedback-files` bucket for screenshots. |
 
 ## Tests (`tests/`)
 | File | Purpose |
@@ -98,6 +101,7 @@
 | `forge.test.ts` | Full forge results against the real catalogue (odds, variants, values, traits). |
 | `safe-next.test.ts` | Sign-in return links can't leave the site; display-name cleaning. |
 | `loadout.test.ts` | Which slot each forge fits, reading saved loadouts, and that every pickaxe has a picture. |
+| `feedback.test.ts` | Feedback types, allowed image types and message cleaning. |
 | `saved-forges.test.ts` | Reading untrusted saved rows, names, matching saves and calculator links. |
 | `fixtures/*.json` | What the in-game screenshots showed for the Dark Knight Chestplate and the Hachiwari. |
 

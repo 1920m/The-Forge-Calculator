@@ -14,6 +14,7 @@ import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, oreCategory, type 
 import { MAX_ORES, MAX_TYPES, addOre, parseRecipe, type Entry } from "@/lib/forge-slots";
 import type { NewForge } from "@/lib/saved-forges";
 import { SaveStar } from "./save-star";
+import { FeedbackLink } from "./feedback";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
@@ -229,6 +230,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <input type="range" min={1} max={100} value={quality} onChange={(e) => setQuality(Number(e.target.value))} />
               </label>
               {SHOW_STATUS_LABELS && <div className="note" style={{ textAlign: "center", marginTop: 4 }}>Quality label ranges are unverified.</div>}
+              {selected && <p className="small faint" style={{ textAlign: "center", margin: "14px 0 0" }}>Game shows something different? <FeedbackLink kind="bug" className="inline-link">Tell us</FeedbackLink></p>}
             </section>
           </Reveal>
         </div>

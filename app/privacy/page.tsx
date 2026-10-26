@@ -27,6 +27,9 @@ export default function Page() {
             <li>The sign-in page loads Google&apos;s own sign-in button from accounts.google.com. Google only learns that you signed in if you choose to continue with Google.</li>
           </ul>
 
+          <H>Feedback</H>
+          <p>When you send feedback we keep your message, any images you attach, the app version and, if you leave the box ticked, the page you were on and your browser. If you&apos;re signed in, it&apos;s linked to your account. To stop spam we also keep a scrambled (hashed) form of your connection address, which can&apos;t be turned back into the address. Only the developer can read feedback.</p>
+
           <H>Where it&apos;s stored</H>
           <p>Accounts and saved forges are stored with Supabase in the EU (Paris). The site runs on Vercel. We don&apos;t sell or share your data, and there are no ads.</p>
 
