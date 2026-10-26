@@ -22,7 +22,8 @@ export default function Page() {
           <H>With an account</H>
           <ul>
             <li>When you sign in with Google or Discord we receive and keep your <b>name</b>, <b>profile picture</b> and <b>email address</b>, plus an ID from that service. We use them only to sign you in and show your name and picture on the site.</li>
-            <li>We keep the <b>forges you save</b> and your <b>loadout</b>. They are private: only you can see them.</li>
+            <li>We keep the <b>forges you save</b> and your <b>loadout</b>. They are private: only you can see them, unless you share your profile.</li>
+            <li><b>Sharing your profile</b> is off until you turn it on from your Forger page. It makes a link that shows your name, picture and loadout (the forges in it and your pickaxe) to anyone who has it. It never shows your email or your other saved forges, and shared pages are hidden from search engines. Choose <b>Stop sharing</b> and the link stops working straight away.</li>
             <li>A sign-in cookie keeps you signed in on this site. We don&apos;t use advertising or tracking cookies.</li>
             <li>The sign-in page loads Google&apos;s own sign-in button from accounts.google.com. Google only learns that you signed in if you choose to continue with Google.</li>
           </ul>

@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, rarityColour } from "@/lib/ui";
 import { supabase } from "@/lib/supabase/browser";
 import { PICKAXES, pickaxeById, type Pickaxe } from "@/data/pickaxes";
 import { ARMOUR_SLOTS, EMPTY_LOADOUT, LOADOUT_COLUMNS, SLOT_LABEL, cleanLoadout, readLoadout, slotFor, type ForgeSlot, type Loadout, type Slot } from "@/lib/loadout";
-import type { SavedForge } from "@/lib/saved-forges";
+import { calculatorHref, type SavedForge } from "@/lib/saved-forges";
 import type { Worked } from "@/lib/forge-stats";
 import { useAuth } from "./auth";
 import { GameImage } from "./game-image";
@@ -135,10 +136,12 @@ type PanelProps = {
   drag: DragState;
   onOpen: (slot: Slot) => void;
   onClear: (slot: Slot) => void;
+  /** A shared profile: no editing; each forge opens in the calculator. */
+  readOnly?: boolean;
 };
 
 /** The LOADOUT panel: armour on the left, weapon and pickaxe on the right, totals in the middle. */
-export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear }: PanelProps) {
+export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readOnly = false }: PanelProps) {
   const card = (s: ForgeSlot) => (loadout[s] ? byId.get(loadout[s]!) ?? null : null);
   const armour = ARMOUR_SLOTS.map(card).filter((c): c is Card => !!c);
   const weapon = card("weapon");
@@ -147,11 +150,11 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear }: Pan
   const defence = known.reduce((n, c) => n + c.r.value!, 0);
   const traits = [...new Set([...armour, ...(weapon ? [weapon] : [])].flatMap((c) => c.r.traits))];
   const target = drag ? slotFor(drag.card.f) : null;
-  const slotProps = (s: Slot) => ({ slot: s, target, over: drag?.over ?? null, dragging: !!drag, onOpen, onClear });
+  const slotProps = (s: Slot) => ({ slot: s, target, over: drag?.over ?? null, dragging: !!drag, onOpen, onClear, readOnly });
 
   return (
     <section className="gp loadout" aria-labelledby="loadout-h">
-      <div className="tb"><h2 id="loadout-h" className="loadout-title">Loadout</h2><span className="small muted">Drag a saved forge&apos;s picture onto a slot, or tap a slot</span></div>
+      <div className="tb"><h2 id="loadout-h" className="loadout-title">Loadout</h2><span className="small muted">{readOnly ? "Tap a piece to open it in the calculator" : <>Drag a saved forge&apos;s picture onto a slot, or tap a slot</>}</span></div>
       <div className="loadout-grid">
         <div className="loadout-col left">
           {ARMOUR_SLOTS.map((s) => <ForgeSlotBox key={s} {...slotProps(s)} card={card(s)} />)}
@@ -182,7 +185,14 @@ function Stat({ label, value, note }: { label: string; value: string; note: stri
   return <div className="loadout-stat"><span className="small muted">{label}</span><b>{value}</b><span className="small faint">{note}</span></div>;
 }
 
-type SlotBoxProps = { slot: Slot; target: ForgeSlot | null; over: string | null; dragging: boolean; onOpen: (s: Slot) => void; onClear: (s: Slot) => void };
+type SlotBoxProps = { slot: Slot; target: ForgeSlot | null; over: string | null; dragging: boolean; onOpen: (s: Slot) => void; onClear: (s: Slot) => void; readOnly?: boolean };
+
+/** The clickable part of a slot: a button on your own page; on a shared profile a calculator link, or plain text. */
+function SlotMain({ readOnly, href, onClick, label, children }: { readOnly?: boolean; href?: string | null; onClick: () => void; label: string; children: React.ReactNode }) {
+  if (!readOnly) return <button className="lo-main" onClick={onClick} aria-label={label}>{children}</button>;
+  if (href) return <Link className="lo-main" href={href} aria-label={label}>{children}</Link>;
+  return <div className="lo-main static">{children}</div>;
+}
 
 function slotClass({ slot, target, over, dragging }: SlotBoxProps, filled: boolean) {
   const valid = dragging && target === slot;
@@ -195,7 +205,8 @@ function ForgeSlotBox(p: SlotBoxProps & { card: Card | null }) {
   const f = card?.f, r = card?.r;
   return (
     <div className={slotClass(p, !!card)} data-slot={slot}>
-      <button className="lo-main" onClick={() => onOpen(slot)} aria-label={card ? `${label}: ${f!.name}. Change` : `${label}: empty. Choose a ${label.toLowerCase()}`}>
+      <SlotMain readOnly={p.readOnly} href={card ? calculatorHref(f!) : null} onClick={() => onOpen(slot)}
+        label={p.readOnly ? `${label}: ${f?.name}. Open in the calculator` : card ? `${label}: ${f!.name}. Change` : `${label}: empty. Choose a ${label.toLowerCase()}`}>
         <span className="tile lo-pic" style={{ ["--rc" as string]: card ? rarityColour(r!.rarity) : "#3a3834" }}>
           {card ? <GameImage src={imageUrl(f!.kind === "weapon" ? "weapons" : "armour", f!.variant_id)} alt="" size={22} /> : <SlotIcon slot={slot} />}
         </span>
@@ -208,7 +219,7 @@ function ForgeSlotBox(p: SlotBoxProps & { card: Card | null }) {
             </>
           ) : <span className="lo-empty small">Empty</span>}
         </span>
-      </button>
+      </SlotMain>
       {card && (
         <>
           <span className="lo-ores">
@@ -219,7 +230,7 @@ function ForgeSlotBox(p: SlotBoxProps & { card: Card | null }) {
               </span>
             ))}
           </span>
-          <button className="lo-clear" onClick={() => onClear(slot)} aria-label={`Take off ${f!.name}`} title="Take off">×</button>
+          {!p.readOnly && <button className="lo-clear" onClick={() => onClear(slot)} aria-label={`Take off ${f!.name}`} title="Take off">×</button>}
         </>
       )}
     </div>
@@ -230,7 +241,7 @@ function PickaxeSlotBox(p: SlotBoxProps & { pick: Pickaxe | null }) {
   const { pick, onOpen, onClear } = p;
   return (
     <div className={slotClass(p, !!pick)} data-slot="pickaxe">
-      <button className="lo-main" onClick={() => onOpen("pickaxe")} aria-label={pick ? `Pickaxe: ${pick.name}. Change` : "Pickaxe: empty. Choose a pickaxe"}>
+      <SlotMain readOnly={p.readOnly} onClick={() => onOpen("pickaxe")} label={pick ? `Pickaxe: ${pick.name}. Change` : "Pickaxe: empty. Choose a pickaxe"}>
         <span className="tile lo-pic" style={{ ["--rc" as string]: pick ? rarityColour(pick.rarity) : "#3a3834" }}>
           {pick ? <GameImage src={imageUrl("pickaxes", pick.id)} alt="" size={22} /> : <SlotIcon slot="pickaxe" />}
         </span>
@@ -243,8 +254,8 @@ function PickaxeSlotBox(p: SlotBoxProps & { pick: Pickaxe | null }) {
             </>
           ) : <span className="lo-empty small">Empty</span>}
         </span>
-      </button>
-      {pick && <button className="lo-clear" onClick={() => onClear("pickaxe")} aria-label={`Take off ${pick.name}`} title="Take off">×</button>}
+      </SlotMain>
+      {pick && !p.readOnly && <button className="lo-clear" onClick={() => onClear("pickaxe")} aria-label={`Take off ${pick.name}`} title="Take off">×</button>}
     </div>
   );
 }

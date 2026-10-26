@@ -13,6 +13,7 @@ import { useSavedForges } from "./saved-forges";
 import { Avatar } from "./account-menu";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
+import { ShareProfile } from "./share-profile";
 import { DragGhost, LoadoutPanel, SlotPicker, useForgeDrag, useLoadout, type Card } from "./loadout";
 
 type KindFilter = "all" | "weapon" | "armour";
@@ -68,10 +69,13 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
 
   return (
     <div className="page">
-      <Reveal col={1}>
-        <div className="forger-who">
-          <Avatar name={name} url={profile?.avatar_url ?? null} size={44} />
-          <h1 className="title">{name}</h1>
+      <Reveal col={1} className="forger-top-wrap">
+        <div className="forger-top">
+          <div className="forger-who">
+            <Avatar name={name} url={profile?.avatar_url ?? null} size={44} />
+            <h1 className="title">{name}</h1>
+          </div>
+          <ShareProfile userId={user.id} />
         </div>
       </Reveal>
 
