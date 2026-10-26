@@ -15,6 +15,9 @@ export function SettingsPage() {
   const [confirm, setConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dpsTarget, setDpsTarget] = useState<boolean | null>(null); // null until the player changes it
+  const [savingPref, setSavingPref] = useState(false);
+  const [prefSaved, setPrefSaved] = useState(false);
 
   useEffect(() => { if (!loading && !user) router.replace("/login?next=%2Fsettings"); }, [loading, user, router]);
 
@@ -32,6 +35,19 @@ export function SettingsPage() {
     await reloadProfile();
     setDraft(null);
     setSaved("Saved.");
+  };
+
+  const showDpsTarget = dpsTarget ?? profile?.show_dps_target ?? false;
+  // Saved straight away; the switch flips first and flips back if saving fails.
+  const toggleDpsTarget = async () => {
+    const next = !showDpsTarget;
+    setDpsTarget(next); setSavingPref(true); setPrefSaved(false); setError(null);
+    const { error: err } = await supabase().from("profiles").update({ show_dps_target: next }).eq("id", user.id);
+    setSavingPref(false);
+    if (err) { setDpsTarget(!next); setError("Couldn't save that setting. Please try again."); return; }
+    await reloadProfile();
+    setDpsTarget(null);
+    setPrefSaved(true);
   };
 
   const deleteAccount = async () => {
@@ -59,6 +75,22 @@ export function SettingsPage() {
             </div>
             {saved && <p className="small" style={{ color: "#8fd19b", margin: "6px 0 0" }} role="status">{saved}</p>}
           </form>
+        </div>
+      </section>
+
+      <section className="gp" aria-labelledby="extras-h">
+        <div className="tb"><h2 id="extras-h">Calculator extras</h2>{prefSaved && <span className="small" style={{ color: "#8fd19b" }} role="status">Saved</span>}</div>
+        <div className="pad">
+          <div className="setting-row">
+            <div>
+              <div className="strong" id="dps-target-label" style={{ fontWeight: 700 }}>Hit a DPS target</div>
+              <p className="small muted" id="dps-target-desc" style={{ margin: "2px 0 0" }}>Adds a panel under weapon results: pick the DPS you want and an enhancement level, and see the chance a forge from your mix reaches it and how many forges that takes.</p>
+            </div>
+            <button className="switch" role="switch" aria-checked={showDpsTarget} aria-labelledby="dps-target-label" aria-describedby="dps-target-desc" disabled={savingPref} onClick={() => void toggleDpsTarget()}>
+              <span className="switch-knob" aria-hidden="true" />
+              <span className="switch-text" aria-hidden="true">{showDpsTarget ? "On" : "Off"}</span>
+            </button>
+          </div>
         </div>
       </section>
 

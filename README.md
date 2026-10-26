@@ -103,6 +103,8 @@ Pick your world at the top and the whole site follows: the ores, the weapon clas
 - **Share any craft.** The ores, item type, quality and world are saved in the address, so a link opens the exact same forge. Your last craft is remembered too.
 - **Ores and Weapons/Armour pages** list every item with its world, unlock count, variants, stats and traits. One switch swaps between weapons and armour.
 - **How many tries?** Every result says how many forges it takes on average, and how many give half or 9 in 10 players the item.
+- **Hit a DPS target** (an extra signed-in players can turn on in Settings): pick the DPS you want and see the chance your mix forges a weapon that reaches it.
+- **Share your profile** from the Forger page: a private link that shows your name, picture and loadout, which you can turn off at any time.
 - **Race spins** calculator: pick the race (or races) you want and how many spins you have, and see your chance, the average spins needed and every race's traits.
 - **How it works** explains every formula in plain words, including the tries and race spin maths, with a chart of how trait strength grows with your share.
 - **Works on phones.** The forge and ore picker come first on small screens.

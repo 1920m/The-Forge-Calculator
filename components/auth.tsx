@@ -6,7 +6,8 @@ import { supabase } from "@/lib/supabase/browser";
 import { safeNext } from "@/lib/safe-next";
 
 export type Provider = "google" | "discord";
-export type Profile = { id: string; display_name: string; avatar_url: string | null };
+/** show_dps_target: the "Hit a DPS target" panel on the calculator, off unless turned on in Settings. */
+export type Profile = { id: string; display_name: string; avatar_url: string | null; show_dps_target: boolean };
 
 type AuthState = {
   user: User | null;
@@ -33,8 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadProfile = useCallback(async (u: User | null) => {
     if (!u) { setProfile(null); return; }
-    const { data } = await supabase().from("profiles").select("id, display_name, avatar_url").eq("id", u.id).maybeSingle();
-    setProfile((data as Profile | null) ?? null);
+    const { data } = await supabase().from("profiles").select("id, display_name, avatar_url, show_dps_target").eq("id", u.id).maybeSingle();
+    const row = data as (Omit<Profile, "show_dps_target"> & { show_dps_target?: unknown }) | null;
+    setProfile(row ? { ...row, show_dps_target: row.show_dps_target === true } : null);
   }, []);
 
   useEffect(() => {

@@ -17,6 +17,8 @@ import { SaveStar } from "./save-star";
 import { FeedbackLink } from "./feedback";
 import Link from "next/link";
 import { averageTries, triesFor } from "@/lib/engine/odds";
+import { DpsTarget } from "./dps-target";
+import { useAuth } from "./auth";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
@@ -36,6 +38,8 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
 
 export function Calculator({ cat }: { cat: Catalogue }) {
   const { world } = useShell();
+  const { profile } = useAuth();
+  const showTarget = profile?.show_dps_target === true; // a setting players turn on themselves
   const oreById = useMemo(() => new Map(cat.ores.map((o) => [o.id, o])), [cat]);
   const [kind, setKind] = useState<Kind>("armour");
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -313,6 +317,12 @@ export function Calculator({ cat }: { cat: Catalogue }) {
               </section>
             </Reveal>
           </div>
+          {kind === "weapon" && showTarget && (
+            <Reveal col={4}>
+              <DpsTarget classes={result.classes} pickedDps={selected.v.dps?.total ?? null} pickedId={selected.v.id} ores={total} quality={quality}
+                onPick={(cls, id) => { startTransition(() => setPick({ cls, id })); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+            </Reveal>
+          )}
           <div className={`collapse ${enhanceOpen ? "" : "open"}`}><div>
             <Reveal col={4}><TraitsPanel traits={result.traits} kind={kind} /></Reveal>
           </div></div>

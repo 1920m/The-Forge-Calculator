@@ -373,7 +373,15 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .loadout-centre { align-self: stretch; display: flex; flex-direction: column; gap: 12px; padding: 14px; background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.05), transparent 70%), var(--well); border: 1px solid var(--bd); }
 .loadout-name { text-align: center; font-family: var(--serif); font-size: 22px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loadout-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.loadout-stat { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; background: var(--row); border: 1px solid var(--bd); min-width: 0; }
+.loadout-stat { display: flex; flex-direction: column; gap: 1px; padding: 9px 12px; border: 1px solid var(--bd); min-width: 0; transition: border-color .2s;
+  /* corner brackets, like the panels */
+  background:
+    linear-gradient(var(--br), var(--br)) 0 0 / 10px 2px no-repeat, linear-gradient(var(--br), var(--br)) 0 0 / 2px 10px no-repeat,
+    linear-gradient(var(--br), var(--br)) 100% 0 / 10px 2px no-repeat, linear-gradient(var(--br), var(--br)) 100% 0 / 2px 10px no-repeat,
+    linear-gradient(var(--br), var(--br)) 0 100% / 10px 2px no-repeat, linear-gradient(var(--br), var(--br)) 0 100% / 2px 10px no-repeat,
+    linear-gradient(var(--br), var(--br)) 100% 100% / 10px 2px no-repeat, linear-gradient(var(--br), var(--br)) 100% 100% / 2px 10px no-repeat,
+    var(--row); }
+.loadout-stat:hover { border-color: var(--bd2); }
 .loadout-stat b { color: #fff; font-size: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loadout-traits { display: flex; flex-direction: column; gap: 2px; font-size: 15px; color: var(--strong); }
 .lo-slot { position: relative; background: var(--row); border: 1px solid var(--bd); transition: border-color .15s, background .15s, opacity .15s, box-shadow .15s; }
@@ -383,6 +391,8 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .lo-slot.dim { opacity: .45; }
 .lo-main { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 34px 8px 8px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; font: inherit; }
 .lo-main:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
+.lo-main.static { cursor: default; }
+a.lo-main:hover .lo-name { text-decoration: underline; }
 .lo-pic { width: 56px; height: 56px; flex: none; }
 .lo-slot:not(.filled) .lo-pic { border-style: dashed; }
 .lo-icon path { fill: none; stroke: #6d675d; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
@@ -521,4 +531,45 @@ body.modal-open { overflow: hidden; }
 .race-card ul { margin: 6px 0 0; padding-left: 18px; color: #cfc7b2; font-size: 15px; display: flex; flex-direction: column; gap: 3px; }
 .race-card li b { color: var(--strong); }
 @media (max-width: 520px) { .spin-pct { font-size: 36px; } .spin-says { font-size: 16px; } }
+
+/* ---------- DPS target ---------- */
+.target-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px 28px; align-items: start; }
+.target-grid .spin-result { margin-top: 0; }
+.target-input { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+.target-input .input { width: 150px; text-align: center; font-weight: 700; font-size: 20px; padding: 6px; color: var(--gold); }
+.level-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.level-row .btn { min-width: 44px; }
+.target-table td.mark { width: 28px; text-align: center; font-weight: 700; }
+.target-table tr.hit td.mark { color: var(--green-br); }
+.target-table tr.miss td.mark { color: #b0574f; }
+.target-table tr.miss td:not(.mark) { opacity: .5; }
+@media (max-width: 860px) { .target-grid { grid-template-columns: 1fr; } }
+.target-table { min-width: 520px; }
+@media (max-width: 560px) { .target-table { min-width: 0; } .target-table .cls { display: none; } }
+
+/* ---------- Share profile ---------- */
+.forger-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.share-wrap { position: relative; }
+.forger-top-wrap { z-index: 5; } /* the share box opens over the loadout below */
+.share-btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+.share-btn svg path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.share-btn.on { border-color: var(--acc); }
+.share-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: min(420px, calc(100vw - 32px)); padding: 14px 16px; contain: none; box-shadow: 0 12px 30px rgba(0,0,0,.55); }
+.share-lead { margin: 0 0 12px; color: var(--strong); font-size: 16px; }
+.share-link { display: flex; gap: 8px; }
+.share-link .input { min-width: 0; font-size: 15px; }
+.share-link .btn { flex: none; }
+.share-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
+/* ---------- Settings switches ---------- */
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.switch { position: relative; flex: none; width: 92px; height: 38px; padding: 0; background: var(--well); border: 1px solid var(--bd2); cursor: pointer; transition: background-color .2s, border-color .2s; }
+.switch:hover { border-color: var(--br); }
+.switch:disabled { opacity: .6; cursor: wait; }
+.switch-knob { position: absolute; top: 4px; left: 4px; width: 28px; height: 28px; background: #6d675d; transition: transform .25s var(--ease), background-color .2s; }
+.switch-text { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); font-weight: 700; font-size: 15px; color: var(--muted); }
+.switch[aria-checked="true"] { background: var(--green); border-color: var(--green-bd); }
+.switch[aria-checked="true"] .switch-knob { transform: translateX(54px); background: var(--green-br); }
+.switch[aria-checked="true"] .switch-text { right: auto; left: 12px; color: #ece6d2; }
+@media (max-width: 520px) { .setting-row { align-items: flex-start; } }
 
