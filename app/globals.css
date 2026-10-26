@@ -195,6 +195,19 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .enh-l { flex: 0 0 52px; font-weight: 700; color: #fff; font-size: 19px; }
 .enh-m { flex: 0 0 120px; color: var(--muted); font-size: 15px; }
 .enh-v { flex: 0 0 84px; }
+.enh-d { flex: 0 0 96px; text-align: right; color: #b9e08f; font-weight: 700; }
+.enh-cols { display: flex; align-items: center; gap: 10px; }
+.enh-cols > span:first-child { flex: 1; min-width: 0; white-space: nowrap; }
+.enh-short { display: none; }
+@media (max-width: 520px) {
+  .enh-long { display: none; }
+  .enh-short { display: inline; }
+  .enh-v { flex-basis: 64px; }
+  .enh-d { flex-basis: 80px; }
+  .enh-l { flex-basis: 40px; }
+  .stat-head.enh-cols { padding-left: 13px; padding-right: 13px; }
+}
+.enh-cols .enh-v, .enh-cols .enh-d { text-align: right; font-size: 15px; font-family: var(--sans); color: var(--muted); font-weight: 700; }
 .trait-grid { display: grid; gap: 12px; }
 .trait { background: var(--row); border: 1px solid var(--bd); padding: 12px 14px; transition: transform .2s, border-color .2s; }
 .trait:hover { transform: translateY(-2px); border-color: var(--br); }

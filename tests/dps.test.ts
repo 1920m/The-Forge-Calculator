@@ -32,3 +32,17 @@ describe("weapon DPS", () => {
     expect(statAtShare({ base: 0.02, max: 0.2 }, 0.5)).toBeCloseTo(0.2, 6);
   });
 });
+
+describe("DPS and enhancement", () => {
+  it("rises by exactly the enhancement multiplier, procs included", () => {
+    // Kitsunite + Galaxite: crits, burn, smite, explosion, lightning and black holes all active.
+    const ores = [{ id: "kitsunite", count: 5 }, { id: "galaxite", count: 5 }, { id: "fichilliumorite", count: 4 }];
+    const base = weaponDps({ ores, damage: 504.46, interval: 0.51 });
+    expect(base.parts.length).toBeGreaterThan(3);
+    for (const level of [1, 5, 10]) {
+      const m = 1 + 0.05 * level;
+      const up = weaponDps({ ores, damage: 504.46 * m, interval: 0.51 });
+      expect(up.total).toBeCloseTo(base.total * m, 6);
+    }
+  });
+});

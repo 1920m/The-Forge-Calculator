@@ -106,6 +106,9 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const fullValue = selected?.v.raw != null ? (selected.v.raw * 2) / (1 + quality / 100) : null;
   const enhance = selected?.v.raw != null ? enhancementTable(selected.v.raw, kind) : [];
   const maxEnh = enhance.length ? Math.max(...enhance.map((l) => l.stat)) || 1 : 1;
+  // DPS is weapon damage times things that don't depend on damage (speed, crits, proc chances), so it rises by the
+  // same 5% per level as damage.
+  const baseDps = kind === "weapon" ? selected?.v.dps?.total ?? null : null;
   const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
   const toSave = useMemo<NewForge | null>(() => selected && total >= 3 ? {
     name: selected.v.name, kind, world, class_name: selected.cls.name, variant_id: selected.v.id, quality, ores: entries,
@@ -297,12 +300,12 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                   <Chevron open={enhanceOpen} /><span>Enhance Equipment</span><span className="small" style={{ marginLeft: "auto", color: "#cfc7e6" }}>{enhanceOpen ? "Show less" : "Show +1 to +10"}</span>
                 </button>
                 <div className="pad">
-                  <div className="stat-head">Stat Improvement:</div>
-                  {enhance.slice(0, 1).map((l) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} />)}
+                  <div className="stat-head enh-cols"><span><span className="enh-long">Stat Improvement:</span><span className="enh-short">Level</span></span>{baseDps != null && <><span className="enh-v">{unit}</span><span className="enh-d">DPS</span></>}</div>
+                  {enhance.slice(0, 1).map((l) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={baseDps} />)}
                   <div id="enh-rest" className={`collapse ${enhanceOpen ? "open" : ""}`}><div>
-                    {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
+                    {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={baseDps} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
                   </div></div>
-                  <p className="note">Every stat rises 5% per level, from +0 to +10. Values use your quality setting.</p>
+                  <p className="note">Every stat rises 5% per level, from +0 to +10. Values use your quality setting.{baseDps != null && " DPS rises by the same 5% per level, because hits and trait procs all scale with weapon damage."}</p>
                 </div>
               </section>
             </Reveal>
@@ -360,13 +363,14 @@ function HoldToRemove({ label, colour, onRemove, children }: { label: string; co
   );
 }
 
-function EnhRow({ l, max, unit, delay = 0, hidden = false }: { l: { level: number; multiplier: number; stat: number }; max: number; unit: string; delay?: number; hidden?: boolean }) {
+function EnhRow({ l, max, unit, dps = null, delay = 0, hidden = false }: { l: { level: number; multiplier: number; stat: number }; max: number; unit: string; dps?: number | null; delay?: number; hidden?: boolean }) {
   return (
     <div className="enh-row" style={{ opacity: hidden ? 0 : 1, transform: hidden ? "translateY(-8px)" : "none", transition: `opacity .4s ease ${delay}ms, transform .4s ease ${delay}ms` }}>
       <span className="enh-l">+{l.level}</span>
       <span className="enh-m">1.00x → {l.multiplier.toFixed(2)}x</span>
       <span className="bar"><span style={{ width: `${Math.max(1, (l.stat / max) * 100)}%`, background: "#8fb86a" }} /></span>
       <span className="num enh-v" title={unit}>{fmt(l.stat)}</span>
+      {dps != null && <span className="num enh-d" title="DPS at this level">{fmt(dps * l.multiplier)}</span>}
     </div>
   );
 }
