@@ -273,9 +273,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
         </Reveal>
       </div>
 
-      {/* ---------- variants + traits (left) and enhancement (right) ---------- */}
+      {/* ---------- traits first (the key information, especially on phones), then variants (left) and enhancement (right) ---------- */}
       {selected && (
         <>
+          <Reveal col={4}><TraitsPanel traits={result.traits} kind={kind} /></Reveal>
           <div className="row">
             <div className="lower-left">
               <Reveal col={4}>
@@ -296,9 +297,6 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                   </div>
                 </section>
               </Reveal>
-              <div className={`collapse ${enhanceOpen ? "open" : ""}`}><div><div style={{ paddingTop: 24 }}>
-                <TraitsPanel traits={result.traits} kind={kind} dense />
-              </div></div></div>
             </div>
 
             <Reveal col={4} className="lower-right">
@@ -323,9 +321,6 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 onPick={(cls, id) => { startTransition(() => setPick({ cls, id })); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
             </Reveal>
           )}
-          <div className={`collapse ${enhanceOpen ? "" : "open"}`}><div>
-            <Reveal col={4}><TraitsPanel traits={result.traits} kind={kind} /></Reveal>
-          </div></div>
         </>
       )}
     </div>
