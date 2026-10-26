@@ -18,7 +18,7 @@ export function Footer() {
           </div>
           <nav style={{ display: "flex", flexWrap: "wrap", gap: "28px 64px" }} aria-label="Footer">
             <div><div className="footer-h">Calculator</div>
-              <div className="fl"><Link href="/armour">Armour</Link><Link href="/weapons">Weapons</Link><Link href="/ores">Ores</Link><Link href="/how-it-works">How it works</Link></div></div>
+              <div className="fl"><Link href="/gear">Weapons/Armour</Link><Link href="/races">Race spins</Link><Link href="/ores">Ores</Link><Link href="/how-it-works">How it works</Link></div></div>
             <div><div className="footer-h">Game data</div>
               <div className="fl"><Link href="/ores">Ore traits</Link><Link href="/how-it-works#odds">Forge odds</Link><Link href="/how-it-works#enhancement">Enhancement</Link></div></div>
             <div><div className="footer-h">Community</div>

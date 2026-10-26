@@ -31,6 +31,13 @@ const csp = [
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // Weapons and Armour became one page; old links and bookmarks open the right list on it.
+  async redirects() {
+    return [
+      { source: "/weapons", destination: "/gear?k=weapon", permanent: true },
+      { source: "/armour", destination: "/gear?k=armour", permanent: true },
+    ];
+  },
   async headers() {
     return [{ source: "/:path*", headers: [
       { key: "Content-Security-Policy", value: csp },

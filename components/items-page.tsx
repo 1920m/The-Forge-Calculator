@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { classNames, classVariants, poolIncomplete, type Catalogue } from "@/lib/engine/forge";
 import { stat, type Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
@@ -8,8 +8,30 @@ import { SHOW_STATUS_LABELS, fmt, pct } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 
-export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
+/** Which list to open: ?k= in the link first, then the type last used on the calculator. */
+function readKind(): Kind | null {
+  try {
+    const k = new URLSearchParams(window.location.search).get("k") ?? window.localStorage.getItem("forge.kind");
+    return k === "weapon" || k === "armour" ? k : null;
+  } catch { return null; }
+}
+
+export function ItemsPage({ cat }: { cat: Catalogue }) {
   const { world } = useShell();
+  const [kind, setKindState] = useState<Kind>("weapon");
+  useEffect(() => {
+    const k = readKind();
+    const t = window.setTimeout(() => { if (k) setKindState(k); }, 0);
+    return () => clearTimeout(t);
+  }, []);
+  const setKind = (k: Kind) => {
+    startTransition(() => { setKindState(k); setCls(null); });
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("k", k);
+      window.history.replaceState(null, "", url);
+    } catch { /* ignore */ }
+  };
   const names = classNames(cat, kind, world);
   const locks = cat.locks[kind];
   const [clsPick, setCls] = useState<string | null>(null);
@@ -21,6 +43,12 @@ export function ItemsPage({ cat, kind }: { cat: Catalogue; kind: Kind }) {
 
   return (
     <div className="page">
+      <Reveal col={1}>
+        <div className="kind-switch" role="group" aria-label="Show weapons or armour">
+          <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => setKind("armour")}>Armour</button>
+          <button className={`big-toggle ${kind === "weapon" ? "gb" : "btn"}`} aria-pressed={kind === "weapon"} onClick={() => setKind("weapon")}>Weapons</button>
+        </div>
+      </Reveal>
       <div className="row">
         <Reveal col={1} style={{ flex: "1 1 520px", minWidth: 0 }}>
           <section className="gp">
