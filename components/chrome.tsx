@@ -9,8 +9,8 @@ import { AccountMenu } from "./account-menu";
 const NAV = [
   ["/", "Calculator"],
   ["/ores", "Ores"],
-  ["/weapons", "Weapons"],
-  ["/armour", "Armour"],
+  ["/gear", "Weapons/Armour"],
+  ["/races", "Races"],
   ["/builds", "Builds"],
   ["/how-it-works", "How it works"],
 ] as const;

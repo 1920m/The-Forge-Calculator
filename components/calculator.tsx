@@ -15,6 +15,8 @@ import { MAX_ORES, MAX_TYPES, addOre, parseRecipe, type Entry } from "@/lib/forg
 import type { NewForge } from "@/lib/saved-forges";
 import { SaveStar } from "./save-star";
 import { FeedbackLink } from "./feedback";
+import Link from "next/link";
+import { averageTries, triesFor } from "@/lib/engine/odds";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
@@ -218,6 +220,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="The real time between swings. The game's item card shows a different 'index' number, which isn't the real speed.">{selected.v.interval}s per swing · range {selected.v.range}<span className="small faint" style={{ display: "block" }}>Card shows {selected.v.speed}s (the game&apos;s index value)</span></span></div>}
                     {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} />}
                     <div className="kv"><span>Chance:</span><span className="muted">{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</span></div>
+                    <TriesRow chance={selected.v.overall / 100} ores={total} />
                     <div className="kv"><span>Lock:</span><span className="muted">{selected.cls.lockable ? "Lockable with this many ores" : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
                   </div>
                 </>
@@ -419,6 +422,21 @@ function DpsRow({ dps }: { dps: DpsResult }) {
         <span className="muted small"> · {fmt(dps.attacksPerSecond)} hits/s</span>
         {bits.length > 0 && <span className="small faint" style={{ display: "block" }}>{bits.join(" · ")}</span>}
         {dps.night != null && <span className="small faint" style={{ display: "block" }}>At night (Moon Stone): {fmt(dps.night)}</span>}
+      </span>
+    </div>
+  );
+}
+
+/** "How many tries?" in plain words. The maths is on the How it works page. */
+function TriesRow({ chance, ores }: { chance: number; ores: number }) {
+  if (!(chance > 0)) return null;
+  if (chance >= 1) return <div className="kv"><span>Tries:</span><span className="muted">Every forge with this mix gives it.</span></div>;
+  const avg = averageTries(chance), half = triesFor(chance, 0.5), most = triesFor(chance, 0.9);
+  const forges = (n: number) => `${fmt(n, 0)} forge${n === 1 ? "" : "s"}`;
+  return (
+    <div className="kv"><span>Tries:</span>
+      <span className="muted">About {avg < 100 ? fmt(avg, 1) : fmt(avg, 0)} forges on average. Half of players get it within {forges(half)}, 9 in 10 within {forges(most)}.
+        <span className="small faint" style={{ display: "block" }}>That&apos;s about {fmt(most * ores, 0)} ores for a 9 in 10 chance. <Link href="/how-it-works#tries" className="inline-link">How this is worked out</Link></span>
       </span>
     </div>
   );
