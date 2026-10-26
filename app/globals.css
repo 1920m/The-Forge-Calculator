@@ -561,3 +561,15 @@ body.modal-open { overflow: hidden; }
 .share-link .btn { flex: none; }
 .share-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 
+/* ---------- Settings switches ---------- */
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.switch { position: relative; flex: none; width: 92px; height: 38px; padding: 0; background: var(--well); border: 1px solid var(--bd2); cursor: pointer; transition: background-color .2s, border-color .2s; }
+.switch:hover { border-color: var(--br); }
+.switch:disabled { opacity: .6; cursor: wait; }
+.switch-knob { position: absolute; top: 4px; left: 4px; width: 28px; height: 28px; background: #6d675d; transition: transform .25s var(--ease), background-color .2s; }
+.switch-text { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); font-weight: 700; font-size: 15px; color: var(--muted); }
+.switch[aria-checked="true"] { background: var(--green); border-color: var(--green-bd); }
+.switch[aria-checked="true"] .switch-knob { transform: translateX(54px); background: var(--green-br); }
+.switch[aria-checked="true"] .switch-text { right: auto; left: 12px; color: #ece6d2; }
+@media (max-width: 520px) { .setting-row { align-items: flex-start; } }
+
