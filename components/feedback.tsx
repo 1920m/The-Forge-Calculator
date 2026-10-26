@@ -32,7 +32,7 @@ export function FeedbackLink({ kind, children, className }: { kind?: FeedbackKin
 
 const APP_VERSION = (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || "dev").slice(0, 7);
 
-type Picked = { file: File; url: string };
+type Picked = { file: File; key: string };
 
 function FeedbackDialog({ initialKind, onClose }: { initialKind: FeedbackKind; onClose: () => void }) {
   const [kind, setKind] = useState<FeedbackKind>(initialKind);
@@ -58,10 +58,6 @@ function FeedbackDialog({ initialKind, onClose }: { initialKind: FeedbackKind; o
     return () => { document.removeEventListener("keydown", onKey); document.body.classList.remove("modal-open"); before?.focus?.(); };
   }, [onClose]);
 
-  // Free the image previews when the window closes.
-  const previews = useRef<Picked[]>([]);
-  useEffect(() => { previews.current = files; }, [files]);
-  useEffect(() => () => previews.current.forEach((f) => URL.revokeObjectURL(f.url)), []);
 
   const pick = (list: FileList | null) => {
     let problem: string | null = null;
@@ -70,7 +66,7 @@ function FeedbackDialog({ initialKind, onClose }: { initialKind: FeedbackKind; o
       if (!fileExt(file.type)) { problem = "Only PNG, JPG or WebP images can be attached."; continue; }
       if (file.size > MAX_FILE_BYTES) { problem = "Each image must be 5 MB or smaller."; continue; }
       if (files.length + add.length >= MAX_FILES) { problem = `You can attach up to ${MAX_FILES} images.`; break; }
-      add.push({ file, url: URL.createObjectURL(file) });
+      add.push({ file, key: crypto.randomUUID() });
     }
     setError(problem);
     if (add.length) setFiles([...files, ...add]);
@@ -147,10 +143,9 @@ function FeedbackDialog({ initialKind, onClose }: { initialKind: FeedbackKind; o
 
             <div className="fb-files">
               {files.map((f, i) => (
-                <span key={f.url} className="fb-thumb">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={f.url} alt={`Attachment ${i + 1}`} />
-                  <button type="button" onClick={() => { URL.revokeObjectURL(f.url); setFiles((cur) => cur.filter((x) => x !== f)); }} aria-label={`Remove attachment ${i + 1}`}><Icon name="x" /></button>
+                <span key={f.key} className="fb-thumb">
+                  <Thumb file={f.file} label={`Attachment ${i + 1}`} />
+                  <button type="button" onClick={() => setFiles((cur) => cur.filter((x) => x !== f))} aria-label={`Remove attachment ${i + 1}`}><Icon name="x" /></button>
                 </span>
               ))}
               {files.length < MAX_FILES && (
@@ -179,6 +174,25 @@ function FeedbackDialog({ initialKind, onClose }: { initialKind: FeedbackKind; o
     // Inside the themed app (so it uses the current world's colours), above the falling petals.
     document.querySelector(".app") ?? document.body,
   );
+}
+
+/** Draws a small preview of a picked image onto a canvas (no page addresses built from the file). */
+function Thumb({ file, label }: { file: File; label: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    let alive = true;
+    createImageBitmap(file).then((bmp) => {
+      const c = ref.current;
+      if (!alive || !c) { bmp.close(); return; }
+      const size = 128, scale = Math.max(size / bmp.width, size / bmp.height);
+      const w = bmp.width * scale, h = bmp.height * scale;
+      c.width = size; c.height = size;
+      c.getContext("2d")?.drawImage(bmp, (size - w) / 2, (size - h) / 2, w, h);
+      bmp.close();
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [file]);
+  return <canvas ref={ref} role="img" aria-label={label} />;
 }
 
 /* ------------------------------------------------------------------ icons (outline, like the rest of the site) */
