@@ -1,6 +1,6 @@
 // Builds data/catalogue.json from docs/PRD.md (the source of truth) plus the
 // short list of wiki-only ores below. Run: npm run data:build
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 
 const prd = readFileSync(new URL("../docs/PRD.md", import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -188,7 +188,9 @@ const catalogue = {
 // the bundled file or the latest Supabase release.
 const out = new URL("../data/catalogue.json", import.meta.url);
 const hash = createHash("sha256").update(JSON.stringify(catalogue)).digest("hex").slice(0, 16);
-const prev = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : {};
+// Read the previous copy directly (no exists-check first, which CodeQL flags as a race); a missing file means a first build.
+let prev = {};
+try { prev = JSON.parse(readFileSync(out, "utf8")); } catch (e) { if (e.code !== "ENOENT") throw e; }
 const revision = prev.contentHash === hash ? prev.revision : (prev.revision ?? 6) + 1;
 writeFileSync(out, JSON.stringify({ revision, contentHash: hash, ...catalogue }) + "\n");
 console.log(`revision ${revision} (${hash})`);
