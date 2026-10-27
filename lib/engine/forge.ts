@@ -8,7 +8,7 @@ export type CatalogueOre = {
   worlds: number[]; drop: number | null; source: string | null; verified: boolean;
   traits: { kinds: Kind[]; text: string }[];
 };
-export type CatalogueWeapon = { id: string; name: string; class: string; baseDamage: number; indexSpeed: number; trueSpeed: number; range: number; price: number; weight: number; worlds: number[]; verified: boolean; tag?: "shop" | "halloween" | null };
+export type CatalogueWeapon = { id: string; name: string; class: string; baseDamage: number; indexSpeed: number; trueSpeed: number; range: number; price: number; weight: number; worlds: number[]; verified: boolean; tag?: "shop" | "halloween" | "world1" | null };
 export type CatalogueArmour = { id: string; name: string; weightClass: "Light" | "Medium" | "Heavy"; set: string; slot: "helmet" | "chestplate" | "leggings"; healthPct: number; price: number; weight: number; worlds: number[]; verified: boolean };
 export type Catalogue = {
   ores: CatalogueOre[]; weapons: CatalogueWeapon[]; armour: CatalogueArmour[];
@@ -39,7 +39,7 @@ export function categoryRows(cat: Catalogue, kind: Kind): CategoryRow[] {
   return Object.entries(cat.odds[kind]).flatMap(([n, cells]) => cells.map((probability, i) => ({ kind, oreCount: Number(n), slot: i + 1, probability })));
 }
 
-export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; interval?: number; range?: number; tag?: "shop" | "halloween" | null };
+export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; interval?: number; range?: number; tag?: "shop" | "halloween" | "world1" | null };
 
 /** Every variant of a class in a world, with its chance inside the class (normalised inverse weights). */
 export function classVariants(cat: Catalogue, kind: Kind, world: World, className: string): Variant[] {

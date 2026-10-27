@@ -58,9 +58,23 @@ describe("catalogue forge results match Cris's in-game crafts", () => {
     expect(r.classes[1].variants.some((v) => v.name === "Hachiwari")).toBe(false);
   });
   it("uses the in-game weights: Wolf 1/3, Raven 1/8", () => {
-    const heavy = classVariants(cat, "armour", 4, "Heavy Chestplate");
+    const heavy = classVariants(cat, "armour", 3, "Heavy Chestplate");
     expect(heavy.find((v) => v.name === "Wolf Chestplate")?.weight).toBe(3);
     expect(heavy.find((v) => v.name === "Raven's Chestplate")?.weight).toBe(8);
+  });
+  it("can't forge Knight, Wolf or Raven's armour in World 4 (players' feedback)", () => {
+    for (const slot of ["Heavy Helmet", "Heavy Chestplate", "Heavy Leggings", "Medium Helmet", "Medium Chestplate", "Medium Leggings"]) {
+      const names = classVariants(cat, "armour", 4, slot).map((v) => v.name);
+      expect(names.filter((n) => /^(Knight|Wolf|Raven's) /.test(n))).toEqual([]);
+    }
+    expect(classVariants(cat, "armour", 3, "Heavy Chestplate").map((v) => v.name)).toContain("Knight Chestplate");
+  });
+  it("lists Comically Large Spoon as a World 1 weapon, not a World 4 shop blueprint", () => {
+    const spoon = cat.weapons.find((w) => w.id === "comically-large-spoon")!;
+    expect(spoon.worlds).toEqual([1]);
+    expect(spoon.tag).toBe("world1");
+    expect(classVariants(cat, "weapon", 2, "Colossal Sword").map((v) => v.id)).toContain("comically-large-spoon");
+    expect(classVariants(cat, "weapon", 4, "Colossal Sword").map((v) => v.id)).not.toContain("comically-large-spoon");
   });
   it("variant chances inside a class sum to 100", () => {
     const sum = classVariants(cat, "armour", 4, "Heavy Chestplate").reduce((s, v) => s + v.chance, 0);
