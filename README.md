@@ -105,6 +105,7 @@ Pick your world at the top and the whole site follows: the ores, the weapon clas
 - **How many tries?** Every result says how many forges it takes on average, and how many give half or 9 in 10 players the item.
 - **Hit a DPS target** (an extra signed-in players can turn on in Settings): pick the DPS you want and see the chance your mix forges a weapon that reaches it.
 - **Share your profile** from the Forger page: a private link that shows your name, picture and loadout, which you can turn off at any time.
+- **Runes:** pick an enhancement level, fill up to 3 rune slots (+3, +6, +9) with any runes at level I to III and their side effects, and see the DPS or armour effects with perfect rolls. Runes are ranked best first for weapons and for armour.
 - **Race spins** calculator: pick the race (or races) you want and how many spins you have, and see your chance, the average spins needed and every race's traits.
 - **How it works** explains every formula in plain words, including the tries and race spin maths, with a chart of how trait strength grows with your share.
 - **Works on phones.** The forge and ore picker come first on small screens.

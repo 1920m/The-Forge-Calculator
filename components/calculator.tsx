@@ -19,10 +19,15 @@ import Link from "next/link";
 import { averageTries, triesFor } from "@/lib/engine/odds";
 import { DpsTarget } from "./dps-target";
 import { useAuth } from "./auth";
+import { RunesPanel, type RuneItem } from "./runes-panel";
+import { decodeRunes, dpsAtLevel, encodeRunes, hasRunes, type RuneSlot } from "@/lib/engine/runes";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
-function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string } } {
+type Runes = Record<Kind, (RuneSlot | null)[]>;
+const NO_RUNES: Runes = { weapon: [null, null, null], armour: [null, null, null] };
+
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes } {
   try {
     const p = new URLSearchParams(window.location.search);
     const fromUrl = p.get("o");
@@ -32,7 +37,12 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
     const entries = raw ? parseRecipe(raw) : undefined;
     // Pre-selection from the Builds page: short, plain values only.
     const cls = p.get("c")?.slice(0, 60) ?? null, id = p.get("v")?.slice(0, 60) ?? null;
-    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined };
+    // Runes: enhancement level (e) and one rune list per item type (rw, ra).
+    const store = (k: string) => p.get(k) ?? window.localStorage.getItem(`forge.${k}`);
+    const e = Number(store("e"));
+    const runes: Runes = { weapon: decodeRunes(store("rw"), "weapon"), armour: decodeRunes(store("ra"), "armour") };
+    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined,
+      enhance: Number.isInteger(e) && e >= 0 && e <= 10 && store("e") != null ? e : undefined, runes };
   } catch { return {}; }
 }
 
@@ -50,6 +60,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const [allWorlds, setAllWorlds] = useState(false);
   const [oreFilter, setOreFilter] = useState<OreFilterState>(EMPTY_FILTER);
   const loaded = useRef(false);
+  const [runeEnhance, setRuneEnhance] = useState(9);
+  const [runes, setRunes] = useState<Runes>(NO_RUNES);
 
   // Restore the recipe from the URL or the last visit, once.
   useEffect(() => {
@@ -59,6 +71,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.quality) setQuality(r.quality);
       if (r.entries) setEntries(r.entries.filter((e) => oreById.has(e.id)));
       if (r.pick) setPick(r.pick);
+      if (r.enhance != null) setRuneEnhance(r.enhance);
+      if (r.runes) setRunes(r.runes);
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
@@ -74,12 +88,19 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       url.searchParams.set("k", kind);
       url.searchParams.set("q", String(quality));
       url.searchParams.delete("c"); url.searchParams.delete("v"); // one-time pre-selection
+      // Runes only go in the link once some are added, so plain links stay short.
+      const rw = encodeRunes(runes.weapon), ra = encodeRunes(runes.armour), none = "-,-,-";
+      const runeParams: [string, string | null][] = [["e", rw === none && ra === none ? null : String(runeEnhance)], ["rw", rw === none ? null : rw], ["ra", ra === none ? null : ra]];
+      for (const [k, v] of runeParams) {
+        if (v == null) url.searchParams.delete(k); else url.searchParams.set(k, v);
+        window.localStorage.setItem(`forge.${k}`, k === "e" ? String(runeEnhance) : (v ?? ""));
+      }
       window.history.replaceState(null, "", url);
       window.localStorage.setItem("forge.recipe", o);
       window.localStorage.setItem("forge.kind", kind);
       window.localStorage.setItem("forge.quality", String(quality));
     } catch { /* storage unavailable */ }
-  }, [entries, kind, quality]);
+  }, [entries, kind, quality, runes, runeEnhance]);
 
   const mix: Mix = useMemo(() => entries.flatMap((e) => { const ore = oreById.get(e.id); return ore ? [{ ore, count: e.count }] : []; }), [entries, oreById]);
   const result = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
@@ -115,6 +136,15 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   // DPS is weapon damage times things that don't depend on damage (speed, crits, proc chances), so it rises by the
   // same 5% per level as damage.
   const baseDps = kind === "weapon" ? selected?.v.dps?.total ?? null : null;
+  // With weapon runes chosen, DPS at each level counts the runes whose slots that level opens (+3, +6, +9).
+  const runeWeapon = kind === "weapon" && hasRunes(runes.weapon) && selected?.v.raw != null && selected.v.interval
+    ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval } : null;
+  const dpsAt = (level: number) => (baseDps == null ? null : runeWeapon ? dpsAtLevel(runeWeapon, level, runes.weapon).total : baseDps * (1 + 0.05 * level));
+  const runeDps = runeWeapon ? dpsAtLevel(runeWeapon, runeEnhance, runes.weapon).total : null;
+  const runeItem = useMemo<RuneItem | null>(() => selected ? {
+    kind, name: selected.v.name, raw: selected.v.raw,
+    ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), interval: selected.v.interval,
+  } : null, [selected, kind, mix]);
   const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
   const toSave = useMemo<NewForge | null>(() => selected && total >= 3 ? {
     name: selected.v.name, kind, world, class_name: selected.cls.name, variant_id: selected.v.id, quality, ores: entries,
@@ -222,7 +252,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>{statName}:</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(selected.v.value)} {unit}</span></div>
                     <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="The real time between swings. The game's item card shows a different 'index' number, which isn't the real speed.">{selected.v.interval}s per swing · range {selected.v.range}<span className="small faint" style={{ display: "block" }}>Card shows {selected.v.speed}s (the game&apos;s index value)</span></span></div>}
-                    {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} />}
+                    {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} withRunes={runeDps} runeLevel={runeEnhance} />}
                     <div className="kv"><span>Chance:</span><span className="muted">{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</span></div>
                     <TriesRow chance={selected.v.overall / 100} ores={total} />
                     <div className="kv"><span>Lock:</span><span className="muted">{selected.cls.lockable ? "Lockable with this many ores" : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
@@ -306,11 +336,11 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 </button>
                 <div className="pad">
                   <div className="stat-head enh-cols"><span><span className="enh-long">Stat Improvement:</span><span className="enh-short">Level</span></span>{baseDps != null && <><span className="enh-v">{unit}</span><span className="enh-d">DPS</span></>}</div>
-                  {enhance.slice(0, 1).map((l) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={baseDps} />)}
+                  {enhance.slice(0, 1).map((l) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={dpsAt(l.level)} />)}
                   <div id="enh-rest" className={`collapse ${enhanceOpen ? "open" : ""}`}><div>
-                    {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={baseDps} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
+                    {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={dpsAt(l.level)} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
                   </div></div>
-                  <p className="note">Every stat rises 5% per level, from +0 to +10. Values use your quality setting.{baseDps != null && " DPS rises by the same 5% per level, because hits and trait procs all scale with weapon damage."}</p>
+                  <p className="note">Every stat rises 5% per level, from +0 to +10. Values use your quality setting.{baseDps != null && (runeWeapon ? " DPS includes your runes from the level their slot opens (+3, +6, +9)." : " DPS rises by the same 5% per level, because hits and trait procs all scale with weapon damage.")}</p>
                 </div>
               </section>
             </Reveal>
@@ -319,6 +349,11 @@ export function Calculator({ cat }: { cat: Catalogue }) {
             <Reveal col={4}>
               <DpsTarget classes={result.classes} pickedDps={selected.v.dps?.total ?? null} pickedId={selected.v.id} ores={total} quality={quality}
                 onPick={(cls, id) => { startTransition(() => setPick({ cls, id })); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+            </Reveal>
+          )}
+          {runeItem && (
+            <Reveal col={4}>
+              <RunesPanel item={runeItem} enhance={runeEnhance} onEnhance={setRuneEnhance} slots={runes[kind]} onSlots={(s) => setRunes((cur) => ({ ...cur, [kind]: s }))} />
             </Reveal>
           )}
         </>
@@ -378,7 +413,7 @@ function EnhRow({ l, max, unit, dps = null, delay = 0, hidden = false }: { l: { 
       <span className="enh-m">1.00x → {l.multiplier.toFixed(2)}x</span>
       <span className="bar"><span style={{ width: `${Math.max(1, (l.stat / max) * 100)}%`, background: "#8fb86a" }} /></span>
       <span className="num enh-v" title={unit}>{fmt(l.stat)}</span>
-      {dps != null && <span className="num enh-d" title="DPS at this level">{fmt(dps * l.multiplier)}</span>}
+      {dps != null && <span className="num enh-d" title="DPS at this level">{fmt(dps)}</span>}
     </div>
   );
 }
@@ -412,7 +447,7 @@ function TraitsPanel({ traits, kind, dense = false }: { traits: ReturnType<typeo
 }
 
 /** DPS with every trait the mix transfers: crits and lethality on each hit, plus procs and damage over time. */
-function DpsRow({ dps }: { dps: DpsResult }) {
+function DpsRow({ dps, withRunes = null, runeLevel = 0 }: { dps: DpsResult; withRunes?: number | null; runeLevel?: number }) {
   const bits = [
     dps.critChance > 0 && `${pct(dps.critChance * 100)} crit chance, crits hit ${fmt(145 + dps.critDamage * 100, 1)}%`,
     dps.lethality > 0 && `+${pct(dps.lethality * 100)} lethality`,
@@ -427,6 +462,7 @@ function DpsRow({ dps }: { dps: DpsResult }) {
         <span className="muted small"> · {fmt(dps.attacksPerSecond)} hits/s</span>
         {bits.length > 0 && <span className="small faint" style={{ display: "block" }}>{bits.join(" · ")}</span>}
         {dps.night != null && <span className="small faint" style={{ display: "block" }}>At night (Moon Stone): {fmt(dps.night)}</span>}
+        {withRunes != null && <span className="small" style={{ display: "block", color: "var(--gold)" }}>With your runes at +{runeLevel}: <b>{fmt(withRunes)}</b> <a className="inline-link" href="#runes-h">see Runes</a></span>}
       </span>
     </div>
   );

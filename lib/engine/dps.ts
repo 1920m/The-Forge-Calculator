@@ -1,7 +1,8 @@
 /**
  * Weapon DPS, including ore traits. A port of the community DPS calculator on the wiki
  * (MediaWiki:ForgeCalculator.js, with the stat ranges from Data:Ores.json), limited to what a forge
- * result decides: the ores, the weapon and its damage. Race, runes, achievements and armour are not included.
+ * result decides: the ores, the weapon and its damage, plus runes when the player adds them (see `extra`).
+ * Race, achievements and armour are not included.
  *
  * - Hits:      damage × (1 + lethality) × crit blend × attacks per second
  * - Crit:      blend = chance × (1.45 + crit damage) + (1 − chance), chance capped at 100%
@@ -37,7 +38,13 @@ export function statAtShare(r: Range, share: number): number {
   return v;
 }
 
-export type DpsInput = { ores: { id: string; count: number }[]; damage: number; interval: number };
+/** Extra stats and on-hit procs from runes (best rolls), added to the ore traits. */
+export type DpsExtra = {
+  stats?: Partial<Record<"lethality" | "crit_chance" | "crit_dmg" | "atk_speed", number>>;
+  procs?: ({ label: string; chance: number; dmg: number } & (
+    | { type: "poison" | "burn"; dur: number } | { type: "explosion" } | { type: "lightning"; cd: number }))[];
+};
+export type DpsInput = { ores: { id: string; count: number }[]; damage: number; interval: number; extra?: DpsExtra };
 export type DpsResult = {
   total: number; hit: number; procs: number;
   parts: { label: string; dps: number }[];
@@ -45,7 +52,7 @@ export type DpsResult = {
   night: number | null;
 };
 
-export function weaponDps({ ores, damage, interval }: DpsInput): DpsResult {
+export function weaponDps({ ores, damage, interval, extra }: DpsInput): DpsResult {
   const total = ores.reduce((n, o) => n + o.count, 0);
   const vals = (stat: DpsStat) => ores.flatMap((o) => {
     const r = DPS_STATS[o.id]?.[stat];
@@ -57,10 +64,12 @@ export function weaponDps({ ores, damage, interval }: DpsInput): DpsResult {
   const max = (s: DpsStat) => Math.max(0, ...vals(s));
   const minPositive = (s: DpsStat) => { const v = vals(s); return v.length ? Math.min(...v) : 0; };
 
-  const lethality = Math.min(sum("lethality"), CAPS.lethality);
-  const critChance = Math.min(sum("crit_chance"), CAPS.crit_chance);
-  const critDamage = Math.min(sum("crit_dmg"), CAPS.crit_dmg);
-  const atkSpeed = Math.min(sum("atk_speed"), CAPS.atk_speed);
+  // Rune secondary traits add to the ores' before the caps.
+  const add = extra?.stats ?? {};
+  const lethality = Math.min(sum("lethality") + (add.lethality ?? 0), CAPS.lethality);
+  const critChance = Math.min(sum("crit_chance") + (add.crit_chance ?? 0), CAPS.crit_chance);
+  const critDamage = Math.min(sum("crit_dmg") + (add.crit_dmg ?? 0), CAPS.crit_dmg);
+  const atkSpeed = Math.min(sum("atk_speed") + (add.atk_speed ?? 0), CAPS.atk_speed);
   const rate = interval > 0 ? (1 + atkSpeed) / interval : 0;
   const blend = critChance * (BASE_CRIT_DMG + critDamage) + (1 - critChance);
 
@@ -81,6 +90,13 @@ export function weaponDps({ ores, damage, interval }: DpsInput): DpsResult {
     { label: "Smite", dps: damage * rate * Math.min(SMITE_CAP, sum("smite_dmg")) * Math.min(max("smite_chance"), 1) },
     { label: "Black hole", dps: hasGalaxite ? damage * blackHoleDmg * BLACK_HOLE_CHANCE * Math.max(1, rate) : 0 },
     { label: "Lightning", dps: rate ? damage * sum("lightning_dmg") * max("lightning_chance") * (lightningCd > 0 ? Math.min(rate, 1 / lightningCd) : rate) : 0 },
+    // Rune procs: each rune is its own source (copies of a rune add up), worked out like the ore procs above.
+    ...(extra?.procs ?? []).map((r) => ({
+      label: r.label,
+      dps: r.type === "explosion" ? damage * r.dmg * Math.min(r.chance, 1) * rate
+        : r.type === "lightning" ? (rate ? damage * r.dmg * Math.min(r.chance, 1) * Math.min(rate, 1 / r.cd) : 0)
+        : dot(r.dmg, r.chance, r.dur),
+    })),
   ].filter((p) => p.dps > 0);
   const procs = parts.reduce((a, p) => a + p.dps, 0);
 
