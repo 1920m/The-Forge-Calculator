@@ -5,7 +5,7 @@ import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type 
 import type { Kind } from "@/lib/engine";
 import type { DpsResult } from "@/lib/engine/dps";
 import { imageUrl } from "@/lib/data/supabase";
-import { SHOW_STATUS_LABELS, fmt, pct, rarityColour } from "@/lib/ui";
+import { SHOW_STATUS_LABELS, fmt, multLabel, pct, rarityColour } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { Chevron, Lock } from "./icons";
@@ -330,10 +330,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
 const OreButton = memo(function OreButton({ ore, count, locked, onAdd }: { ore: CatalogueOre; count: number; locked: boolean; onAdd: (id: string, n?: number) => void }) {
   return (
     <button className={`tile${locked ? " locked" : ""}`} style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={() => onAdd(ore.id)} aria-disabled={locked}
-      onContextMenu={(e) => { e.preventDefault(); onAdd(ore.id, -1); }} aria-label={locked ? `${ore.name}: the forge already has ${MAX_TYPES} ore types` : `Add ${ore.name}, ${ore.rarity}, ${ore.multiplier}x`} title={`${ore.name} · ${ore.rarity} · ${ore.multiplier}x${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
+      onContextMenu={(e) => { e.preventDefault(); onAdd(ore.id, -1); }} aria-label={locked ? `${ore.name}: the forge already has ${MAX_TYPES} ore types` : `Add ${ore.name}, ${ore.rarity}, ${ore.rule === "average" ? "takes the average multiplier" : `${ore.multiplier}x`}`} title={`${ore.name} · ${ore.rarity} · ${ore.rule === "average" ? "takes the other ores' average multiplier" : `${ore.multiplier}x`}${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
       <GameImage src={imageUrl("ores", ore.id)} alt="" size={24} />
       <span className="t-top" style={{ right: count ? 26 : 2 }}>{ore.name}</span>
-      <span className="t-br">{ore.multiplier}x</span>
+      <span className="t-br">{multLabel(ore)}</span>
       <TraitMarks ore={ore} />
       {count > 0 && <span className="t-badge">{count}</span>}
     </button>

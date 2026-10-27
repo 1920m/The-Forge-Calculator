@@ -6,6 +6,8 @@ export const RARITY_ORDER = Object.keys(RARITY_COLOURS);
 export const rarityColour = (r: string | null | undefined) => (r && RARITY_COLOURS[r]) || "#3a3834";
 export const pct = (v: number, d = 1) => `${Number(v.toFixed(d))}%`;
 export const fmt = (v: number | null | undefined, d = 2) => (v == null ? "–" : v.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: d }));
+/** An ore's multiplier as shown on tiles. Fichilliumorite and Bismuth take the other ores' average when forging. */
+export const multLabel = (o: { multiplier: number; rule?: string }) => (o.rule === "average" ? "Avg" : `${o.multiplier}x`);
 export const worldLabel = (worlds: number[]) => (worlds.length >= 4 ? "All" : worlds.join(" and "));
 
 /**
