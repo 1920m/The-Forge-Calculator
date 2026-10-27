@@ -663,7 +663,6 @@ body.modal-open { overflow: hidden; }
 .stash-tile[aria-pressed="true"] { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset, 0 0 18px color-mix(in srgb, var(--gold) 25%, transparent); }
 .stash-tile.other { opacity: .55; }
 .stash-name { position: absolute; top: 5px; left: 6px; right: 6px; text-align: center; font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px #000; }
-.stash-rank { position: absolute; top: 24px; right: 5px; width: 26px; height: 26px; padding-top: 2px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #1a1408; background: var(--gold); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
 .stash-score { position: absolute; bottom: 5px; left: 4px; right: 4px; text-align: center; font-size: 13px; color: var(--gold); }
 .stash-side { display: flex; flex-direction: column; gap: 8px; padding: 14px; overflow-y: auto; min-height: 0;
   background:
@@ -690,8 +689,11 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 980px) { .runes-top { grid-template-columns: 1fr; } .rune-slots { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
   .stash { max-height: 94vh; }
-  .stash-body { grid-template-columns: 1fr; overflow-y: auto; }
+  .stash-body { grid-template-columns: 1fr; grid-auto-rows: max-content; overflow-y: auto; }
   .stash-grid { overflow: visible; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
   .stash-side { overflow: visible; }
+  /* phones: the button sits right under the rune's picture, not at the end of the list */
+  .stash-side-head { order: -2; }
+  .stash-save { order: -1; position: static; box-shadow: none; margin: 4px 0 6px; }
   .stash-head h2 { font-size: 22px; }
 }

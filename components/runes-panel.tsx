@@ -241,11 +241,10 @@ function RuneStash({ item, enhance, slots, index, open, onSave, onClose }: {
         </div>
         <div className="stash-body">
           <div className="stash-grid" role="group" aria-label="Runes, best first">
-            {shown.map(({ r, score }, i) => (
+            {shown.map(({ r, score }) => (
               <button key={r.id} aria-pressed={selected === r.id} className={`stash-tile${r.kind !== item.kind ? " other" : ""}`} onClick={() => setSelected(r.id)}>
                 <span className="stash-name">{r.name}</span>
                 <RuneIcon id={r.id} size={64} />
-                <span className="stash-rank" title="Rank in this list">{i + 1}</span>
                 <span className="stash-score">
                   {tab === "weapon" && item.kind === "weapon" ? (score > 0.005 ? `+${fmt(score, 0)} DPS` : "Utility")
                     : tab === "armour" ? (score > 0 ? `+${pct(score * 100)} EH` : r.effect) : r.effect}
@@ -256,9 +255,11 @@ function RuneStash({ item, enhance, slots, index, open, onSave, onClose }: {
           </div>
 
           <aside className="stash-side" aria-live="polite">
-            <div className="stash-side-name">{rune.name}</div>
-            <div className="stash-side-pic"><RuneIcon id={rune.id} size={112} /></div>
-            <div className="small muted" style={{ textAlign: "center" }}>{rune.kind === "weapon" ? "Weapon" : "Armour"} rune · {rune.effect}{rune.aka ? ` · also called ${rune.aka}` : ""}</div>
+            <div className="stash-side-head">
+              <div className="stash-side-name">{rune.name}</div>
+              <div className="stash-side-pic"><RuneIcon id={rune.id} size={112} /></div>
+              <div className="small muted" style={{ textAlign: "center" }}>{rune.kind === "weapon" ? "Weapon" : "Armour"} rune · {rune.effect}{rune.aka ? ` · also called ${rune.aka}` : ""}</div>
+            </div>
             {fits ? (
               <>
                 <div className="stash-label">Level</div>
