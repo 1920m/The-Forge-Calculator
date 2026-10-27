@@ -45,3 +45,29 @@ describe("calculatorHref", () => {
     expect(Object.fromEntries(u.searchParams)).toEqual({ o: "gargantuan:3,onyx:3", k: "weapon", q: "100", world: "2", c: "Gauntlets", v: "dark-knights-gauntlets" });
   });
 });
+
+describe("runes saved with a forge", async () => {
+  const { readSavedForge, forgeKey, calculatorHref, cleanRunes } = await import("../lib/saved-forges");
+  const row = { id: "f1", name: "DKG", kind: "weapon", world: 2, class_name: "Gauntlets", variant_id: "dark-knights-gauntlets", quality: 100, ores: [{ id: "kitsunite", count: 3 }], catalogue_revision: 9, created_at: "" };
+
+  it("reads old saves without runes", () => {
+    expect(readSavedForge(row)).toMatchObject({ runes: null, enhance: null });
+  });
+  it("keeps valid runes and drops wrong-kind or unknown ones", () => {
+    expect(readSavedForge({ ...row, runes: "blast-chip:3:atk_speed,-,-", enhance: 9 })).toMatchObject({ runes: "blast-chip:3:atk_speed,-,-", enhance: 9 });
+    expect(readSavedForge({ ...row, runes: "ward-patch:3,-,-", enhance: 9 })).toMatchObject({ runes: null, enhance: null }); // armour rune on a weapon
+    expect(cleanRunes("nope:2", "weapon")).toBeNull();
+  });
+  it("tells forges with different runes apart", () => {
+    const f = readSavedForge(row)!;
+    expect(forgeKey(f)).not.toBe(forgeKey({ ...f, runes: "blast-chip:3,-,-", enhance: 9 }));
+    expect(forgeKey({ ...f, runes: "blast-chip:3,-,-", enhance: 9 })).not.toBe(forgeKey({ ...f, runes: "blast-chip:3,-,-", enhance: 6 }));
+  });
+  it("opens in the calculator with its runes", () => {
+    const href = calculatorHref({ ...readSavedForge(row)!, runes: "blast-chip:3,-,-", enhance: 9 });
+    const p = new URLSearchParams(href.slice(2));
+    expect(p.get("e")).toBe("9");
+    expect(p.get("rw")).toBe("blast-chip:3,-,-");
+    expect(new URLSearchParams(calculatorHref(readSavedForge(row)!).slice(2)).has("rw")).toBe(false);
+  });
+});

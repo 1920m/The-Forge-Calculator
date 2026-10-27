@@ -164,7 +164,8 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
           <div className="loadout-stats">
             <Stat label="Armor defense" value={known.length ? fmt(defence) : "–"} note={`${armour.length} of 3 pieces`} />
             <Stat label="Weapon damage" value={weapon?.r.value != null ? fmt(weapon.r.value) : "–"} note={weapon?.f.class_name ?? "No weapon"} />
-            <Stat label="Weapon DPS" value={weapon?.r.dps != null ? fmt(weapon.r.dps) : "–"} note={weapon?.r.speed != null ? `${weapon.r.speed}s per swing` : ""} />
+            <Stat label="Weapon DPS" value={weapon?.r.runeDps != null ? fmt(weapon.r.runeDps) : weapon?.r.dps != null ? fmt(weapon.r.dps) : "–"}
+              note={weapon?.r.runeDps != null ? `+${weapon.r.runeLevel} with runes` : weapon?.r.speed != null ? `${weapon.r.speed}s per swing` : ""} />
             <Stat label="Pickaxe" value={pick ? pick.name.replace(/ Pickaxe$/, "") : "–"} note={pick ? pick.region : "None"} />
           </div>
           <div className="loadout-traits">

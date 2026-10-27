@@ -100,3 +100,29 @@ describe("traits", () => {
     expect(qualityLabel(cat, 10)).toBe("Broken");
   });
 });
+
+describe("locking a class", async () => {
+  const { lockClass } = await import("../lib/engine/forge");
+  const r = forge(cat, mix(["Bismuth", 1], ["Fichilliumorite", 1], ["Galaxite", 1], ["Kitsunite", 1], ["Iron", 6]), "weapon", 4, 1); // 10 ores
+  const sum = (cs: typeof r.classes) => cs.reduce((a, c) => a + c.variants.reduce((b, v) => b + v.overall, 0), 0);
+
+  it("changes nothing when no class is locked", () => {
+    expect(lockClass(r.classes, null)).toBe(r.classes);
+  });
+  it("guarantees the locked class and keeps the 1 in N split inside it", () => {
+    const ss = r.classes.find((c) => c.name === "Straight Sword")!;
+    expect(ss.lockable).toBe(true); // 9 ores lock Straight Sword
+    const locked = lockClass(r.classes, "Straight Sword");
+    expect(locked.find((c) => c.name === "Straight Sword")!.probability).toBe(100);
+    expect(locked.filter((c) => c.name !== "Straight Sword").every((c) => c.probability === 0 && c.variants.every((v) => v.overall === 0))).toBe(true);
+    const hs = locked.find((c) => c.name === "Straight Sword")!.variants.find((v) => v.name === "Hell Slayer")!;
+    expect(hs.overall).toBeCloseTo(hs.chance, 12);
+    expect(sum(locked)).toBeCloseTo(100, 9);
+    expect(sum(r.classes)).toBeCloseTo(100, 9);
+  });
+  it("can't lock a class the ores don't reach", () => {
+    const colossal = r.classes.find((c) => c.name === "Colossal Sword")!;
+    expect(colossal.lockable).toBe(false);
+    expect(lockClass(r.classes, "Colossal Sword")).toBe(r.classes);
+  });
+});
