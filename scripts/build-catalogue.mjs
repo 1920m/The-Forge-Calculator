@@ -88,6 +88,7 @@ const allWeapons = [...csv("class,name,base_damage").slice(1), ...EXTRA_WEAPONS]
 const byName = new Map(allWeapons.map((w) => [w.name, w]));
 
 // Which classes and variants each world rolls, as listed by Cris from the game (24 Oct 2026).
+const COLOSSAL_1_2 = [["Great Sword"], ["Hammer"], ["Skull Crusher"], ["Dragon Slayer"]];
 // [name] uses the wiki weight; [name, weight] overrides it for that world. shop: the class also has
 // shop-blueprint weapons Cris does not own yet, so the list (and the odds inside it) may be incomplete.
 const W2 = {
@@ -97,7 +98,8 @@ const W2 = {
   "Katana": { items: [["Uchigatana"], ["Tachi"]] },
   "Greatsword": { items: [["Crusader Sword"], ["Long Sword"], ["Dark Knight's Greatsword"], ["Anchored Greatsword"], ["Zweihander"], ["Jack's Crest"], ["The Carver"]] },
   "Great Axe": { items: [["Double Battle Axe"], ["Scythe"]] },
-  "Colossal Sword": { items: [["Great Sword"], ["Hammer"], ["Skull Crusher"], ["Dragon Slayer"]] },
+  // Comically Large Spoon only rolls in World 1 (players' feedback, 27 Oct 2026). It isn't a shop blueprint.
+  "Colossal Sword": { items: [...COLOSSAL_1_2, ["Comically Large Spoon"]] },
 };
 const W3 = {
   "Dagger": { items: W2["Dagger"].items, shop: true },
@@ -106,7 +108,7 @@ const W3 = {
   "Axe": { items: [["Axe"], ["Battleaxe"], ["Curved Handle Axe"], ["Spade Armed Axe"]], shop: true },
   "Spear": { items: [["Spear"], ["Trident"], ["Angelic Spear"], ["Knight Spear"], ["Compass Spear"]] },
   "Great Axe": { items: [...W2["Great Axe"].items, ["Greater Battle Axe"], ["Wyvern Axe"]], shop: true },
-  "Colossal Sword": W2["Colossal Sword"],
+  "Colossal Sword": { items: COLOSSAL_1_2 },
 };
 const W4 = {
   "Dagger": { items: [["Kunai"], ["Jitte"], ["Damascus Dagger"], ["Tanto"]], shop: true },
@@ -149,17 +151,22 @@ for (const w of allWeapons.filter((x) => !listed.has(x.id))) {
   if (!w.worlds.length) w.verified = false; // class does not exist in any world we know
 }
 for (const world of [2, 3, 4]) for (const p of Object.values(weaponPools[world].pools)) p.shop = false;
+// The site shows Worlds 1 and 2 together, so World 1-only weapons sit in that pool with a "World 1 only" tag.
+const WORLD_1_ONLY = new Set(["Comically Large Spoon"]);
+for (const w of allWeapons) if (WORLD_1_ONLY.has(w.name)) { w.worlds = [1]; w.tag = "world1"; }
 const weapons = allWeapons.map((w) => ({ ...w, worlds: w.worlds.sort() }));
 
 // ---------- armour
 const W4_SETS = new Set(["Ninja's", "Rootguard", "Vanguard", "Shogun"]);
+// Sets that can't be forged in World 4 (players' feedback, 27 Oct 2026).
+const NOT_W4_SETS = new Set(["Knight", "Wolf", "Raven's"]);
 const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, slot, hp, price, chance]) => {
   const set = name.replace(/ (Helmet|Chestplate|Leggings|Armor|Crown)$/, "").replace(/^(Light|Medium)$/, "Basic");
   const s = W4_SETS.has(set) ? set : set;
   return {
     id: slug(name), name, weightClass: cls, set: s, slot, healthPct: num(hp), price: num(price),
     weight: num(chance), // Wolf 1/3 and Raven 1/8 confirmed in game by Cris, 24 Oct 2026
-    worlds: W4_SETS.has(s) ? [4] : [1, 2, 3, 4],
+    worlds: W4_SETS.has(s) ? [4] : NOT_W4_SETS.has(s) ? [1, 2, 3] : [1, 2, 3, 4],
     verified: !(name === "Vanguard Helmet" || name === "Vanguard Leggings"),
   };
 });

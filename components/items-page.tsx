@@ -88,7 +88,7 @@ export function ItemsPage({ cat }: { cat: Catalogue }) {
                     <tr key={v.id}>
                       <td><span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                         <span className="tile" style={{ width: 34, height: 34, borderWidth: 1 }}><GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={16} /></span>
-                        {v.name}</span> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}</td>
+                        {v.name}</span> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}{v.tag === "world1" && <span className="badge der" title="Only rolls in World 1, not World 2">World 1 only</span>}</td>
                       {kind === "weapon" ? <><td>{v.base}</td><td>{v.interval}s</td><td className="muted">{v.speed}s</td><td>{v.range}</td></> : <td>{v.base}</td>}
                       <td className="muted">1/{v.weight}</td>
                       <td>{pct(v.chance)}</td>
