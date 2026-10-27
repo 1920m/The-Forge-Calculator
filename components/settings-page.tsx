@@ -7,6 +7,12 @@ import { Avatar } from "./account-menu";
 import { supabase } from "@/lib/supabase/browser";
 import { cleanDisplayName } from "@/lib/safe-next";
 
+type PrefKey = "show_dps_target" | "show_molds";
+const PREFS: { key: PrefKey; title: string; text: string }[] = [
+  { key: "show_dps_target", title: "Hit a DPS target", text: "Adds a panel under weapon results: pick the DPS you want and an enhancement level, and see the chance a forge from your mix reaches it and how many forges that takes." },
+  { key: "show_molds", title: "Molds", text: "Adds Weapon and Armor Molds to the calculator: a fifth forge slot for molds, and double-click an item in Forge Chances to aim them at it. With its class locked and enough molds, the item is guaranteed." },
+];
+
 export function SettingsPage() {
   const { user, profile, loading, reloadProfile, signOut } = useAuth();
   const router = useRouter();
@@ -15,7 +21,8 @@ export function SettingsPage() {
   const [confirm, setConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dpsTarget, setDpsTarget] = useState<boolean | null>(null); // null until the player changes it
+  // Each switch shows the player's change straight away (null until they change it).
+  const [prefs, setPrefs] = useState<Partial<Record<PrefKey, boolean>>>({});
   const [savingPref, setSavingPref] = useState(false);
   const [prefSaved, setPrefSaved] = useState(false);
 
@@ -37,16 +44,16 @@ export function SettingsPage() {
     setSaved("Saved.");
   };
 
-  const showDpsTarget = dpsTarget ?? profile?.show_dps_target ?? false;
+  const prefOn = (key: PrefKey) => prefs[key] ?? profile?.[key] ?? false;
   // Saved straight away; the switch flips first and flips back if saving fails.
-  const toggleDpsTarget = async () => {
-    const next = !showDpsTarget;
-    setDpsTarget(next); setSavingPref(true); setPrefSaved(false); setError(null);
-    const { error: err } = await supabase().from("profiles").update({ show_dps_target: next }).eq("id", user.id);
+  const togglePref = async (key: PrefKey) => {
+    const next = !prefOn(key);
+    setPrefs((p) => ({ ...p, [key]: next })); setSavingPref(true); setPrefSaved(false); setError(null);
+    const { error: err } = await supabase().from("profiles").update({ [key]: next }).eq("id", user.id);
     setSavingPref(false);
-    if (err) { setDpsTarget(!next); setError("Couldn't save that setting. Please try again."); return; }
+    if (err) { setPrefs((p) => ({ ...p, [key]: !next })); setError("Couldn't save that setting. Please try again."); return; }
     await reloadProfile();
-    setDpsTarget(null);
+    setPrefs((p) => { const rest = { ...p }; delete rest[key]; return rest; });
     setPrefSaved(true);
   };
 
@@ -81,16 +88,18 @@ export function SettingsPage() {
       <section className="gp" aria-labelledby="extras-h">
         <div className="tb"><h2 id="extras-h">Calculator extras</h2>{prefSaved && <span className="small" style={{ color: "#8fd19b" }} role="status">Saved</span>}</div>
         <div className="pad">
-          <div className="setting-row">
-            <div>
-              <div className="strong" id="dps-target-label" style={{ fontWeight: 700 }}>Hit a DPS target</div>
-              <p className="small muted" id="dps-target-desc" style={{ margin: "2px 0 0" }}>Adds a panel under weapon results: pick the DPS you want and an enhancement level, and see the chance a forge from your mix reaches it and how many forges that takes.</p>
+          {PREFS.map((p) => (
+            <div key={p.key} className="setting-row">
+              <div>
+                <div className="strong" id={`${p.key}-label`} style={{ fontWeight: 700 }}>{p.title}</div>
+                <p className="small muted" id={`${p.key}-desc`} style={{ margin: "2px 0 0" }}>{p.text}</p>
+              </div>
+              <button className="switch" role="switch" aria-checked={prefOn(p.key)} aria-labelledby={`${p.key}-label`} aria-describedby={`${p.key}-desc`} disabled={savingPref} onClick={() => void togglePref(p.key)}>
+                <span className="switch-knob" aria-hidden="true" />
+                <span className="switch-text" aria-hidden="true">{prefOn(p.key) ? "On" : "Off"}</span>
+              </button>
             </div>
-            <button className="switch" role="switch" aria-checked={showDpsTarget} aria-labelledby="dps-target-label" aria-describedby="dps-target-desc" disabled={savingPref} onClick={() => void toggleDpsTarget()}>
-              <span className="switch-knob" aria-hidden="true" />
-              <span className="switch-text" aria-hidden="true">{showDpsTarget ? "On" : "Off"}</span>
-            </button>
-          </div>
+          ))}
         </div>
       </section>
 
