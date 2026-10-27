@@ -21,13 +21,15 @@ import { DpsTarget } from "./dps-target";
 import { useAuth } from "./auth";
 import { RunesPanel, type RuneItem } from "./runes-panel";
 import { decodeRunes, dpsAtLevel, encodeRunes, hasRunes, type RuneSlot } from "@/lib/engine/runes";
+import { MAX_MOLDS, applyMolds, decodeMolds, encodeMolds, moldsNeeded, type MoldState } from "@/lib/engine/molds";
+import { MOLDS, type Mold } from "@/data/molds";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
 type Runes = Record<Kind, (RuneSlot | null)[]>;
 const NO_RUNES: Runes = { weapon: [null, null, null], armour: [null, null, null] };
 
-function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes; lock?: string } {
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes; lock?: string; molds?: { molds: number; id: string | null } } {
   try {
     const p = new URLSearchParams(window.location.search);
     const fromUrl = p.get("o");
@@ -45,14 +47,17 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
     const runes: Runes = { weapon: decodeRunes(store("rw"), "weapon"), armour: decodeRunes(store("ra"), "armour") };
     return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined,
       enhance: Number.isInteger(e) && e >= 0 && e <= 10 && store("e") != null ? e : undefined, runes,
-      lock: (p.get("l") ?? (fromUrl == null ? window.localStorage.getItem("forge.lock") : null))?.slice(0, 60) || undefined };
+      lock: (p.get("l") ?? (fromUrl == null ? window.localStorage.getItem("forge.lock") : null))?.slice(0, 60) || undefined,
+      molds: decodeMolds(p.get("m") ?? (fromUrl == null ? window.localStorage.getItem("forge.molds") : null)) };
   } catch { return {}; }
 }
 
 export function Calculator({ cat }: { cat: Catalogue }) {
   const { world } = useShell();
-  const { profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const showTarget = profile?.show_dps_target === true; // a setting players turn on themselves
+  const showMolds = profile?.show_molds === true; // likewise
+  const settingsKnown = !authLoading && (!user || profile != null);
   const oreById = useMemo(() => new Map(cat.ores.map((o) => [o.id, o])), [cat]);
   const [kind, setKind] = useState<Kind>("armour");
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -66,6 +71,9 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const [runeEnhance, setRuneEnhance] = useState(9);
   const [runes, setRunes] = useState<Runes>(NO_RUNES);
   const [locked, setLocked] = useState<string | null>(null); // the class the player locked in Forge Chances
+  const [molds, setMolds] = useState(0); // molds in the fifth forge slot
+  const [moldId, setMoldId] = useState<string | null>(null); // the item the molds are aimed at
+  const lastTap = useRef<{ id: string; t: number } | null>(null);
 
   // Restore the recipe from the URL or the last visit, once.
   useEffect(() => {
@@ -78,6 +86,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.enhance != null) setRuneEnhance(r.enhance);
       if (r.runes) setRunes(r.runes);
       if (r.lock) setLocked(r.lock);
+      if (r.molds) { setMolds(r.molds.molds); setMoldId(r.molds.id); }
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
@@ -88,9 +97,18 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const normal = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
   // A locked class only counts while the ores still allow locking it.
   const activeLock = locked && normal.classes.some((c) => c.name === locked && c.lockable) ? locked : null;
-  const result = useMemo(() => ({ ...normal, classes: lockClass(normal.classes, activeLock) }), [normal, activeLock]);
+  // Molds (when turned on in Settings) aim the forge at one item inside its class.
+  const moldTarget = useMemo(() => {
+    const c = moldId ? normal.classes.find((x) => x.variants.some((v) => v.id === moldId)) : undefined;
+    return c && moldId ? { cls: c.name, id: moldId } : null;
+  }, [normal, moldId]);
+  const { result, mold } = useMemo(() => {
+    const lockedClasses = lockClass(normal.classes, activeLock);
+    const m = showMolds ? applyMolds(lockedClasses, moldTarget, molds, activeLock) : { classes: lockedClasses, mold: { state: "off" } as MoldState };
+    return { result: { ...normal, classes: m.classes }, mold: m.mold };
+  }, [normal, activeLock, showMolds, moldTarget, molds]);
   const total = result.total;
-  /** The item's chance without the lock, for comparison. */
+  /** The item's chance without the lock or molds, for comparison. */
   const normalChance = (cls: string, id: string) => normal.classes.find((c) => c.name === cls)?.variants.find((v) => v.id === id)?.overall ?? 0;
 
   // Keep the URL shareable and remember the recipe.
@@ -106,6 +124,12 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       // item if the ores change so it can't come out).
       if (activeLock) { url.searchParams.set("l", activeLock); window.localStorage.setItem("forge.lock", activeLock); }
       else { url.searchParams.delete("l"); window.localStorage.removeItem("forge.lock"); }
+      // Molds: only in the link for players who turned them on (and left alone until we know their settings).
+      const m = molds > 0 || moldId ? encodeMolds(molds, moldId) : null;
+      if (showMolds) {
+        if (m) { url.searchParams.set("m", m); window.localStorage.setItem("forge.molds", m); }
+        else { url.searchParams.delete("m"); window.localStorage.removeItem("forge.molds"); }
+      } else if (settingsKnown) url.searchParams.delete("m");
       if (pick) { url.searchParams.set("c", pick.cls); url.searchParams.set("v", pick.id); window.localStorage.setItem("forge.pick", `${pick.cls}|${pick.id}`); }
       else { url.searchParams.delete("c"); url.searchParams.delete("v"); window.localStorage.removeItem("forge.pick"); }
       // Runes only go in the link once some are added, so plain links stay short.
@@ -120,7 +144,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       window.localStorage.setItem("forge.kind", kind);
       window.localStorage.setItem("forge.quality", String(quality));
     } catch { /* storage unavailable */ }
-  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock]);
+  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock, molds, moldId, showMolds, settingsKnown]);
 
   // Selected result: the user's pick if still valid, else the most likely variant.
   const selected = useMemo(() => {
@@ -143,6 +167,9 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const countOf = (id: string) => entries.find((e) => e.id === id)?.count ?? 0;
   const full = entries.length >= MAX_TYPES;
   const removeAll = useCallback((id: string) => startTransition(() => setEntries((cur) => cur.filter((e) => e.id !== id))), []);
+  const changeMolds = useCallback((f: (cur: number) => number) => startTransition(() => setMolds((cur) => Math.max(0, Math.min(MAX_MOLDS, Math.floor(f(cur)) || 0)))), []);
+  const aimMolds = (id: string | null) => startTransition(() => setMoldId(id));
+  const moldInfo = MOLDS[kind];
   const statName = kind === "armour" ? "Defense" : "Damage";
   const unit = kind === "armour" ? "DEF" : "DMG";
   // The same item at 100% quality: raw = base × M × (1 + q), so scale by 2 / (1 + q).
@@ -169,6 +196,14 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     catalogue_revision: Number((cat as { revision?: number }).revision) || null,
     runes: savedRunes, enhance: savedRunes ? runeEnhance : null,
   } : null, [selected, total, kind, world, quality, entries, cat, savedRunes, runeEnhance]);
+  // What changed the picked item's chance from the plain odds: the class lock and molds in its class.
+  const moldsInClass = showMolds && mold.state !== "off" && moldTarget != null && moldTarget.cls === selected?.cls.name;
+  const aimedName = moldTarget ? normal.classes.find((c) => c.name === moldTarget.cls)?.variants.find((v) => v.id === moldTarget.id)?.name ?? null : null;
+  const changedBy = [
+    activeLock != null && activeLock === selected?.cls.name && `${activeLock} locked`,
+    moldsInClass && `${molds} mold${molds === 1 ? "" : "s"} on ${moldTarget.id === selected?.v.id ? "it" : aimedName}`,
+  ].filter((x): x is string => Boolean(x));
+  const withoutWhat = changedBy.length === 2 ? "locking or molds" : moldsInClass ? "molds" : "locking";
   const visibleOres = applyOreFilter(scopeOres.filter((o) => o.name.toLowerCase().includes(search.trim().toLowerCase())), oreFilter);
 
   return (
@@ -198,13 +233,27 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     </div>
                     {!off && (
                       <div className="variant-tiles">
-                        {c.variants.map((v) => (
-                          <button key={v.id} className="tile" style={{ width: 60, height: 60, ["--rc" as string]: selected?.v.id === v.id ? "var(--acc)" : "#3a3834" }}
-                            onClick={() => startTransition(() => setPick({ cls: c.name, id: v.id }))} aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall`} title={`${v.name}: ${pct(v.chance)} in class, ${pct(v.overall, 2)} overall`}>
-                            <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={20} />
-                            <span className="t-br" style={{ left: 0, right: 0, textAlign: "center" }}>1/{v.weight}</span>
-                          </button>
-                        ))}
+                        {c.variants.map((v) => {
+                          const aimed = showMolds && moldTarget?.id === v.id;
+                          const need = moldsNeeded(v.weight);
+                          return (
+                            <button key={v.id} className={`tile variant-tile${aimed ? " mold-aimed" : ""}${aimed && mold.state === "guaranteed" ? " mold-sure" : ""}`}
+                              style={{ width: 60, height: 60, ["--rc" as string]: aimed ? "var(--gold)" : selected?.v.id === v.id ? "var(--acc)" : "#3a3834" }}
+                              onClick={() => {
+                                startTransition(() => setPick({ cls: c.name, id: v.id }));
+                                if (!showMolds) return;
+                                // A second tap on the same item within 400ms aims the molds at it (or stops aiming). Works with touch too.
+                                const now = Date.now(), last = lastTap.current;
+                                if (last && last.id === v.id && now - last.t < 400) { lastTap.current = null; aimMolds(aimed ? null : v.id); }
+                                else lastTap.current = { id: v.id, t: now };
+                              }}
+                              aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall${showMolds ? `. Double-click to ${aimed ? "stop aiming molds at it" : `aim molds at it (needs ${need})`}` : ""}`}
+                              title={`${v.name}: ${pct(v.chance)} in class, ${pct(v.overall, 2)} overall${showMolds ? (aimed ? ". Molds aimed here; double-click to stop" : `. Double-click to aim molds here (needs ${need})`) : ""}`}>
+                              <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={20} />
+                              <span className="t-br" style={{ left: 0, right: 0, textAlign: "center" }}>{aimed ? `${Math.min(molds, MAX_MOLDS)}/${v.weight}` : `1/${v.weight}`}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                     {!off && c.incomplete && <div className="note" style={{ textAlign: "center", marginTop: 4 }}>Plus shop-blueprint weapons not listed yet, so chances inside this class may be a little high.</div>}
@@ -220,7 +269,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
           <Reveal col={2}>
             <section className="gp forge-panel" style={{ padding: "20px 22px 22px", textAlign: "center" }} aria-label="Forge">
               <SaveStar forge={toSave} />
-              <div className="slots">
+              <div className={`slots${showMolds ? " with-mold" : ""}`}>
                   {mix.map(({ ore, count }) => (
                     <div key={ore.id} className="slot">
                       <HoldToRemove label={ore.name} onRemove={() => removeAll(ore.id)} colour={rarityColour(ore.rarity)}>
@@ -240,6 +289,21 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       <div className="tile slot-empty" style={{ width: 92, height: 92 }}><span className="small faint">Empty</span></div>
                     </div>
                   ))}
+                  {showMolds && (
+                    <div className="slot mold-slot">
+                      <div className={`tile${molds > 0 ? "" : " mold-empty"}`} style={{ width: 92, height: 92, ["--rc" as string]: molds > 0 ? "var(--gold)" : "#3a3834" }} title={`${moldInfo.name}s. Drop from ${moldInfo.from}.`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={moldInfo.image} alt="" />
+                        <span className="t-top">{moldInfo.name}</span>
+                        <span className="t-br">x{molds}</span>
+                      </div>
+                      <div className="slot-ctl">
+                        <button className="btn sm" onClick={() => changeMolds((n) => n - 1)} aria-label={`Remove one ${moldInfo.name}`} disabled={molds === 0}>−</button>
+                        <input className="input count" type="number" min={0} max={MAX_MOLDS} value={molds} aria-label={`${moldInfo.name} count`} onChange={(e) => changeMolds(() => Number(e.target.value))} />
+                        <button className="btn sm" onClick={() => changeMolds((n) => n + 1)} aria-label={`Add one ${moldInfo.name}`}>+</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               <p className="small muted" style={{ margin: "10px 0 0" }}>
                 {mix.length === 0 ? <>Your forge is empty. Pick up to {MAX_TYPES} ore types from <b>Select Ores</b>.</> : full ? <>The forge is full: {MAX_TYPES} ore types. Press and hold an ore to remove it.</> : <>Up to {MAX_TYPES} ore types. Press and hold an ore to remove it.</>}
@@ -256,7 +320,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                   <div className="share-legend">{mix.map((m) => <span key={m.ore.id}>{m.ore.name} {pct((m.count / total) * 100, 0)}</span>)}</div>
                 </div>
               )}
-              {mix.length > 0 && <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={() => startTransition(() => { setEntries([]); setPick(null); setLocked(null); })}>Clear forge</button>}
+              {showMolds && <p className="small muted" style={{ margin: "6px 0 0" }}>Molds go in their own slot and don&apos;t count as ores. Double-click an item in Forge Chances to aim them at it.</p>}
+              {(mix.length > 0 || molds > 0) && <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={() => startTransition(() => { setEntries([]); setPick(null); setLocked(null); setMolds(0); setMoldId(null); })}>Clear forge</button>}
             </section>
           </Reveal>
 
@@ -279,14 +344,15 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="The real time between swings. The game's item card shows a different 'index' number, which isn't the real speed.">{selected.v.interval}s per swing · range {selected.v.range}<span className="small faint" style={{ display: "block" }}>Card shows {selected.v.speed}s (the game&apos;s index value)</span></span></div>}
                     {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} withRunes={runeDps} runeLevel={runeEnhance} />}
-                    <div className="kv"><span>Chance:</span><span className="muted">{activeLock === selected.cls.name
-                      ? <>{pct(selected.v.overall, 2)} with {selected.cls.name} locked <span className="small faint">({pct(normalChance(selected.cls.name, selected.v.id), 2)} without locking)</span></>
+                    <div className="kv"><span>Chance:</span><span className="muted">{changedBy.length > 0
+                      ? <>{pct(selected.v.overall, 2)} with {changedBy.join(" and ")} <span className="small faint">({pct(normalChance(selected.cls.name, selected.v.id), 2)} without {withoutWhat})</span></>
                       : <>{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</>}</span></div>
                     <TriesRow chance={selected.v.overall / 100} ores={total}
-                      compare={activeLock === selected.cls.name ? { label: "Without locking", chance: normalChance(selected.cls.name, selected.v.id) / 100 }
+                      compare={changedBy.length > 0 ? { label: `Without ${withoutWhat}`, chance: normalChance(selected.cls.name, selected.v.id) / 100 }
                         : selected.cls.lockable && selected.cls.probability < 100 ? { label: `If you lock ${selected.cls.name}`, chance: selected.v.chance / 100 } : null} />
                     <div className="kv"><span>Lock:</span><span className="muted">{activeLock === selected.cls.name ? <>Locked: {selected.cls.name} is guaranteed</>
                       : selected.cls.lockable ? <>Lockable with this many ores. Press the <Lock size={13} /> by {selected.cls.name} in Forge Chances to lock it.</> : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
+                    {showMolds && <MoldRow item={selected.v} cls={selected.cls} aimed={moldTarget?.id === selected.v.id} aimedName={aimedName} mold={mold} moldName={moldInfo.name} locked={activeLock === selected.cls.name} onAim={aimMolds} />}
                   </div>
                 </>
               ) : (
@@ -321,13 +387,14 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 <OreFilter ores={scopeOres} value={oreFilter} onChange={setOreFilter} />
               </div>
               <div className="ore-grid">
+                {showMolds && <MoldButton mold={moldInfo} count={molds} onChange={changeMolds} />}
                 {visibleOres.map((o) => { const c = countOf(o.id); return <OreButton key={o.id} ore={o} count={c} locked={full && c === 0} onAdd={add} />; })}
               </div>
               {visibleOres.length === 0 && <p className="muted" style={{ margin: "4px 0 0" }}>No ores match these filters. Try widening the multiplier range or press Reset.</p>}
               <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one. <span style={{ color: "#e8c27a" }}>Sword</span> = weapon trait, <span style={{ color: "#8fd0f2" }}>shield</span> = armour trait.</p>
               <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
-                <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => startTransition(() => { setKind("armour"); setPick(null); })}>Armor</button>
-                <button className={`big-toggle ${kind === "weapon" ? "gb" : "btn"}`} aria-pressed={kind === "weapon"} onClick={() => startTransition(() => { setKind("weapon"); setPick(null); })}>Weapon</button>
+                <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => startTransition(() => { if (kind !== "armour") { setMolds(0); setMoldId(null); } setKind("armour"); setPick(null); })}>Armor</button>
+                <button className={`big-toggle ${kind === "weapon" ? "gb" : "btn"}`} aria-pressed={kind === "weapon"} onClick={() => startTransition(() => { if (kind !== "weapon") { setMolds(0); setMoldId(null); } setKind("weapon"); setPick(null); })}>Weapon</button>
               </div>
             </div>
           </section>
@@ -405,6 +472,45 @@ const OreButton = memo(function OreButton({ ore, count, locked, onAdd }: { ore: 
     </button>
   );
 });
+
+/** The mold tile, first in Select Ores: click adds one, right-click removes one. Molds don't use an ore slot. */
+function MoldButton({ mold, count, onChange }: { mold: Mold; count: number; onChange: (f: (cur: number) => number) => void }) {
+  return (
+    <button className="tile mold-tile" style={{ height: 88, ["--rc" as string]: "var(--gold)" }} onClick={() => onChange((n) => n + 1)}
+      onContextMenu={(e) => { e.preventDefault(); onChange((n) => n - 1); }}
+      aria-label={`Add a ${mold.name}. ${count} in the forge.`} title={`${mold.name} · goes in the mold slot, not an ore slot · drops from ${mold.from}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={mold.image} alt="" />
+      <span className="t-top" style={{ right: count ? 26 : 2 }}>{mold.name}</span>
+      <span className="t-br">Mold</span>
+      {count > 0 && <span className="t-badge">{count}</span>}
+    </button>
+  );
+}
+
+/** What molds do for the picked item: how many it needs, and whether it's guaranteed. */
+function MoldRow({ item, cls, aimed, aimedName, mold, moldName, locked, onAim }: {
+  item: { id: string; name: string; weight: number }; cls: { name: string; lockable: boolean; lockAt: number };
+  aimed: boolean; aimedName: string | null; mold: MoldState; moldName: string; locked: boolean; onAim: (id: string | null) => void;
+}) {
+  const need = moldsNeeded(item.weight);
+  const plural = (n: number) => `${n} ${moldName}${n === 1 ? "" : "s"}`;
+  const lockHint = cls.lockable ? <>Press the <Lock size={13} /> by {cls.name} in Forge Chances.</> : <>{cls.name} locks from {cls.lockAt} ores.</>;
+  let text: React.ReactNode;
+  if (!aimed) text = <>Needs {plural(need)} and {cls.name} locked to guarantee it.{aimedName && <> Your molds are aimed at {aimedName}.</>}</>;
+  else if (mold.state === "guaranteed") text = <span className="gold"><b>Guaranteed</b>: {plural(mold.need)} with {cls.name} locked.{mold.wasted > 0 && <span className="small faint" style={{ display: "block" }}>{plural(mold.wasted)} more than needed: the extra ones are wasted.</span>}</span>;
+  else if (mold.state === "needs-lock") text = <>{mold.molds}/{mold.need}: enough molds, but lock {cls.name} first to guarantee it. {lockHint}</>;
+  else if (mold.state === "short") text = <>{mold.molds}/{mold.need}: add {mold.need - mold.molds} more{!locked && <> and lock {cls.name}</>} to guarantee it.
+    <span className="small faint" style={{ display: "block" }}>Until then we count its weight as {mold.molds}/{mold.need} instead of 1/{mold.need}. That part is our reading, not confirmed in game.</span></>;
+  else text = <>Molds aimed here. Add {plural(need)} in the forge{!locked && <> and lock {cls.name}</>} to guarantee it.</>;
+  return (
+    <div className="kv mold-row"><span>Molds:</span>
+      <span className="muted">{text}
+        <button className="btn sm mold-aim" onClick={() => onAim(aimed ? null : item.id)}>{aimed ? "Stop aiming molds" : `Aim molds at ${item.name}`}</button>
+      </span>
+    </div>
+  );
+}
 
 /** Forge slot that removes the whole ore after a press-and-hold: a ring fills round a bin icon, red fading to grey. */
 function HoldToRemove({ label, colour, onRemove, children }: { label: string; colour: string; onRemove: () => void; children: React.ReactNode }) {
