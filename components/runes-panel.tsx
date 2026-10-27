@@ -171,6 +171,14 @@ function RuneStash({ item, enhance, slots, index, open, onSave, onClose }: {
 }) {
   const titleId = useId();
   const box = useRef<HTMLDivElement>(null);
+  const side = useRef<HTMLElement>(null);
+  // Phones show the rune's details under the grid, so picking a rune slides the page down to them.
+  const pick = (id: string) => {
+    setSelected(id);
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      requestAnimationFrame(() => side.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }));
+    }
+  };
   const current = slots[index];
   const [tab, setTab] = useState<RuneKind>(item.kind);
   const [query, setQuery] = useState("");
@@ -221,7 +229,7 @@ function RuneStash({ item, enhance, slots, index, open, onSave, onClose }: {
   const tier = rune.levels[setup.level - 1];
 
   return createPortal(
-    <div className="picker-backdrop" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="picker-backdrop stash-backdrop" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="stash gp" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={box}>
         <div className="stash-head">
           <h2 id={titleId}>Rune Stash</h2>
@@ -242,7 +250,7 @@ function RuneStash({ item, enhance, slots, index, open, onSave, onClose }: {
         <div className="stash-body">
           <div className="stash-grid" role="group" aria-label="Runes, best first">
             {shown.map(({ r, score }) => (
-              <button key={r.id} aria-pressed={selected === r.id} className={`stash-tile${r.kind !== item.kind ? " other" : ""}`} onClick={() => setSelected(r.id)}>
+              <button key={r.id} aria-pressed={selected === r.id} className={`stash-tile${r.kind !== item.kind ? " other" : ""}`} onClick={() => pick(r.id)}>
                 <span className="stash-name">{r.name}</span>
                 <RuneIcon id={r.id} size={64} />
                 <span className="stash-score">
@@ -254,7 +262,7 @@ function RuneStash({ item, enhance, slots, index, open, onSave, onClose }: {
             {shown.length === 0 && <p className="muted" style={{ gridColumn: "1 / -1", margin: 8 }}>No runes match.</p>}
           </div>
 
-          <aside className="stash-side" aria-live="polite">
+          <aside className="stash-side" aria-live="polite" ref={side}>
             <div className="stash-side-head">
               <div className="stash-side-name">{rune.name}</div>
               <div className="stash-side-pic"><RuneIcon id={rune.id} size={112} /></div>

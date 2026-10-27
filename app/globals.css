@@ -686,14 +686,20 @@ body.modal-open { overflow: hidden; }
 .stash-preview { margin: 4px 0 0; text-align: center; color: var(--strong); }
 .stash-preview b { color: var(--gold); }
 .stash-save { min-height: 46px; font-size: 18px; margin-top: 4px; position: sticky; bottom: 0; box-shadow: 0 -10px 16px var(--well); }
+@keyframes stash-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .stash { animation: none !important; } }
 @media (max-width: 980px) { .runes-top { grid-template-columns: 1fr; } .rune-slots { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
-  .stash { max-height: 94vh; }
-  .stash-body { grid-template-columns: 1fr; grid-auto-rows: max-content; overflow-y: auto; }
+  /* phones: the stash is a full-screen page that slides up and scrolls as a whole; the title bar stays on top */
+  .stash-backdrop { padding: 0; place-items: end stretch; }
+  .stash { width: 100%; height: 100dvh; max-height: none; overflow-y: auto; overscroll-behavior: contain; animation: stash-up .35s var(--ease) both; }
+  .stash-head { position: sticky; top: 0; z-index: 2; }
+  .stash-body { grid-template-columns: 1fr; grid-auto-rows: max-content; overflow: visible; padding-bottom: 28px; }
+  .stash-side { scroll-margin-top: 76px; }
   .stash-grid { overflow: visible; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
   .stash-side { overflow: visible; }
   /* phones: the button sits right under the rune's picture, not at the end of the list */
   .stash-side-head { order: -2; }
-  .stash-save { order: -1; position: static; box-shadow: none; margin: 4px 0 6px; }
+  .stash-save { order: -1; position: static; box-shadow: none; margin: 18px 0 14px; }
   .stash-head h2 { font-size: 22px; }
 }
