@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
+import { enhancementTable, forge, lockClass, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
 import type { Kind } from "@/lib/engine";
 import type { DpsResult } from "@/lib/engine/dps";
 import { imageUrl } from "@/lib/data/supabase";
@@ -27,7 +27,7 @@ const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 type Runes = Record<Kind, (RuneSlot | null)[]>;
 const NO_RUNES: Runes = { weapon: [null, null, null], armour: [null, null, null] };
 
-function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes } {
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes; lock?: string } {
   try {
     const p = new URLSearchParams(window.location.search);
     const fromUrl = p.get("o");
@@ -35,14 +35,17 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
     const kind = (p.get("k") ?? window.localStorage.getItem("forge.kind")) as Kind | null;
     const q = Number(p.get("q") ?? window.localStorage.getItem("forge.quality"));
     const entries = raw ? parseRecipe(raw) : undefined;
-    // Pre-selection from the Builds page: short, plain values only.
-    const cls = p.get("c")?.slice(0, 60) ?? null, id = p.get("v")?.slice(0, 60) ?? null;
+    // The picked item: from the link (shared links, the Builds page), or the one picked last time when the recipe
+    // also comes from last time. Short, plain values only.
+    const lastPick = fromUrl == null ? (window.localStorage.getItem("forge.pick") ?? "").split("|") : [];
+    const cls = (p.get("c") ?? lastPick[0])?.slice(0, 60) || null, id = (p.get("v") ?? lastPick[1])?.slice(0, 60) || null;
     // Runes: enhancement level (e) and one rune list per item type (rw, ra).
     const store = (k: string) => p.get(k) ?? window.localStorage.getItem(`forge.${k}`);
     const e = Number(store("e"));
     const runes: Runes = { weapon: decodeRunes(store("rw"), "weapon"), armour: decodeRunes(store("ra"), "armour") };
     return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined,
-      enhance: Number.isInteger(e) && e >= 0 && e <= 10 && store("e") != null ? e : undefined, runes };
+      enhance: Number.isInteger(e) && e >= 0 && e <= 10 && store("e") != null ? e : undefined, runes,
+      lock: (p.get("l") ?? (fromUrl == null ? window.localStorage.getItem("forge.lock") : null))?.slice(0, 60) || undefined };
   } catch { return {}; }
 }
 
@@ -62,6 +65,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const loaded = useRef(false);
   const [runeEnhance, setRuneEnhance] = useState(9);
   const [runes, setRunes] = useState<Runes>(NO_RUNES);
+  const [locked, setLocked] = useState<string | null>(null); // the class the player locked in Forge Chances
 
   // Restore the recipe from the URL or the last visit, once.
   useEffect(() => {
@@ -73,10 +77,21 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.pick) setPick(r.pick);
       if (r.enhance != null) setRuneEnhance(r.enhance);
       if (r.runes) setRunes(r.runes);
+      if (r.lock) setLocked(r.lock);
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
   }, [oreById]);
+
+
+  const mix: Mix = useMemo(() => entries.flatMap((e) => { const ore = oreById.get(e.id); return ore ? [{ ore, count: e.count }] : []; }), [entries, oreById]);
+  const normal = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
+  // A locked class only counts while the ores still allow locking it.
+  const activeLock = locked && normal.classes.some((c) => c.name === locked && c.lockable) ? locked : null;
+  const result = useMemo(() => ({ ...normal, classes: lockClass(normal.classes, activeLock) }), [normal, activeLock]);
+  const total = result.total;
+  /** The item's chance without the lock, for comparison. */
+  const normalChance = (cls: string, id: string) => normal.classes.find((c) => c.name === cls)?.variants.find((v) => v.id === id)?.overall ?? 0;
 
   // Keep the URL shareable and remember the recipe.
   useEffect(() => {
@@ -87,7 +102,12 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (o) url.searchParams.set("o", o); else url.searchParams.delete("o");
       url.searchParams.set("k", kind);
       url.searchParams.set("q", String(quality));
-      url.searchParams.delete("c"); url.searchParams.delete("v"); // one-time pre-selection
+      // The item the player picked stays picked, in the link and for next time (it falls back to the most likely
+      // item if the ores change so it can't come out).
+      if (activeLock) { url.searchParams.set("l", activeLock); window.localStorage.setItem("forge.lock", activeLock); }
+      else { url.searchParams.delete("l"); window.localStorage.removeItem("forge.lock"); }
+      if (pick) { url.searchParams.set("c", pick.cls); url.searchParams.set("v", pick.id); window.localStorage.setItem("forge.pick", `${pick.cls}|${pick.id}`); }
+      else { url.searchParams.delete("c"); url.searchParams.delete("v"); window.localStorage.removeItem("forge.pick"); }
       // Runes only go in the link once some are added, so plain links stay short.
       const rw = encodeRunes(runes.weapon), ra = encodeRunes(runes.armour), none = "-,-,-";
       const runeParams: [string, string | null][] = [["e", rw === none && ra === none ? null : String(runeEnhance)], ["rw", rw === none ? null : rw], ["ra", ra === none ? null : ra]];
@@ -100,11 +120,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       window.localStorage.setItem("forge.kind", kind);
       window.localStorage.setItem("forge.quality", String(quality));
     } catch { /* storage unavailable */ }
-  }, [entries, kind, quality, runes, runeEnhance]);
-
-  const mix: Mix = useMemo(() => entries.flatMap((e) => { const ore = oreById.get(e.id); return ore ? [{ ore, count: e.count }] : []; }), [entries, oreById]);
-  const result = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
-  const total = result.total;
+  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock]);
 
   // Selected result: the user's pick if still valid, else the most likely variant.
   const selected = useMemo(() => {
@@ -146,10 +162,13 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), interval: selected.v.interval,
   } : null, [selected, kind, mix]);
   const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
+  // The runes for this item type go with the save, at the enhancement level they're planned for.
+  const savedRunes = hasRunes(runes[kind]) ? encodeRunes(runes[kind]) : null;
   const toSave = useMemo<NewForge | null>(() => selected && total >= 3 ? {
     name: selected.v.name, kind, world, class_name: selected.cls.name, variant_id: selected.v.id, quality, ores: entries,
     catalogue_revision: Number((cat as { revision?: number }).revision) || null,
-  } : null, [selected, total, kind, world, quality, entries, cat]);
+    runes: savedRunes, enhance: savedRunes ? runeEnhance : null,
+  } : null, [selected, total, kind, world, quality, entries, cat, savedRunes, runeEnhance]);
   const visibleOres = applyOreFilter(scopeOres.filter((o) => o.name.toLowerCase().includes(search.trim().toLowerCase())), oreFilter);
 
   return (
@@ -166,9 +185,16 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 const off = c.probability === 0;
                 return (
                   <div key={c.name} style={{ opacity: off ? 0.45 : 1, transition: "opacity .3s" }}>
-                    <div className="class-head">
+                    <div className={`class-head${activeLock === c.name ? " locked" : ""}`}>
                       <span>{c.name} ({c.probability}%)</span>
-                      <span className="lock" title={`Lockable at ${c.lockAt} ores`} style={{ color: c.lockable ? "var(--acc)" : "var(--muted)" }}><Lock /> <small>{c.lockAt}</small></span>
+                      {c.lockable ? (
+                        <button className="lock lock-btn" aria-pressed={activeLock === c.name} onClick={() => startTransition(() => setLocked(activeLock === c.name ? null : c.name))}
+                          title={activeLock === c.name ? `Unlock ${c.name}` : `Lock ${c.name}: guarantees this class`} aria-label={activeLock === c.name ? `Unlock ${c.name}` : `Lock ${c.name}`}>
+                          <Lock /> <small>{c.lockAt}</small>
+                        </button>
+                      ) : (
+                        <span className="lock" title={`Lockable at ${c.lockAt} ores`} style={{ color: "var(--muted)" }}><Lock /> <small>{c.lockAt}</small></span>
+                      )}
                     </div>
                     {!off && (
                       <div className="variant-tiles">
@@ -230,7 +256,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                   <div className="share-legend">{mix.map((m) => <span key={m.ore.id}>{m.ore.name} {pct((m.count / total) * 100, 0)}</span>)}</div>
                 </div>
               )}
-              {mix.length > 0 && <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={() => startTransition(() => { setEntries([]); setPick(null); })}>Clear forge</button>}
+              {mix.length > 0 && <button className="btn ghost sm" style={{ marginTop: 12 }} onClick={() => startTransition(() => { setEntries([]); setPick(null); setLocked(null); })}>Clear forge</button>}
             </section>
           </Reveal>
 
@@ -253,9 +279,14 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="The real time between swings. The game's item card shows a different 'index' number, which isn't the real speed.">{selected.v.interval}s per swing · range {selected.v.range}<span className="small faint" style={{ display: "block" }}>Card shows {selected.v.speed}s (the game&apos;s index value)</span></span></div>}
                     {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} withRunes={runeDps} runeLevel={runeEnhance} />}
-                    <div className="kv"><span>Chance:</span><span className="muted">{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</span></div>
-                    <TriesRow chance={selected.v.overall / 100} ores={total} />
-                    <div className="kv"><span>Lock:</span><span className="muted">{selected.cls.lockable ? "Lockable with this many ores" : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
+                    <div className="kv"><span>Chance:</span><span className="muted">{activeLock === selected.cls.name
+                      ? <>{pct(selected.v.overall, 2)} with {selected.cls.name} locked <span className="small faint">({pct(normalChance(selected.cls.name, selected.v.id), 2)} without locking)</span></>
+                      : <>{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</>}</span></div>
+                    <TriesRow chance={selected.v.overall / 100} ores={total}
+                      compare={activeLock === selected.cls.name ? { label: "Without locking", chance: normalChance(selected.cls.name, selected.v.id) / 100 }
+                        : selected.cls.lockable && selected.cls.probability < 100 ? { label: `If you lock ${selected.cls.name}`, chance: selected.v.chance / 100 } : null} />
+                    <div className="kv"><span>Lock:</span><span className="muted">{activeLock === selected.cls.name ? <>Locked: {selected.cls.name} is guaranteed</>
+                      : selected.cls.lockable ? <>Lockable with this many ores. Press the <Lock size={13} /> by {selected.cls.name} in Forge Chances to lock it.</> : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
                   </div>
                 </>
               ) : (
@@ -469,7 +500,7 @@ function DpsRow({ dps, withRunes = null, runeLevel = 0 }: { dps: DpsResult; with
 }
 
 /** "How many tries?" in plain words. The maths is on the How it works page. */
-function TriesRow({ chance, ores }: { chance: number; ores: number }) {
+function TriesRow({ chance, ores, compare = null }: { chance: number; ores: number; compare?: { label: string; chance: number } | null }) {
   if (!(chance > 0)) return null;
   if (chance >= 1) return <div className="kv"><span>Tries:</span><span className="muted">Every forge with this mix gives it.</span></div>;
   const avg = averageTries(chance), half = triesFor(chance, 0.5), most = triesFor(chance, 0.9);
@@ -478,6 +509,7 @@ function TriesRow({ chance, ores }: { chance: number; ores: number }) {
     <div className="kv"><span>Tries:</span>
       <span className="muted">About {avg < 100 ? fmt(avg, 1) : fmt(avg, 0)} forges on average. Half of players get it within {forges(half)}, 9 in 10 within {forges(most)}.
         <span className="small faint" style={{ display: "block" }}>That&apos;s about {fmt(most * ores, 0)} ores for a 9 in 10 chance. <Link href="/how-it-works#tries" className="inline-link">How this is worked out</Link></span>
+        {compare && compare.chance > 0 && <span className="small tries-compare" style={{ display: "block" }}>{compare.label}: about {fmt(averageTries(compare.chance), averageTries(compare.chance) < 100 ? 1 : 0)} forges on average, 9 in 10 within {fmt(triesFor(compare.chance, 0.9), 0)}.</span>}
       </span>
     </div>
   );

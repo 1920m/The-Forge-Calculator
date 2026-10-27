@@ -226,6 +226,8 @@ const ForgeCard = memo(function ForgeCard({ card, cat, equipped, onEquip, onDrag
           <>
             <div className="kv"><span>{unit}</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(r.value ?? 0)}</span></div>
             {f.kind === "weapon" && r.dps != null && <div className="kv"><span>DPS</span><span className="strong">{fmt(r.dps)}</span></div>}
+            {r.runeDps != null && <div className="kv"><span>With runes</span><span className="strong" style={{ color: "var(--gold)" }}>{fmt(r.runeDps)} <span className="small muted">at +{r.runeLevel}</span></span></div>}
+            {f.kind === "armour" && r.hasRunes && <div className="kv"><span>Runes</span><span className="small muted">Saved · open in calculator</span></div>}
             {f.kind === "weapon" && r.speed != null && <div className="kv"><span>ATK Speed</span><span className="muted">{r.speed}s per swing</span></div>}
             <div className="kv"><span>Quality</span><span className="gold">{qualityLabel(cat, f.quality)} ({f.quality}%)</span></div>
             <div className="kv"><span>Multiplier</span><span className="muted">{r.multiplier == null ? "–" : `${fmt(r.multiplier)}x`}</span></div>

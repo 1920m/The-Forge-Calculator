@@ -5,7 +5,7 @@ import images from "@/data/images.json";
 import type { SavedForge } from "@/lib/saved-forges";
 
 const forge = (id: string, kind: "weapon" | "armour", class_name: string): SavedForge => ({
-  id, name: id, kind, class_name, world: 4, variant_id: "x", quality: 100, ores: [{ id: "a", count: 1 }], catalogue_revision: 8, created_at: "",
+  id, name: id, kind, class_name, world: 4, variant_id: "x", quality: 100, ores: [{ id: "a", count: 1 }], catalogue_revision: 8, created_at: "", enhance: null, runes: null,
 });
 const A = "11111111-1111-4111-8111-111111111111", B = "22222222-2222-4222-8222-222222222222", C = "33333333-3333-4333-8333-333333333333";
 

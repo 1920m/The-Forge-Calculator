@@ -116,4 +116,18 @@ export function forge(cat: Catalogue, mix: Mix, kind: Kind, world: World, qualit
   return { total, multiplier, primary, rarity: primary?.rarity ?? null, oddsStatus: odds.status, capped: odds.capped, classes, traits: transferredTraits(mix, kind) };
 }
 
+/**
+ * The odds after the player locks a class in the forge (possible once the ore count reaches its lock number):
+ * that class is guaranteed and the others can't come out. Items inside it keep their 1/N split.
+ * Returns the classes unchanged if the class isn't there or can't be locked with this many ores.
+ */
+export function lockClass<C extends { name: string; probability: number; lockable: boolean; variants: V[] }, V extends { chance: number; overall: number }>(classes: C[], locked: string | null): C[] {
+  const target = locked ? classes.find((c) => c.name === locked && c.lockable) : null;
+  if (!target) return classes;
+  return classes.map((c) => {
+    const probability = c === target ? 100 : 0;
+    return { ...c, probability, variants: c.variants.map((v) => ({ ...v, overall: (probability * v.chance) / 100 })) };
+  });
+}
+
 export { enhancementTable, roundStat, rawStat };
