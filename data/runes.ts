@@ -100,4 +100,8 @@ export const SECONDARIES: Secondary[] = [
 
 export const RUNES_SOURCE = { url: "https://forgewiki.org/wiki/Runes", edited: "6 September 2026" };
 export const runeById = new Map(RUNES.map((r) => [r.id, r]));
+/** Rune pictures from the wiki (CC BY-SA 4.0), resized to 112px and served with the site. */
+export const runeImage = (id: string) => `/runes/${id}.webp`;
+/** The wiki's Thunder Shard and Toxic Veins pictures have a wide empty border, so they're drawn larger to match. */
+export const runeImageScale: Record<string, number> = { "thunder-shard": 1.6, "toxic-veins": 1.6 };
 export const secondaryById = new Map(SECONDARIES.map((s) => [s.id, s]));

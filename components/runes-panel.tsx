@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { startTransition, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { RUNES_SOURCE, runeById, secondaryById, type Rune, type RuneKind, type RuneLevel, type SecondaryId } from "@/data/runes";
+import { RUNES_SOURCE, runeById, runeImage, runeImageScale, secondaryById, type Rune, type RuneKind, type RuneLevel, type SecondaryId } from "@/data/runes";
 import { roman, runeTotals, runesFor, secondariesFor, slotOpensAt, slotsAt, MAX_RUNE_SLOTS, type RuneSlot, type RuneTotals } from "@/lib/engine/runes";
 import { weaponDps, type DpsResult } from "@/lib/engine/dps";
 import { enhanceFactor } from "@/lib/engine/dps-target";
@@ -30,9 +30,36 @@ function dpsWith(item: RuneItem, enhance: number, totals: RuneTotals | null): Dp
 /** Effective health from a shield: 1 ÷ (1 − chance × cut). Each Ward Patch shields on its own. */
 const shieldFactor = (shields: { chance: number; cut: number }[]) => shields.reduce((f, s) => f / (1 - s.chance * s.cut), 1);
 
+/** "Blast Chip III ×2 1,277.12": copies of the same rune shown once with their total. */
+function groupParts(parts: { label: string; dps: number }[]) {
+  const by = new Map<string, { n: number; dps: number }>();
+  for (const p of parts) { const g = by.get(p.label) ?? { n: 0, dps: 0 }; g.n++; g.dps += p.dps; by.set(p.label, g); }
+  return [...by].map(([label, g]) => `${label}${g.n > 1 ? ` ×${g.n}` : ""} ${fmt(g.dps)}`).join(" · ");
+}
+
+/** The best roll this site calculates with, in short. */
+function bestRoll(tier: Rune["levels"][number]): string | null {
+  const p = tier.proc;
+  if (p) {
+    if (p.type === "explosion") return `${pct(p.chance * 100)} chance, ${pct(p.dmg * 100)} weapon damage`;
+    if (p.type === "lightning") return `${pct(p.chance * 100)} chance, ${pct(p.dmg * 100)} weapon damage, ${p.cd}s cooldown`;
+    return `${pct(p.chance * 100)} chance, ${pct(p.dmg * 100)} weapon damage per second for ${p.dur}s`;
+  }
+  if (tier.shield) return `${pct(tier.shield.chance * 100)} chance to cut damage by ${pct(tier.shield.cut * 100)}`;
+  return null;
+}
+
+function RuneIcon({ id, size }: { id: string; size: number }) {
+  const k = runeImageScale[id];
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="rune-img" src={runeImage(id)} alt="" width={size} height={size} draggable={false} style={k ? { transform: `scale(${k})` } : undefined} />;
+}
+
+/* ------------------------------------------------------------------ the section */
+
 export function RunesPanel({ item, enhance, onEnhance, slots, onSlots }: Props) {
   const open = slotsAt(enhance);
-  const [picking, setPicking] = useState<number | null>(null);
+  const [editing, setEditing] = useState<number | null>(null);
   const totals = useMemo(() => runeTotals(slots, open), [slots, open]);
   const without = useMemo(() => dpsWith(item, enhance, null), [item, enhance]);
   const withRunes = useMemo(() => dpsWith(item, enhance, totals), [item, enhance, totals]);
@@ -66,40 +93,19 @@ export function RunesPanel({ item, enhance, onEnhance, slots, onSlots }: Props) 
         <div className="rune-slots">
           {Array.from({ length: MAX_RUNE_SLOTS }, (_, i) => {
             const s = slots[i];
-            if (i >= open) return <div key={i} className="rune-slot locked"><span className="rune-lock" aria-hidden="true"><Lock /></span><span className="muted">Opens at +{slotOpensAt(i)}</span></div>;
-            if (!s) return <button key={i} className="rune-slot empty" onClick={() => setPicking(i)}><span className="rune-plus" aria-hidden="true">+</span>Add a rune</button>;
-            return <RuneCard key={i} slot={s} gain={gainOf(i)} onChange={(n) => setSlot(i, n)} onSwap={() => setPicking(i)} onRemove={() => setSlot(i, null)} />;
+            if (i >= open) return <div key={i} className="rune-slot locked"><span className="rune-lock" aria-hidden="true"><Lock size={22} /></span><span className="muted">Opens at +{slotOpensAt(i)}</span></div>;
+            if (!s) return <button key={i} className="rune-slot empty" onClick={() => setEditing(i)}><span className="rune-plus" aria-hidden="true">+</span>Add a rune</button>;
+            return <RuneCard key={i} slot={s} gain={gainOf(i)} onEdit={() => setEditing(i)} onRemove={() => setSlot(i, null)} />;
           })}
         </div>
-        <p className="note">Every value is the best roll of its range (a perfect rune). Side effects: a level I rune can have 1, II can have 2, III can have 3. The same rune can go in more than one slot, and each copy adds its effect again. Rune values from the <a className="inline-link" href={RUNES_SOURCE.url} target="_blank" rel="noopener noreferrer">Forge wiki</a>. <Link className="inline-link" href="/how-it-works#runes">How runes are counted</Link></p>
+        <p className="note">Every value is the best roll of its range (a perfect rune). A level I rune can have 1 side effect, II can have 2, III can have 3. The same rune can go in more than one slot, and each copy adds its effect again. Rune values and pictures from the <a className="inline-link" href={RUNES_SOURCE.url} target="_blank" rel="noopener noreferrer">Forge wiki</a> (CC BY-SA). <Link className="inline-link" href="/how-it-works#runes">How runes are counted</Link></p>
       </div>
-      {picking != null && (
-        <RunePicker item={item} enhance={enhance} slots={slots} index={picking} open={open}
-          onClose={() => setPicking(null)}
-          onPick={(r) => { setSlot(picking, { id: r.id, level: slots[picking]?.level ?? 3, secondaries: [] }); setPicking(null); }} />
+      {editing != null && (
+        <RuneStash item={item} enhance={enhance} slots={slots} index={editing} open={open}
+          onClose={() => setEditing(null)} onSave={(s) => { setSlot(editing, s); setEditing(null); }} />
       )}
     </section>
   );
-}
-
-/** "Blast Chip III ×2 1,277.12": copies of the same rune shown once with their total. */
-function groupParts(parts: { label: string; dps: number }[]) {
-  const by = new Map<string, { n: number; dps: number }>();
-  for (const p of parts) { const g = by.get(p.label) ?? { n: 0, dps: 0 }; g.n++; g.dps += p.dps; by.set(p.label, g); }
-  return [...by].map(([label, g]) => `${label}${g.n > 1 ? ` ×${g.n}` : ""} ${fmt(g.dps)}`).join(" · ");
-}
-
-/** The best roll this site calculates with, in short. */
-function bestRoll(tier: Rune["levels"][number]): string | null {
-  const p = tier.proc;
-  if (p) {
-    const base = `${pct(p.chance * 100)} chance, ${pct(p.dmg * 100)} weapon damage`;
-    if (p.type === "explosion") return base;
-    if (p.type === "lightning") return `${base}, ${p.cd}s cooldown`;
-    return `${pct(p.chance * 100)} chance, ${pct(p.dmg * 100)} weapon damage per second for ${p.dur}s`;
-  }
-  if (tier.shield) return `${pct(tier.shield.chance * 100)} chance to cut damage by ${pct(tier.shield.cut * 100)}`;
-  return null;
 }
 
 function RuneSummary({ item, stat, unit, enhance, totals, without, withRunes }: { item: RuneItem; stat: number | null; unit: string; enhance: number; totals: RuneTotals; without: DpsResult | null; withRunes: DpsResult | null }) {
@@ -130,112 +136,162 @@ function RuneSummary({ item, stat, unit, enhance, totals, without, withRunes }: 
   );
 }
 
-function RuneCard({ slot, gain, onChange, onSwap, onRemove }: { slot: RuneSlot; gain: number | null; onChange: (s: RuneSlot) => void; onSwap: () => void; onRemove: () => void }) {
+/** A filled slot: the rune's picture, level, side effects and what it adds. Click to edit it in the stash. */
+function RuneCard({ slot, gain, onEdit, onRemove }: { slot: RuneSlot; gain: number | null; onEdit: () => void; onRemove: () => void }) {
   const rune = runeById.get(slot.id)!;
   const tier = rune.levels[slot.level - 1];
-  const options = secondariesFor(rune.kind);
-  const setLevel = (level: RuneLevel) => onChange({ ...slot, level, secondaries: slot.secondaries.slice(0, level) });
-  const setSec = (i: number, id: string) => {
-    const next = [...slot.secondaries];
-    if (id) next[i] = id as SecondaryId; else next.splice(i, 1);
-    onChange({ ...slot, secondaries: next.filter(Boolean).slice(0, slot.level) });
-  };
   return (
     <article className="rune-slot filled">
-      <div className="rune-head">
-        <button className="link-btn rune-name" onClick={onSwap} title="Change rune">{rune.name}</button>
-        <span className="rune-kind small">{rune.effect}</span>
-        <button className="lo-clear" onClick={onRemove} aria-label={`Remove ${rune.name}`} title="Remove">×</button>
-      </div>
-      <div className="rune-levels" role="group" aria-label={`${rune.name} level`}>
-        {([1, 2, 3] as RuneLevel[]).map((l) => <button key={l} className="btn sm" aria-pressed={slot.level === l} onClick={() => setLevel(l)}>{roman(l)}</button>)}
-      </div>
-      <p className="rune-text">{tier.text}</p>
-      {bestRoll(tier) && <p className="rune-best small">Counted as: {bestRoll(tier)}</p>}
-      <div className="rune-secs">
-        <span className="small muted">Side effects ({slot.secondaries.length}/{slot.level})</span>
-        {Array.from({ length: slot.level }, (_, i) => {
-          const value = slot.secondaries[i] ?? "";
-          if (i > slot.secondaries.length) return null; // fill in order
-          return (
-            <select key={i} className="input rune-sec" value={value} aria-label={`Side effect ${i + 1}`} onChange={(e) => setSec(i, e.target.value)}>
-              <option value="">{value ? "Remove" : "Add a side effect…"}</option>
-              {options.filter((o) => o.id === value || !slot.secondaries.includes(o.id)).map((o) => <option key={o.id} value={o.id}>+{pct(o.best * 100)} {o.name}</option>)}
-            </select>
-          );
-        })}
-      </div>
-      {gain != null && <div className="rune-gain small">{gain > 0.005 ? <><b>+{fmt(gain)}</b> DPS from this rune</> : <span className="muted">Adds no DPS (doesn&apos;t deal damage)</span>}</div>}
+      <button className="rune-card-main" onClick={onEdit} aria-label={`${rune.name} ${roman(slot.level)}. Edit`}>
+        <span className="rune-card-top">
+          <span className="rune-pic"><RuneIcon id={rune.id} size={64} /></span>
+          <span className="rune-card-id">
+            <span className="rune-name">{rune.name} <span className="rune-lv">{roman(slot.level)}</span></span>
+            <span className="rune-kind small">{rune.effect}</span>
+          </span>
+        </span>
+        <span className="rune-text">{bestRoll(tier) ?? tier.text}</span>
+        <span className="rune-sec-list">
+          {slot.secondaries.length ? slot.secondaries.map((id) => <span key={id} className="rune-chip">+{pct(secondaryById.get(id)!.best * 100)} {secondaryById.get(id)!.name}</span>)
+            : <span className="small faint">No side effects yet ({slot.level} allowed)</span>}
+        </span>
+        {gain != null && <span className="rune-gain small">{gain > 0.005 ? <><b>+{fmt(gain)}</b> DPS from this rune</> : <span className="muted">Adds no DPS (doesn&apos;t deal damage)</span>}</span>}
+        <span className="rune-edit small">Edit</span>
+      </button>
+      <button className="lo-clear" onClick={onRemove} aria-label={`Remove ${rune.name}`} title="Remove">×</button>
     </article>
   );
 }
 
-/** Pick a rune: one tab per kind, best first. Weapon runes are ranked by the DPS they'd add to this weapon. */
-function RunePicker({ item, enhance, slots, index, open, onPick, onClose }: { item: RuneItem; enhance: number; slots: (RuneSlot | null)[]; index: number; open: number; onPick: (r: Rune) => void; onClose: () => void }) {
-  const current = slots[index];
+/* ------------------------------------------------------------------ the rune stash: pick a rune, then set it up on the right */
+
+function RuneStash({ item, enhance, slots, index, open, onSave, onClose }: {
+  item: RuneItem; enhance: number; slots: (RuneSlot | null)[]; index: number; open: number;
+  onSave: (s: RuneSlot) => void; onClose: () => void;
+}) {
   const titleId = useId();
   const box = useRef<HTMLDivElement>(null);
+  const current = slots[index];
   const [tab, setTab] = useState<RuneKind>(item.kind);
+  const [query, setQuery] = useState("");
+  const [draft, setDraft] = useState<RuneSlot | null>(current ?? null);
+  const [selected, setSelected] = useState<string>(current?.id ?? runesFor(item.kind)[0].id);
 
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
-    box.current?.querySelector<HTMLElement>(".picker-item:not(:disabled)")?.focus();
+    box.current?.querySelector<HTMLElement>(".stash-tile[aria-pressed='true']")?.focus();
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
+    document.body.classList.add("modal-open");
+    return () => { document.removeEventListener("keydown", onKey); document.body.classList.remove("modal-open"); prev?.focus?.(); };
   }, [onClose]);
 
+  // Best first: weapon runes by the DPS they'd add here at level III; armour runes by effective health.
+  const others = useMemo(() => slots.map((x, j) => (j === index ? null : x)), [slots, index]);
   const ranked = useMemo(() => {
     const list = runesFor(tab);
     if (tab === "weapon" && item.kind === "weapon") {
-      // DPS this rune would add at level III (no side effects) next to the runes already chosen.
-      const others = slots.map((x, j) => (j === index ? null : x));
       const base = dpsWith(item, enhance, runeTotals(others, open))?.total ?? 0;
       return list.map((r) => {
         const t = runeTotals(others.map((x, j) => (j === index ? { id: r.id, level: 3 as RuneLevel, secondaries: [] } : x)), open);
-        return { r, score: (dpsWith(item, enhance, t)?.total ?? 0) - base, note: "" };
+        return { r, score: (dpsWith(item, enhance, t)?.total ?? 0) - base };
       }).sort((a, b) => b.score - a.score);
     }
-    if (tab === "armour") {
-      return list.map((r) => {
-        const sh = r.levels[2].shield;
-        return { r, score: sh ? shieldFactor([sh]) - 1 : -1, note: sh ? "" : "Not counted in health numbers" };
-      }).sort((a, b) => b.score - a.score);
-    }
-    return list.map((r) => ({ r, score: 0, note: "" }));
-  }, [tab, item, enhance, slots, index, open]);
+    if (tab === "armour") return list.map((r) => ({ r, score: r.levels[2].shield ? shieldFactor([r.levels[2].shield]) - 1 : -1 })).sort((a, b) => b.score - a.score);
+    return list.map((r) => ({ r, score: 0 }));
+  }, [tab, item, enhance, others, index, open]);
+  const shown = ranked.filter(({ r }) => !query.trim() || `${r.name} ${r.effect} ${r.aka ?? ""}`.toLowerCase().includes(query.trim().toLowerCase()));
+
+  const rune = runeById.get(selected)!;
+  const fits = rune.kind === item.kind;
+  // The rune being set up: the slot's own settings if it's the same rune, otherwise level III with no side effects.
+  const setup = useMemo<RuneSlot>(() => (draft && draft.id === selected ? draft : { id: selected, level: 3, secondaries: [] }), [draft, selected]);
+  const setLevel = (level: RuneLevel) => setDraft({ ...setup, level, secondaries: setup.secondaries.slice(0, level) });
+  const toggleSec = (id: SecondaryId) => {
+    const has = setup.secondaries.includes(id);
+    if (!has && setup.secondaries.length >= setup.level) return;
+    setDraft({ ...setup, secondaries: has ? setup.secondaries.filter((x) => x !== id) : [...setup.secondaries, id] });
+  };
+  const preview = useMemo(() => {
+    if (!fits || item.kind !== "weapon") return null;
+    const base = dpsWith(item, enhance, runeTotals(others, open))?.total ?? 0;
+    const t = runeTotals(others.map((x, j) => (j === index ? setup : x)), open);
+    return (dpsWith(item, enhance, t)?.total ?? 0) - base;
+  }, [fits, item, enhance, others, index, open, setup]);
+  const tier = rune.levels[setup.level - 1];
 
   return createPortal(
     <div className="picker-backdrop" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="picker gp" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={box}>
-        <div className="tb">
-          <h2 id={titleId}>{current ? "Change rune" : "Add a rune"}</h2>
-          <button className="lo-clear static" onClick={onClose} aria-label="Close">×</button>
+      <div className="stash gp" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={box}>
+        <div className="stash-head">
+          <h2 id={titleId}>Rune Stash</h2>
+          <span className="small muted">Slot {index + 1} · {item.name}</span>
+          <button className="stash-x" onClick={onClose} aria-label="Close">×</button>
         </div>
-        <div className="picker-worlds" role="group" aria-label="Rune type">
-          {(["weapon", "armour"] as RuneKind[]).map((k) => (
-            <button key={k} className="btn sm" aria-pressed={tab === k} onClick={() => setTab(k)}>Best for {k === "weapon" ? "weapons" : "armour"}</button>
-          ))}
+        <div className="stash-tools">
+          <label className="stash-search">
+            <span className="sr-only">Search runes</span>
+            <input className="input" type="search" placeholder="Search…" value={query} onChange={(e) => setQuery(e.target.value)} />
+          </label>
+          <div className="stash-tabs" role="group" aria-label="Rune type">
+            {(["weapon", "armour"] as RuneKind[]).map((k) => (
+              <button key={k} className="btn sm" aria-pressed={tab === k} onClick={() => setTab(k)}>Best for {k === "weapon" ? "weapons" : "armour"}</button>
+            ))}
+          </div>
         </div>
-        {tab !== item.kind && <p className="note" style={{ margin: "8px 14px 0" }}>{tab === "weapon" ? "Weapon runes go on weapons." : "Armour runes go on armour."} Switch the calculator to {tab === "weapon" ? "Weapon" : "Armor"} to use these.</p>}
-        <div className="picker-list">
-          {ranked.map(({ r, score, note }, i) => {
-            const fits = r.kind === item.kind;
-            return (
-              <button key={r.id} className={`picker-item${current?.id === r.id ? " on" : ""}`} disabled={!fits} onClick={() => onPick(r)} aria-pressed={current?.id === r.id}>
-                <span className="rune-rank" aria-hidden="true">{i + 1}</span>
-                <span className="picker-text">
-                  <b>{r.name}{r.aka ? <span className="muted small"> ({r.aka})</span> : null}</b>
-                  <span className="small muted">{r.effect} · III: {r.levels[2].text}</span>
-                  {tab === "weapon" && item.kind === "weapon" && <span className="small" style={{ color: score > 0.005 ? "var(--gold)" : "var(--faint)" }}>{score > 0.005 ? `+${fmt(score)} DPS on this weapon at III` : "No DPS (utility)"}</span>}
-                  {tab === "armour" && <span className="small" style={{ color: score > 0 ? "var(--gold)" : "var(--faint)" }}>{score > 0 ? `+${pct(score * 100)} effective health at III` : note}</span>}
+        <div className="stash-body">
+          <div className="stash-grid" role="group" aria-label="Runes, best first">
+            {shown.map(({ r, score }, i) => (
+              <button key={r.id} aria-pressed={selected === r.id} className={`stash-tile${r.kind !== item.kind ? " other" : ""}`} onClick={() => setSelected(r.id)}>
+                <span className="stash-name">{r.name}</span>
+                <RuneIcon id={r.id} size={64} />
+                <span className="stash-rank" title="Rank in this list">{i + 1}</span>
+                <span className="stash-score">
+                  {tab === "weapon" && item.kind === "weapon" ? (score > 0.005 ? `+${fmt(score, 0)} DPS` : "Utility")
+                    : tab === "armour" ? (score > 0 ? `+${pct(score * 100)} EH` : r.effect) : r.effect}
                 </span>
               </button>
-            );
-          })}
+            ))}
+            {shown.length === 0 && <p className="muted" style={{ gridColumn: "1 / -1", margin: 8 }}>No runes match.</p>}
+          </div>
+
+          <aside className="stash-side" aria-live="polite">
+            <div className="stash-side-name">{rune.name}</div>
+            <div className="stash-side-pic"><RuneIcon id={rune.id} size={112} /></div>
+            <div className="small muted" style={{ textAlign: "center" }}>{rune.kind === "weapon" ? "Weapon" : "Armour"} rune · {rune.effect}{rune.aka ? ` · also called ${rune.aka}` : ""}</div>
+            {fits ? (
+              <>
+                <div className="stash-label">Level</div>
+                <div className="rune-levels" role="group" aria-label="Rune level">
+                  {([1, 2, 3] as RuneLevel[]).map((l) => <button key={l} className="btn sm" aria-pressed={setup.level === l} onClick={() => setLevel(l)}>{roman(l)}</button>)}
+                </div>
+                <div className="stash-label">Traits</div>
+                <div className="stash-traits">
+                  <div className="stash-main"><b>{rune.effect} {roman(setup.level)}</b><span>{tier.text}</span>{bestRoll(tier) && <span className="rune-best">Counted as: {bestRoll(tier)}</span>}</div>
+                </div>
+                <div className="stash-label">Side effects <span className="faint">({setup.secondaries.length}/{setup.level})</span></div>
+                <div className="stash-secs" role="group" aria-label="Side effects">
+                  {secondariesFor(rune.kind).map((s) => {
+                    const on = setup.secondaries.includes(s.id);
+                    const full = !on && setup.secondaries.length >= setup.level;
+                    return (
+                      <button key={s.id} className="stash-sec" aria-pressed={on} disabled={full} onClick={() => toggleSec(s.id)} title={`${s.range} ${s.text}`}>
+                        <span>{s.name}</span><b>+{pct(s.best * 100)}</b>
+                      </button>
+                    );
+                  })}
+                </div>
+                {preview != null && <p className="stash-preview">{preview > 0.005 ? <>Adds <b>+{fmt(preview)} DPS</b> at +{enhance}</> : "Adds no DPS"}</p>}
+                <button className="btn gb stash-save" onClick={() => onSave(setup)}>{current ? "Save rune" : `Put in slot ${index + 1}`}</button>
+              </>
+            ) : (
+              <p className="note" style={{ textAlign: "center" }}>{rune.kind === "weapon" ? "Weapon runes go on weapons." : "Armour runes go on armour."} Switch the calculator to {rune.kind === "weapon" ? "Weapon" : "Armor"} to use it.</p>
+            )}
+          </aside>
         </div>
       </div>
     </div>,
-    document.body,
+    // Inside the themed app, so it uses the current world's colours.
+    document.querySelector(".app") ?? document.body,
   );
 }

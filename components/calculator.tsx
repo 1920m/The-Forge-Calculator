@@ -20,7 +20,7 @@ import { averageTries, triesFor } from "@/lib/engine/odds";
 import { DpsTarget } from "./dps-target";
 import { useAuth } from "./auth";
 import { RunesPanel, type RuneItem } from "./runes-panel";
-import { decodeRunes, encodeRunes, type RuneSlot } from "@/lib/engine/runes";
+import { decodeRunes, dpsAtLevel, encodeRunes, hasRunes, type RuneSlot } from "@/lib/engine/runes";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
@@ -136,6 +136,11 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   // DPS is weapon damage times things that don't depend on damage (speed, crits, proc chances), so it rises by the
   // same 5% per level as damage.
   const baseDps = kind === "weapon" ? selected?.v.dps?.total ?? null : null;
+  // With weapon runes chosen, DPS at each level counts the runes whose slots that level opens (+3, +6, +9).
+  const runeWeapon = kind === "weapon" && hasRunes(runes.weapon) && selected?.v.raw != null && selected.v.interval
+    ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval } : null;
+  const dpsAt = (level: number) => (baseDps == null ? null : runeWeapon ? dpsAtLevel(runeWeapon, level, runes.weapon).total : baseDps * (1 + 0.05 * level));
+  const runeDps = runeWeapon ? dpsAtLevel(runeWeapon, runeEnhance, runes.weapon).total : null;
   const runeItem = useMemo<RuneItem | null>(() => selected ? {
     kind, name: selected.v.name, raw: selected.v.raw,
     ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), interval: selected.v.interval,
@@ -247,7 +252,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>{statName}:</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(selected.v.value)} {unit}</span></div>
                     <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="The real time between swings. The game's item card shows a different 'index' number, which isn't the real speed.">{selected.v.interval}s per swing · range {selected.v.range}<span className="small faint" style={{ display: "block" }}>Card shows {selected.v.speed}s (the game&apos;s index value)</span></span></div>}
-                    {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} />}
+                    {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} withRunes={runeDps} runeLevel={runeEnhance} />}
                     <div className="kv"><span>Chance:</span><span className="muted">{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</span></div>
                     <TriesRow chance={selected.v.overall / 100} ores={total} />
                     <div className="kv"><span>Lock:</span><span className="muted">{selected.cls.lockable ? "Lockable with this many ores" : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
@@ -331,11 +336,11 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                 </button>
                 <div className="pad">
                   <div className="stat-head enh-cols"><span><span className="enh-long">Stat Improvement:</span><span className="enh-short">Level</span></span>{baseDps != null && <><span className="enh-v">{unit}</span><span className="enh-d">DPS</span></>}</div>
-                  {enhance.slice(0, 1).map((l) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={baseDps} />)}
+                  {enhance.slice(0, 1).map((l) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={dpsAt(l.level)} />)}
                   <div id="enh-rest" className={`collapse ${enhanceOpen ? "open" : ""}`}><div>
-                    {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={baseDps} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
+                    {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={dpsAt(l.level)} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
                   </div></div>
-                  <p className="note">Every stat rises 5% per level, from +0 to +10. Values use your quality setting.{baseDps != null && " DPS rises by the same 5% per level, because hits and trait procs all scale with weapon damage."}</p>
+                  <p className="note">Every stat rises 5% per level, from +0 to +10. Values use your quality setting.{baseDps != null && (runeWeapon ? " DPS includes your runes from the level their slot opens (+3, +6, +9)." : " DPS rises by the same 5% per level, because hits and trait procs all scale with weapon damage.")}</p>
                 </div>
               </section>
             </Reveal>
@@ -408,7 +413,7 @@ function EnhRow({ l, max, unit, dps = null, delay = 0, hidden = false }: { l: { 
       <span className="enh-m">1.00x → {l.multiplier.toFixed(2)}x</span>
       <span className="bar"><span style={{ width: `${Math.max(1, (l.stat / max) * 100)}%`, background: "#8fb86a" }} /></span>
       <span className="num enh-v" title={unit}>{fmt(l.stat)}</span>
-      {dps != null && <span className="num enh-d" title="DPS at this level">{fmt(dps * l.multiplier)}</span>}
+      {dps != null && <span className="num enh-d" title="DPS at this level">{fmt(dps)}</span>}
     </div>
   );
 }
@@ -442,7 +447,7 @@ function TraitsPanel({ traits, kind, dense = false }: { traits: ReturnType<typeo
 }
 
 /** DPS with every trait the mix transfers: crits and lethality on each hit, plus procs and damage over time. */
-function DpsRow({ dps }: { dps: DpsResult }) {
+function DpsRow({ dps, withRunes = null, runeLevel = 0 }: { dps: DpsResult; withRunes?: number | null; runeLevel?: number }) {
   const bits = [
     dps.critChance > 0 && `${pct(dps.critChance * 100)} crit chance, crits hit ${fmt(145 + dps.critDamage * 100, 1)}%`,
     dps.lethality > 0 && `+${pct(dps.lethality * 100)} lethality`,
@@ -457,6 +462,7 @@ function DpsRow({ dps }: { dps: DpsResult }) {
         <span className="muted small"> · {fmt(dps.attacksPerSecond)} hits/s</span>
         {bits.length > 0 && <span className="small faint" style={{ display: "block" }}>{bits.join(" · ")}</span>}
         {dps.night != null && <span className="small faint" style={{ display: "block" }}>At night (Moon Stone): {fmt(dps.night)}</span>}
+        {withRunes != null && <span className="small" style={{ display: "block", color: "var(--gold)" }}>With your runes at +{runeLevel}: <b>{fmt(withRunes)}</b> <a className="inline-link" href="#runes-h">see Runes</a></span>}
       </span>
     </div>
   );

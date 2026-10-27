@@ -3,6 +3,7 @@
  * the share link. Pure functions; the data is in data/runes.ts.
  */
 import { RUNES, SECONDARIES, runeById, secondaryById, type RuneKind, type RuneLevel, type RuneProc, type SecondaryId } from "@/data/runes";
+import { weaponDps, type DpsResult } from "./dps";
 
 export const MAX_RUNE_SLOTS = 3;
 /** A slot opens at +3, +6 and +9. */
@@ -66,3 +67,15 @@ export function decodeRunes(raw: string | null | undefined, kind: RuneKind): (Ru
 
 export const runesFor = (kind: RuneKind) => RUNES.filter((r) => r.kind === kind);
 export const secondariesFor = (kind: RuneKind) => SECONDARIES.filter((s) => s.kind === kind);
+
+/**
+ * A weapon's DPS at an enhancement level with the runes in the slots that level opens.
+ * Pass no runes (or all empty) to get the plain DPS at that level.
+ */
+export function dpsAtLevel(w: { ores: { id: string; count: number }[]; raw: number; interval: number }, level: number, slots: readonly (RuneSlot | null)[] = []): DpsResult {
+  const t = runeTotals(slots, slotsAt(level));
+  return weaponDps({ ores: w.ores, damage: w.raw * (1 + 0.05 * level), interval: w.interval, extra: { stats: t.stats, procs: t.procs } });
+}
+
+export const hasRunes = (slots: readonly (RuneSlot | null)[]) => slots.some(Boolean);
+

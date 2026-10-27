@@ -69,3 +69,14 @@ describe("rune link", () => {
     expect(decodeRunes("blast-chip:1:atk_speed.lethality", "weapon")[0]).toEqual({ id: "blast-chip", level: 1, secondaries: ["atk_speed"] });
   });
 });
+
+describe("DPS at an enhancement level with runes", () => {
+  it("only counts the runes whose slots that level opens", async () => {
+    const { dpsAtLevel } = await import("../lib/engine/runes");
+    const w = { ores: [{ id: "iron", count: 10 }], raw: 100, interval: 0.5 };
+    const blast: RuneSlot = { id: "blast-chip", level: 3, secondaries: [] };
+    expect(dpsAtLevel(w, 2, [blast]).total).toBeCloseTo(110 * 2, 9); // no slot yet at +2
+    expect(dpsAtLevel(w, 3, [blast]).total).toBeCloseTo(115 * 2 + 115 * 0.8 * 0.5 * 2, 9);
+    expect(dpsAtLevel(w, 5, [blast, blast]).procs).toBeCloseTo(125 * 0.8 * 0.5 * 2, 9); // second slot opens at +6
+  });
+});
