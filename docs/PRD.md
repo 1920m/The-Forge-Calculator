@@ -340,6 +340,7 @@ These are the trait lines from the [ore pages](https://forgewiki.org/wiki/Ores) 
 | Vanegos | Armour / Both | Armour: below 35% HP +35% physical damage and move speed for 15s, +5% thorns. Both: +40% Lethality, -20% Vitality, -10% stamina, -10% move speed |
 | Vooite | Armour / Both | Armour: +8% thorns, venom cloud below 35% HP (30% weapon damage/s, 12s, 25s cooldown). Both: poison cloud (40%/s, 10s) and 4% max HP AoE per second in combat |
 | Fichilliumorite | Both | Takes the average multiplier of the other ores when forging |
+| Bismuth (multiplier) | Both | Also takes the average multiplier of the other ores when forging; its listed 8× is not used (wiki ore page, and an in-game craft on 27 Oct 2026: 1 each of Bismuth, Fichilliumorite, Kitsunite and Galaxite shows 26.25×) |
 | Kitsunite | Weapon / Armour | Weapon: lightning 60% for 80% damage, Smite 50% for 50%, Burn 50% (5s, 40%/s), explosion 40% for 70%. Armour: +25% Vitality, +15 regen, +6% thorns, +9% yield, +7% luck |
 | Bismuth | Weapon / Armour | Weapon: +18% attack speed, random T3 attack rune on hit, rainbow wave of 125% weapon damage on Galaxite black hole. Armour: +15% crit chance, +15% crit damage, +15% Lethality, fire, poison, black hole and resonance damage +1% per 500 HP (up to +20%), +6 regen/s, heal 2.5% max HP when a Galaxite black hole triggers |
 | Aether Lotus | Armour | +30% Vitality; 60% chance to cut damage by 65%; +18 regen/s |

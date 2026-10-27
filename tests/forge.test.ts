@@ -25,6 +25,18 @@ describe("catalogue forge results match Cris's in-game crafts", () => {
     const h = r.classes[1].variants.find((v) => v.name === "Hachiwari")!;
     expect(h.value).toBe(179.52);
   });
+  // In game (Hell Slayer craft video, 27 Oct 2026): Bismuth, Fichilliumorite, Kitsunite and Galaxite, one each,
+  // shows 26.25× and a Masterwork (100%) Hell Slayer with 584.06 DMG. Bismuth and Fichilliumorite both take the
+  // average of the other ores, so the multiplier is the average of Kitsunite (27.5) and Galaxite (25).
+  it("Hell Slayer: Bismuth takes the average like Fichilliumorite, 26.25x, 584.06 DMG", () => {
+    const r = forge(cat, mix(["Bismuth", 1], ["Fichilliumorite", 1], ["Kitsunite", 1], ["Galaxite", 1]), "weapon", 4, 1);
+    expect(r.multiplier!.toFixed(2)).toBe("26.25");
+    expect(r.rarity).toBe("Divine");
+    const hs = r.classes.find((c) => c.name === "Straight Sword")!.variants.find((v) => v.name === "Hell Slayer")!;
+    expect(hs.value).toBe(584.06);
+    // More Bismuth doesn't drag the multiplier down either.
+    expect(forge(cat, mix(["Bismuth", 5], ["Kitsunite", 2], ["Galaxite", 2]), "weapon", 4, 1).multiplier).toBeCloseTo(26.25, 9);
+  });
   it("uses each world's classes: 1–2 Gauntlets/Katana/Greatsword, 3 Mace/Axe/Spear, 4 Mace/Katana/Spear", () => {
     const names = (w: 1 | 2 | 3 | 4) => forge(cat, mix(["Iron", 10]), "weapon", w, 1).classes.slice(2, 5).map((c) => c.name);
     expect(names(2)).toEqual(["Gauntlets", "Katana", "Greatsword"]);

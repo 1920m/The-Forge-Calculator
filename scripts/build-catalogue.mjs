@@ -63,6 +63,10 @@ for (const r of tablesIn(between("### Ore traits", "## Measured mechanics"))[0].
   else ore.traits.push({ kinds, text });
 }
 const fichi = ores.get("Fichilliumorite"); if (fichi) { fichi.rule = "average"; fichi.traits = [{ kinds: ["weapon", "armour"], text: "Takes the average multiplier of the other ores" }]; }
+// Bismuth also takes the average when forging (its ore page says so, and an in-game craft confirms it: Bismuth,
+// Fichilliumorite, Kitsunite and Galaxite, one each, shows 26.25×, the average of Kitsunite and Galaxite).
+// Its listed 8× isn't used when forging. It keeps its own traits.
+const bismuth = ores.get("Bismuth"); if (bismuth) bismuth.rule = "average";
 
 // ---------- odds
 const csv = (header) => { const m = [...prd.matchAll(/```csv\n([\s\S]*?)\n```/g)].map((x) => x[1]).find((c) => c.startsWith(header)); if (!m) throw new Error(header); return m.split("\n").map((l) => l.split(",")); };

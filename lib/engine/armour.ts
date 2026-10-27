@@ -43,12 +43,15 @@ export const ARMOUR_EFFECTS: Record<string, Effect> = {
   kitsunite: { vitality: 0.25 },
 };
 
-export type ArmourOre = { id: string; multiplier: number; rarity: string };
+/** rule "average": the ore takes the other ores' average multiplier when forging (Fichilliumorite, Bismuth). */
+export type ArmourOre = { id: string; multiplier: number; rarity: string; rule?: "fixed" | "average" };
 export type ArmourScore = { multiplier: number; vitality: number; shieldChance: number; shieldCut: number; dodge: number; effectiveHealth: number };
 
 export function armourScore(mix: { ore: ArmourOre; count: number }[]): ArmourScore {
   const total = mix.reduce((n, m) => n + m.count, 0);
-  const multiplier = total ? mix.reduce((n, m) => n + m.ore.multiplier * m.count, 0) / total : 0;
+  const fixed = mix.filter((m) => m.ore.rule !== "average");
+  const fixedCount = fixed.reduce((n, m) => n + m.count, 0);
+  const multiplier = fixedCount ? fixed.reduce((n, m) => n + m.ore.multiplier * m.count, 0) / fixedCount : 0;
   let vitality = 0, shieldChance = 0, shieldCut = 0, dodge = 0;
   for (const { ore, count } of mix) {
     const e = ARMOUR_EFFECTS[ore.id];

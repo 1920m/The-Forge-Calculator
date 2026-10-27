@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Catalogue } from "@/lib/engine/forge";
 import { imageUrl } from "@/lib/data/supabase";
-import { RARITY_ORDER, SHOW_STATUS_LABELS, rarityColour, worldLabel } from "@/lib/ui";
+import { RARITY_ORDER, SHOW_STATUS_LABELS, multLabel, rarityColour, worldLabel } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { EMPTY_FILTER, OreFilter, TraitMarks, applyOreFilter, type OreFilterState } from "./ore-filter";
@@ -54,10 +54,10 @@ export function OresPage({ cat }: { cat: Catalogue }) {
               <div className="ore-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(112px, 1fr))", maxHeight: "none" }}>
                 {list.map((o) => (
                   <button key={o.id} className="tile" style={{ height: 104, ["--rc" as string]: rarityColour(o.rarity), outline: sel?.id === o.id ? "2px solid var(--acc)" : "none", outlineOffset: 2 }}
-                    onClick={() => setSelId(o.id)} aria-pressed={sel?.id === o.id} aria-label={`${o.name}, ${o.multiplier}x`}>
+                    onClick={() => setSelId(o.id)} aria-pressed={sel?.id === o.id} aria-label={`${o.name}, ${o.rule === "average" ? "takes the average multiplier" : `${o.multiplier}x`}`}>
                     <GameImage src={imageUrl("ores", o.id)} alt="" />
                     <span className="t-top">{o.name}</span>
-                    <span className="t-br">{o.multiplier}x</span>
+                    <span className="t-br">{multLabel(o)}</span>
                     <TraitMarks ore={o} />
                   </button>
                 ))}
@@ -73,7 +73,8 @@ export function OresPage({ cat }: { cat: Catalogue }) {
               <div className="pad">
                 <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 12 }}>
                   <div className="tile" style={{ width: 96, height: 96, ["--rc" as string]: rarityColour(sel.rarity) }}><GameImage src={imageUrl("ores", sel.id)} alt={sel.name} size={36} /></div>
-                  <div><div className="small muted">Multiplier</div><div style={{ fontSize: 30, fontWeight: 700 }} className="gold">{sel.multiplier}x</div></div>
+                  <div><div className="small muted">Multiplier</div><div style={{ fontSize: 30, fontWeight: 700 }} className="gold">{sel.rule === "average" ? "Average" : `${sel.multiplier}x`}</div>
+                    {sel.rule === "average" && <div className="small muted">Takes the average multiplier of the other ores when forging{sel.multiplier !== 1 ? ` (its listed ${sel.multiplier}x isn't used when forging)` : ""}.</div>}</div>
                 </div>
                 <div className="kv"><span>Rarity:</span><span style={{ color: rarityColour(sel.rarity), fontWeight: 700 }}>{sel.rarity}</span></div>
                 <div className="kv"><span>World:</span><span className="muted">{worldLabel(sel.worlds)}</span></div>
