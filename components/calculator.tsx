@@ -19,10 +19,15 @@ import Link from "next/link";
 import { averageTries, triesFor } from "@/lib/engine/odds";
 import { DpsTarget } from "./dps-target";
 import { useAuth } from "./auth";
+import { RunesPanel, type RuneItem } from "./runes-panel";
+import { decodeRunes, encodeRunes, type RuneSlot } from "@/lib/engine/runes";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
-function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string } } {
+type Runes = Record<Kind, (RuneSlot | null)[]>;
+const NO_RUNES: Runes = { weapon: [null, null, null], armour: [null, null, null] };
+
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes } {
   try {
     const p = new URLSearchParams(window.location.search);
     const fromUrl = p.get("o");
@@ -32,7 +37,12 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
     const entries = raw ? parseRecipe(raw) : undefined;
     // Pre-selection from the Builds page: short, plain values only.
     const cls = p.get("c")?.slice(0, 60) ?? null, id = p.get("v")?.slice(0, 60) ?? null;
-    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined };
+    // Runes: enhancement level (e) and one rune list per item type (rw, ra).
+    const store = (k: string) => p.get(k) ?? window.localStorage.getItem(`forge.${k}`);
+    const e = Number(store("e"));
+    const runes: Runes = { weapon: decodeRunes(store("rw"), "weapon"), armour: decodeRunes(store("ra"), "armour") };
+    return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined,
+      enhance: Number.isInteger(e) && e >= 0 && e <= 10 && store("e") != null ? e : undefined, runes };
   } catch { return {}; }
 }
 
@@ -50,6 +60,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const [allWorlds, setAllWorlds] = useState(false);
   const [oreFilter, setOreFilter] = useState<OreFilterState>(EMPTY_FILTER);
   const loaded = useRef(false);
+  const [runeEnhance, setRuneEnhance] = useState(9);
+  const [runes, setRunes] = useState<Runes>(NO_RUNES);
 
   // Restore the recipe from the URL or the last visit, once.
   useEffect(() => {
@@ -59,6 +71,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.quality) setQuality(r.quality);
       if (r.entries) setEntries(r.entries.filter((e) => oreById.has(e.id)));
       if (r.pick) setPick(r.pick);
+      if (r.enhance != null) setRuneEnhance(r.enhance);
+      if (r.runes) setRunes(r.runes);
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
@@ -74,12 +88,19 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       url.searchParams.set("k", kind);
       url.searchParams.set("q", String(quality));
       url.searchParams.delete("c"); url.searchParams.delete("v"); // one-time pre-selection
+      // Runes only go in the link once some are added, so plain links stay short.
+      const rw = encodeRunes(runes.weapon), ra = encodeRunes(runes.armour), none = "-,-,-";
+      const runeParams: [string, string | null][] = [["e", rw === none && ra === none ? null : String(runeEnhance)], ["rw", rw === none ? null : rw], ["ra", ra === none ? null : ra]];
+      for (const [k, v] of runeParams) {
+        if (v == null) url.searchParams.delete(k); else url.searchParams.set(k, v);
+        window.localStorage.setItem(`forge.${k}`, k === "e" ? String(runeEnhance) : (v ?? ""));
+      }
       window.history.replaceState(null, "", url);
       window.localStorage.setItem("forge.recipe", o);
       window.localStorage.setItem("forge.kind", kind);
       window.localStorage.setItem("forge.quality", String(quality));
     } catch { /* storage unavailable */ }
-  }, [entries, kind, quality]);
+  }, [entries, kind, quality, runes, runeEnhance]);
 
   const mix: Mix = useMemo(() => entries.flatMap((e) => { const ore = oreById.get(e.id); return ore ? [{ ore, count: e.count }] : []; }), [entries, oreById]);
   const result = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
@@ -115,6 +136,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   // DPS is weapon damage times things that don't depend on damage (speed, crits, proc chances), so it rises by the
   // same 5% per level as damage.
   const baseDps = kind === "weapon" ? selected?.v.dps?.total ?? null : null;
+  const runeItem = useMemo<RuneItem | null>(() => selected ? {
+    kind, name: selected.v.name, raw: selected.v.raw,
+    ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), interval: selected.v.interval,
+  } : null, [selected, kind, mix]);
   const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
   const toSave = useMemo<NewForge | null>(() => selected && total >= 3 ? {
     name: selected.v.name, kind, world, class_name: selected.cls.name, variant_id: selected.v.id, quality, ores: entries,
@@ -319,6 +344,11 @@ export function Calculator({ cat }: { cat: Catalogue }) {
             <Reveal col={4}>
               <DpsTarget classes={result.classes} pickedDps={selected.v.dps?.total ?? null} pickedId={selected.v.id} ores={total} quality={quality}
                 onPick={(cls, id) => { startTransition(() => setPick({ cls, id })); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+            </Reveal>
+          )}
+          {runeItem && (
+            <Reveal col={4}>
+              <RunesPanel item={runeItem} enhance={runeEnhance} onEnhance={setRuneEnhance} slots={runes[kind]} onSlots={(s) => setRunes((cur) => ({ ...cur, [kind]: s }))} />
             </Reveal>
           )}
         </>
