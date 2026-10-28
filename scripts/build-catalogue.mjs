@@ -172,36 +172,81 @@ const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, 
 });
 
 // ---------- molds
-// How many Weapon or Armor Molds guarantee an item (with its class locked). This is NOT the item's 1/N:
-// Dark Knight's Gauntlets is 1/6 but players report 70 molds. Statuses:
-//   verified:   an exact number confirmed in game. Only this can show a 100% guarantee on the site.
-//   reported:   an exact number from player reports. The site shows it as "guaranteed if the report is right".
-//   unverified: an approximate player estimate ("about 40"). Never treated as a guarantee.
-// Items not listed: unknown. Reports collected by Cris on 28 Oct 2026; the Reddit posts weren't readable from
-// our tools, so each note records what the report says as summarised by Cris.
-const REDDIT = "https://www.reddit.com/r/TheForgeRoblox/comments/";
-const moldRequirements = [
-  { itemId: "dark-knights-gauntlets", kind: "weapon", worlds: [1, 2], exact: null, reported: 70, approximate: false, status: "reported", reports: 3, checked: "2026-10-28",
-    sources: [
-      { url: `${REDDIT}1wb8otn/best_dps_in_the_game_vs_my_fav_weapon_i_made/`, date: "2026-09-09", note: "Crafted with 14 Kitsunite and 70 Weapon Molds" },
-      { url: `${REDDIT}1wbx2js/best_weapon_armor_recipes/`, date: null, note: "Recommends 70 molds" },
-      { url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "Lists 70" },
-    ] },
-  { itemId: "excalibur", kind: "weapon", worlds: [4], exact: null, reported: 150, approximate: false, status: "reported", reports: 1, checked: "2026-10-28",
-    sources: [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "Lists 150" }] },
-  { itemId: "shogun-chestplate", kind: "armour", worlds: [4], exact: null, reported: 52, approximate: true, status: "unverified", reports: 1, checked: "2026-10-28",
-    sources: [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "About 52" }] },
-  { itemId: "shogun-helmet", kind: "armour", worlds: [4], exact: null, reported: 40, approximate: true, status: "unverified", reports: 1, checked: "2026-10-28",
-    sources: [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "About 40" }] },
-  { itemId: "shogun-leggings", kind: "armour", worlds: [4], exact: null, reported: 40, approximate: true, status: "unverified", reports: 1, checked: "2026-10-28",
-    sources: [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "About 40" }] },
+// How many Weapon or Armor Molds make the game's mold screen show 100% for an item. This is NOT the item's 1/N:
+// Dark Knight's Gauntlets is 1/6 but needs 70. Every number below was checked in game by Cris on 28 Oct 2026
+// (screenshots or written down from the game). "seen" is the worlds it was checked in (2 = Worlds 1–2); an
+// item uses the same number in every world. "ores" is the minimum ores the mold screen showed, which is always
+// the class's lock number. Not listed (blank, never 0): Funguy shop blueprints Cris doesn't own, Halloween
+// weapons, Comically Large Spoon, Boxing Gloves, Crusader Sword, Dark Knight's Greatsword, Anchored Greatsword,
+// The Carver, Greater Battle Axe, Kinmon Kamagatana, Otsuchi and Sharktooth Odachi.
+// Name differences from the game's mold screen: "Wytherin Axe" is our Wyvern Axe, "Spiked Halberd" our Halberd,
+// "Ninja's Headgear" our Ninja's Helmet, "Shogun's ..." our Shogun ....
+// Statuses the site understands: verified (exact, can show 100%), reported (player reports: "guaranteed if the
+// report is right"), unverified (an estimate: never a guarantee).
+const MOLDS_CHECKED = "2026-10-28";
+// [item id, molds, minimum ores on the mold screen, worlds seen]
+const WEAPON_MOLDS = [
+  ["dagger", 2, 3, [2, 3]], ["gladius-daggers", 3, 3, [2, 3]], ["hook", 5, 3, [2, 3]],
+  ["falchion-sword", 2, 9, [2, 3]], ["cutlass", 12, 9, [2, 3]], ["rapier", 15, 9, [2, 3]], ["chaos", 25, 9, [2, 3]], ["hook-blade", 38, 9, [3, 4]],
+  ["ironhand", 3, 14, [2]], ["relevator", 25, 14, [2]], ["savage-claws", 40, 14, [2]], ["dark-knights-gauntlets", 70, 14, [2]],
+  ["uchigatana", 2, 18, [2, 4]], ["tachi", 25, 18, [2, 4]],
+  ["long-sword", 5, 24, [2]], ["zweihander", 20, 24, [2]], ["jacks-crest", 25, 24, [2]],
+  ["double-battle-axe", 2, 31, [2, 3, 4]], ["scythe", 10, 31, [2, 3, 4]], ["batwing-reaver", 20, 31, [2, 3, 4]], ["wyvern-axe", 20, 31, [3, 4]], ["halberd", 40, 31, [4]],
+  ["great-sword", 15, 50, [2, 3]], ["hammer", 15, 50, [2, 3]], ["skull-crusher", 30, 50, [2, 3]], ["dragon-slayer", 40, 50, [2, 3, 4]], ["excalibur", 150, 50, [3, 4]],
+  ["mace", 2, 14, [3, 4]], ["spiked-mace", 5, 14, [3]], ["winged-mace", 12, 14, [3]], ["hammerhead-mace", 12, 14, [3]], ["grave-maker", 18, 14, [3]],
+  ["tetsubo", 10, 14, [4]], ["kanabo", 12, 14, [4]],
+  ["axe", 2, 18, [3]], ["battleaxe", 5, 18, [3]], ["curved-handle-axe", 10, 18, [3]], ["spade-armed-axe", 20, 18, [3]], ["duskwings-cleaver", 20, 18, [3]],
+  ["spear", 2, 24, [3, 4]], ["trident", 15, 24, [3]], ["angelic-spear", 40, 24, [3]], ["knight-spear", 55, 24, [3]], ["compass-spear", 30, 24, [3]],
+  ["shakujo", 15, 24, [4]], ["sodegarami", 40, 24, [4]], ["bo-staff", 50, 24, [4]], ["naginata", 40, 24, [4]],
+  ["kunai", 2, 3, [4]], ["jitte", 2, 3, [4]], ["damascus-dagger", 3, 3, [4]], ["tanto", 3, 3, [4]],
+  ["chokuto", 10, 9, [4]], ["hachiwari", 15, 9, [4]], ["dragon-blade", 35, 9, [4]],
+  ["juto-katana", 16, 18, [4]], ["kurokiba-gatana", 28, 18, [4]], ["washi-maru", 60, 18, [4]],
 ];
+const ARMOUR_MOLDS = [
+  ["light-helmet", 2, 3, [3]], ["light-leggings", 3, 11, [3]], ["light-chestplate", 3, 15, [3]],
+  ["ninjas-helmet", 6, 3, [4]], ["ninjas-leggings", 8, 11, [4]], ["ninjas-armor", 8, 15, [4]],
+  ["medium-helmet", 4, 20, [3]], ["medium-leggings", 5, 24, [3]], ["medium-chestplate", 6, 30, [3]],
+  ["viking-helmet", 6, 20, [3]], ["viking-leggings", 8, 24, [3]], ["viking-chestplate", 12, 30, [3]],
+  ["samurai-helmet", 5, 20, [4]], ["samurai-leggings", 6, 24, [4]], ["samurai-chestplate", 10, 30, [4]],
+  ["rootguard-helmet", 12, 20, [4]], ["rootguard-leggings", 15, 24, [4]], ["rootguard-chestplate", 20, 30, [4]],
+  ["knight-helmet", 10, 35, [2, 3]], ["knight-leggings", 11, 42, [2, 3]], ["knight-chestplate", 15, 52, [2, 3]],
+  ["dark-knight-helmet", 15, 35, [2, 4]], ["dark-knight-leggings", 18, 42, [2, 4]], ["dark-knight-chestplate", 22, 52, [2, 4]],
+  ["wolf-helmet", 24, 35, [3]], ["wolf-leggings", 28, 42, [3]], ["wolf-chestplate", 28, 52, [3]],
+  ["ravens-helmet", 25, 35, [3]], ["ravens-leggings", 27, 42, [3]], ["ravens-chestplate", 30, 52, [3]],
+  ["goblins-crown", 22, 35, [4]],
+  ["vanguard-helmet", 30, 35, [4]], ["vanguard-leggings", 33, 42, [4]], ["vanguard-chestplate", 35, 52, [4]],
+  ["shogun-helmet", 40, 35, [4]], ["shogun-leggings", 42, 42, [4]], ["shogun-chestplate", 45, 52, [4]],
+];
+const REDDIT = "https://www.reddit.com/r/TheForgeRoblox/comments/";
+// Player reports that matched before the in-game check, kept as extra sources.
+const EARLIER_REPORTS = {
+  "dark-knights-gauntlets": [
+    { url: `${REDDIT}1wb8otn/best_dps_in_the_game_vs_my_fav_weapon_i_made/`, date: "2026-09-09", note: "Player report: crafted with 14 Kitsunite and 70 Weapon Molds" },
+    { url: `${REDDIT}1wbx2js/best_weapon_armor_recipes/`, date: null, note: "Player report: recommends 70 molds" },
+    { url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "Player report: lists 70" },
+  ],
+  "excalibur": [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "Player report: lists 150" }],
+};
+const moldRequirements = [...WEAPON_MOLDS.map((r) => ["weapon", ...r]), ...ARMOUR_MOLDS.map((r) => ["armour", ...r])].map(([kind, itemId, molds, minOres, seen]) => ({
+  itemId, kind, worlds: seen, exact: molds, reported: molds, approximate: false, status: "verified", minOres, checked: MOLDS_CHECKED,
+  reports: 1 + (EARLIER_REPORTS[itemId]?.length ?? 0),
+  sources: [{ url: null, date: MOLDS_CHECKED, note: "Checked in game by Cris" }, ...(EARLIER_REPORTS[itemId] ?? [])],
+}));
+const poolHas = (world, id) => Object.values(weaponPools[world].pools).some((p) => p.items.some(([x]) => x === id));
+const seenNotInPool = [];
 for (const r of moldRequirements) {
   const item = r.kind === "weapon" ? weapons.find((w) => w.id === r.itemId) : armour.find((a) => a.id === r.itemId);
   if (!item) throw new Error(`Mold requirement for unknown ${r.kind} ${r.itemId}`);
   if (r.status === "verified" && !(r.exact > 0)) throw new Error(`${r.itemId}: verified needs an exact number`);
   if (r.status !== "verified" && r.exact != null) throw new Error(`${r.itemId}: only verified entries have an exact number`);
+  if (new Set(moldRequirements.map((x) => x.itemId)).size !== moldRequirements.length) throw new Error("Duplicate mold requirement");
+  for (const w of r.worlds) {
+    const there = r.kind === "weapon" ? poolHas(w, r.itemId) : item.worlds.includes(w);
+    if (!there) seenNotInPool.push(`${r.itemId} (World ${w === 2 ? "1-2" : w})`);
+  }
 }
+// Items Cris saw on a world's mold screen that our world lists don't have there yet (waiting for confirmation).
+if (seenNotInPool.length) console.log(`molds seen outside our world lists: ${seenNotInPool.join(", ")}`);
 
 const catalogue = {
   generatedFrom: "docs/PRD.md",

@@ -21,7 +21,7 @@ import { DpsTarget } from "./dps-target";
 import { useAuth } from "./auth";
 import { RunesPanel, type RuneItem } from "./runes-panel";
 import { decodeRunes, dpsAtLevel, encodeRunes, hasRunes, type RuneSlot } from "@/lib/engine/runes";
-import { MAX_MOLDS, NO_MOLDS, applyMolds, decodeMolds, encodeMolds, moldNeed, needLabel, type MoldState, type Need } from "@/lib/engine/molds";
+import { MAX_MOLDS, NO_MOLDS, applyMolds, decodeMolds, encodeMolds, moldNeed, moldScreenChance, needLabel, type MoldState, type Need, type MoldRequirement } from "@/lib/engine/molds";
 import { MOLDS, type Mold } from "@/data/molds";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
@@ -211,9 +211,13 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   ].filter((x): x is string => Boolean(x));
   const withoutWhat = changedBy.length === 2 ? "locking or molds" : moldsCounted ? "molds" : "locking";
   const isTarget = selected != null && mold.targetId === selected.v.id;
+  // The game's mold-screen chance, (molds ÷ needed)²: shown on its own, never mixed into the chances.
+  const screenChance = mold.state === "partial" ? moldScreenChance(molds, mold.need) : null;
   // What to say about the chance with molds, when it isn't known.
   const moldChanceNote = !withoutMolds || !selected ? null
     : isTarget && mold.state === "conditional" ? `With ${molds} molds: 100% if the player-reported ${mold.need.value} is right. Not verified.`
+    : isTarget && mold.state === "needs-lock" ? `With ${molds} molds the game's mold screen shows 100%. Lock ${selected.cls.name} to count it as guaranteed here.`
+    : isTarget && screenChance != null ? `With ${molds} mold${molds === 1 ? "" : "s"} the game's mold screen shows about ${pct(screenChance * 100, 0)} ((molds ÷ needed)², which matches all our screenshots). How that combines with the normal chance isn't confirmed yet.`
     : isTarget ? `With ${molds} mold${molds === 1 ? "" : "s"}: exact chance unverified. Players report that molds raise it.`
     : `Your molds are aimed at ${aimedName}, so this item's real chance with them is unverified.`;
   const moldTriesNote = !withoutMolds || !selected ? null
@@ -510,10 +514,26 @@ function MoldButton({ mold, count, onChange }: { mold: Mold; count: number; onCh
 function needText(need: Need) {
   if (need.value == null) return "molds needed: unknown";
   if (need.kind === "approximate") return `about ${need.value} molds, a rough player estimate`;
-  return `${need.value} molds, ${need.kind === "verified" ? "verified" : "player report"}`;
+  return `${need.value} molds${need.kind === "verified" ? "" : ", player report"}`;
 }
 
-const NEED_BADGE: Record<Need["kind"], string> = { verified: "Verified", reported: "Player report", approximate: "Rough player estimate", unknown: "Unknown" };
+const NEED_BADGE: Record<Need["kind"], string> = { verified: "Checked in game", reported: "Player report", approximate: "Rough player estimate", unknown: "Unknown" };
+const worldList = (ws: number[]) => ws.map((w) => (w <= 2 ? "1–2" : String(w))).filter((w, i, a) => a.indexOf(w) === i).join(", ");
+
+/** Where a mold number comes from: checked in game (with the worlds), plus any earlier player reports. */
+function MoldSources({ req }: { req: MoldRequirement }) {
+  const inGame = req.sources.filter((s) => !s.url);
+  const links = req.sources.filter((s): s is typeof s & { url: string } => !!s.url);
+  return (
+    <span className="small faint" style={{ display: "block" }}>
+      {inGame.map((s, i) => <span key={i}>{s.note}, {shortDate(s.date ?? req.checked)}{req.status === "verified" && <> (World {worldList(req.worlds)})</>}. </span>)}
+      {links.length > 0 && <>{inGame.length ? "Earlier player reports" : `Source${links.length === 1 ? "" : "s"}`}: {links.map((src, i) => (
+        <span key={src.url + i}>{i > 0 && ", "}<a className="inline-link" href={src.url} target="_blank" rel="noreferrer" title={src.note}>Reddit {i + 1}</a>{src.date && ` (${shortDate(src.date)})`}</span>
+      ))}. </>}
+      {!inGame.length && <>Checked {shortDate(req.checked)}.</>}
+    </span>
+  );
+}
 const shortDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 /** What molds do for the picked item: how many it needs (and how sure that number is), and what's still missing. */
@@ -527,29 +547,25 @@ function MoldRow({ item, need, cls, aimed, aimedName, mold, moldName, onAim }: {
   const needSentence = need.value == null ? <>How many molds it needs isn&apos;t known yet.</>
     : need.kind === "approximate" ? <>Players estimate about {plural(need.value)}; the exact number isn&apos;t known.</>
     : need.kind === "reported" ? <>Players report {plural(need.value)} with {cls.name} locked. Not verified.</>
-    : <>{plural(need.value)} with {cls.name} locked (verified).</>;
+    : <>{plural(need.value)} with {cls.name} locked makes the game&apos;s mold screen show 100%.</>;
   let text: React.ReactNode;
   if (!aimed) text = <>{needSentence}{aimedName && <> Your molds are aimed at {aimedName}.</>}</>;
   else if (mold.state === "aimed") text = <>Molds aimed here. {needSentence}</>;
-  else if (mold.state === "partial") text = <>{mold.molds}/{label}. {need.value == null ? needSentence : <>Add {need.value - mold.molds} more to reach the {need.kind === "approximate" ? "estimated" : need.kind === "verified" ? "verified" : "reported"} {label}.</>}{need.value != null && need.kind !== "approximate" && lockStep}</>;
+  // (The mold-screen chance for fewer molds is in the Chance row above.)
+  else if (mold.state === "partial") text = <>{mold.molds}/{label}. {need.value == null ? needSentence : <>Add {need.value - mold.molds} more to reach {need.kind === "approximate" ? "the estimated" : need.kind === "verified" ? "the" : "the reported"} {label}.</>}{need.value != null && need.kind !== "approximate" && lockStep}</>;
   else if (mold.state === "approx-reached") text = <>{mold.molds}/{label}: you&apos;ve entered at least the reported ~{need.value}, but the exact number isn&apos;t known, so this isn&apos;t counted as a guarantee.</>;
-  else if (mold.state === "needs-lock") text = <>{mold.molds}/{label}: enough by the {need.kind === "verified" ? "verified" : "reported"} number, but {cls.name} has to be locked first.{lockStep}</>;
+  else if (mold.state === "needs-lock") text = <>{mold.molds}/{label}: enough molds, but {cls.name} has to be locked first.{lockStep}
+    <span className="small faint" style={{ display: "block" }}>Whether the game needs the padlock pressed, or locks the class for you, isn&apos;t confirmed, so the calculator asks for it.</span></>;
   else if (mold.state === "conditional") text = <span className="gold"><b>Guaranteed if the player report is right</b>: {plural(need.value!)} with {cls.name} locked. Not verified, so the chances above stay as they are without molds.</span>;
-  else if (mold.state === "guaranteed") text = <span className="gold"><b>Guaranteed</b>: {plural(need.value!)} with {cls.name} locked (verified).</span>;
+  else if (mold.state === "guaranteed") text = <span className="gold"><b>Guaranteed</b>: {plural(need.value!)} with {cls.name} locked. The game&apos;s mold screen shows 100%.</span>;
   const req = need.req;
   return (
     <div className="kv mold-row"><span>Molds:</span>
       <span className="muted">
         <span className={`badge ${need.kind === "verified" ? "ok" : "der"} mold-badge`}>{NEED_BADGE[need.kind]}{need.kind === "reported" && req ? ` · ${req.reports} report${req.reports === 1 ? "" : "s"}` : ""}</span>
         {text}
-        {aimed && mold.surplus > 0 && <span className="small faint" style={{ display: "block" }}>{plural(mold.surplus)} more than the {need.kind === "verified" ? "verified" : "reported"} {need.value}: extras add nothing. Whether the game still uses them up isn&apos;t confirmed.</span>}
-        {req && req.sources.length > 0 && (
-          <span className="small faint" style={{ display: "block" }}>
-            Source{req.sources.length === 1 ? "" : "s"}: {req.sources.map((src, i) => (
-              <span key={src.url + i}>{i > 0 && ", "}<a className="inline-link" href={src.url} target="_blank" rel="noreferrer" title={src.note}>Reddit {i + 1}</a>{src.date && ` (${shortDate(src.date)})`}</span>
-            ))}. Checked {shortDate(req.checked)}.
-          </span>
-        )}
+        {aimed && mold.surplus > 0 && <span className="small faint" style={{ display: "block" }}>{plural(mold.surplus)} more than the {need.kind === "verified" ? "" : "reported "}{need.value} needed: extras add nothing. Whether the game still uses them up isn&apos;t confirmed.</span>}
+        {req && req.sources.length > 0 && <MoldSources req={req} />}
         <button className="btn sm mold-aim" onClick={() => onAim(aimed ? null : item.id)}>{aimed ? "Stop aiming molds" : `Aim molds at ${item.name}`}</button>
       </span>
     </div>
