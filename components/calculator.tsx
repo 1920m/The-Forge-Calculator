@@ -21,7 +21,7 @@ import { DpsTarget } from "./dps-target";
 import { useAuth } from "./auth";
 import { RunesPanel, type RuneItem } from "./runes-panel";
 import { decodeRunes, dpsAtLevel, encodeRunes, hasRunes, type RuneSlot } from "@/lib/engine/runes";
-import { MAX_MOLDS, applyMolds, decodeMolds, encodeMolds, moldsNeeded, type MoldState } from "@/lib/engine/molds";
+import { MAX_MOLDS, NO_MOLDS, applyMolds, decodeMolds, encodeMolds, moldNeed, needLabel, type MoldState, type Need } from "@/lib/engine/molds";
 import { MOLDS, type Mold } from "@/data/molds";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
@@ -104,9 +104,11 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   }, [normal, moldId]);
   const { result, mold } = useMemo(() => {
     const lockedClasses = lockClass(normal.classes, activeLock);
-    const m = showMolds ? applyMolds(lockedClasses, moldTarget, molds, activeLock) : { classes: lockedClasses, mold: { state: "off" } as MoldState };
+    const m = showMolds ? applyMolds(lockedClasses, moldTarget, molds, activeLock, cat.moldRequirements) : { classes: lockedClasses, mold: NO_MOLDS };
     return { result: { ...normal, classes: m.classes }, mold: m.mold };
-  }, [normal, activeLock, showMolds, moldTarget, molds]);
+  }, [normal, activeLock, showMolds, moldTarget, molds, cat]);
+  // With molds whose effect nobody has measured, every chance on the page is the chance WITHOUT them.
+  const withoutMolds = showMolds && !mold.chancesKnown;
   const total = result.total;
   /** The item's chance without the lock or molds, for comparison. */
   const normalChance = (cls: string, id: string) => normal.classes.find((c) => c.name === cls)?.variants.find((v) => v.id === id)?.overall ?? 0;
@@ -167,7 +169,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const countOf = (id: string) => entries.find((e) => e.id === id)?.count ?? 0;
   const full = entries.length >= MAX_TYPES;
   const removeAll = useCallback((id: string) => startTransition(() => setEntries((cur) => cur.filter((e) => e.id !== id))), []);
-  const changeMolds = useCallback((f: (cur: number) => number) => startTransition(() => setMolds((cur) => Math.max(0, Math.min(MAX_MOLDS, Math.floor(f(cur)) || 0)))), []);
+  const clampMoldCount = (n: number) => Math.max(0, Math.min(MAX_MOLDS, Math.floor(n) || 0));
+  const changeMolds = useCallback((f: (cur: number) => number) => startTransition(() => setMolds((cur) => clampMoldCount(f(cur)))), []);
+  // Typing in the count box updates straight away: a deferred update can drop keystrokes in a controlled input.
+  const typeMolds = (raw: string) => setMolds(clampMoldCount(Number(raw)));
   const aimMolds = (id: string | null) => startTransition(() => setMoldId(id));
   const moldInfo = MOLDS[kind];
   const statName = kind === "armour" ? "Defense" : "Damage";
@@ -196,14 +201,23 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     catalogue_revision: Number((cat as { revision?: number }).revision) || null,
     runes: savedRunes, enhance: savedRunes ? runeEnhance : null,
   } : null, [selected, total, kind, world, quality, entries, cat, savedRunes, runeEnhance]);
-  // What changed the picked item's chance from the plain odds: the class lock and molds in its class.
-  const moldsInClass = showMolds && mold.state !== "off" && moldTarget != null && moldTarget.cls === selected?.cls.name;
+  // What changed the picked item's chance from the plain odds: the class lock, and molds only when their effect is
+  // known (a verified guarantee). Unmeasured molds are shown separately.
   const aimedName = moldTarget ? normal.classes.find((c) => c.name === moldTarget.cls)?.variants.find((v) => v.id === moldTarget.id)?.name ?? null : null;
+  const moldsCounted = showMolds && mold.state === "guaranteed" && mold.targetClass === selected?.cls.name;
   const changedBy = [
     activeLock != null && activeLock === selected?.cls.name && `${activeLock} locked`,
-    moldsInClass && `${molds} mold${molds === 1 ? "" : "s"} on ${moldTarget.id === selected?.v.id ? "it" : aimedName}`,
+    moldsCounted && `${molds} mold${molds === 1 ? "" : "s"} on ${mold.targetId === selected?.v.id ? "it" : aimedName}`,
   ].filter((x): x is string => Boolean(x));
-  const withoutWhat = changedBy.length === 2 ? "locking or molds" : moldsInClass ? "molds" : "locking";
+  const withoutWhat = changedBy.length === 2 ? "locking or molds" : moldsCounted ? "molds" : "locking";
+  const isTarget = selected != null && mold.targetId === selected.v.id;
+  // What to say about the chance with molds, when it isn't known.
+  const moldChanceNote = !withoutMolds || !selected ? null
+    : isTarget && mold.state === "conditional" ? `With ${molds} molds: 100% if the player-reported ${mold.need.value} is right. Not verified.`
+    : isTarget ? `With ${molds} mold${molds === 1 ? "" : "s"}: exact chance unverified. Players report that molds raise it.`
+    : `Your molds are aimed at ${aimedName}, so this item's real chance with them is unverified.`;
+  const moldTriesNote = !withoutMolds || !selected ? null
+    : isTarget && mold.state === "conditional" ? "With molds: 1 forge, if the player report is right." : "With molds: unknown.";
   const visibleOres = applyOreFilter(scopeOres.filter((o) => o.name.toLowerCase().includes(search.trim().toLowerCase())), oreFilter);
 
   return (
@@ -216,6 +230,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
             <div style={{ padding: "12px 14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
               {total < 3 && <p className="small muted" style={{ margin: 0 }}>Add at least 3 ores to see what you can forge.</p>}
               {result.capped && <p className="small muted" style={{ margin: 0 }}>Odds are only known up to 55 ores, so the 55-ore odds are shown.</p>}
+              {withoutMolds && <p className="small mold-note" style={{ margin: 0 }}>Chances without molds. Your {molds} mold{molds === 1 ? "" : "s"} on {aimedName} change them by an amount nobody has measured yet.</p>}
               {result.classes.map((c) => {
                 const off = c.probability === 0;
                 return (
@@ -235,9 +250,9 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       <div className="variant-tiles">
                         {c.variants.map((v) => {
                           const aimed = showMolds && moldTarget?.id === v.id;
-                          const need = moldsNeeded(v.weight);
+                          const need = needText(moldNeed(cat.moldRequirements, v.id));
                           return (
-                            <button key={v.id} className={`tile variant-tile${aimed ? " mold-aimed" : ""}${aimed && mold.state === "guaranteed" ? " mold-sure" : ""}`}
+                            <button key={v.id} className={`tile variant-tile${aimed ? " mold-aimed" : ""}${aimed && mold.state === "guaranteed" ? " mold-sure" : ""}${aimed && mold.state === "conditional" ? " mold-cond" : ""}`}
                               style={{ width: 60, height: 60, ["--rc" as string]: aimed ? "var(--gold)" : selected?.v.id === v.id ? "var(--acc)" : "#3a3834" }}
                               onClick={() => {
                                 startTransition(() => setPick({ cls: c.name, id: v.id }));
@@ -247,10 +262,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                                 if (last && last.id === v.id && now - last.t < 400) { lastTap.current = null; aimMolds(aimed ? null : v.id); }
                                 else lastTap.current = { id: v.id, t: now };
                               }}
-                              aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall${showMolds ? `. Double-click to ${aimed ? "stop aiming molds at it" : `aim molds at it (needs ${need})`}` : ""}`}
-                              title={`${v.name}: ${pct(v.chance)} in class, ${pct(v.overall, 2)} overall${showMolds ? (aimed ? ". Molds aimed here; double-click to stop" : `. Double-click to aim molds here (needs ${need})`) : ""}`}>
+                              aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall${showMolds ? `. Double-click to ${aimed ? "stop aiming molds at it" : `aim molds at it (${need})`}` : ""}`}
+                              title={`${v.name}: ${pct(v.chance)} in class, ${pct(v.overall, 2)} overall${showMolds ? (aimed ? ". Molds aimed here; double-click to stop" : `. Double-click to aim molds here (${need})`) : ""}`}>
                               <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={20} />
-                              <span className="t-br" style={{ left: 0, right: 0, textAlign: "center" }}>{aimed ? `${Math.min(molds, MAX_MOLDS)}/${v.weight}` : `1/${v.weight}`}</span>
+                              <span className="t-br" style={{ left: 0, right: 0, textAlign: "center" }}>{aimed ? `${molds}/${needLabel(mold.need)}` : `1/${v.weight}`}</span>
                             </button>
                           );
                         })}
@@ -299,7 +314,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       </div>
                       <div className="slot-ctl">
                         <button className="btn sm" onClick={() => changeMolds((n) => n - 1)} aria-label={`Remove one ${moldInfo.name}`} disabled={molds === 0}>−</button>
-                        <input className="input count" type="number" min={0} max={MAX_MOLDS} value={molds} aria-label={`${moldInfo.name} count`} onChange={(e) => changeMolds(() => Number(e.target.value))} />
+                        <input className="input count" type="number" min={0} max={MAX_MOLDS} value={molds} aria-label={`${moldInfo.name} count`} onChange={(e) => typeMolds(e.target.value)} />
                         <button className="btn sm" onClick={() => changeMolds((n) => n + 1)} aria-label={`Add one ${moldInfo.name}`}>+</button>
                       </div>
                     </div>
@@ -344,15 +359,17 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="The real time between swings. The game's item card shows a different 'index' number, which isn't the real speed.">{selected.v.interval}s per swing · range {selected.v.range}<span className="small faint" style={{ display: "block" }}>Card shows {selected.v.speed}s (the game&apos;s index value)</span></span></div>}
                     {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} withRunes={runeDps} runeLevel={runeEnhance} />}
-                    <div className="kv"><span>Chance:</span><span className="muted">{changedBy.length > 0
+                    <div className="kv"><span>Chance:</span><span className="muted">{moldChanceNote && <>Normal chance: </>}{changedBy.length > 0
                       ? <>{pct(selected.v.overall, 2)} with {changedBy.join(" and ")} <span className="small faint">({pct(normalChance(selected.cls.name, selected.v.id), 2)} without {withoutWhat})</span></>
-                      : <>{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</>}</span></div>
-                    <TriesRow chance={selected.v.overall / 100} ores={total}
+                      : <>{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</>}
+                      {moldChanceNote && <span className="small mold-note" style={{ display: "block" }}>{moldChanceNote}</span>}</span></div>
+                    <TriesRow chance={selected.v.overall / 100} ores={total} moldNote={moldTriesNote}
                       compare={changedBy.length > 0 ? { label: `Without ${withoutWhat}`, chance: normalChance(selected.cls.name, selected.v.id) / 100 }
                         : selected.cls.lockable && selected.cls.probability < 100 ? { label: `If you lock ${selected.cls.name}`, chance: selected.v.chance / 100 } : null} />
                     <div className="kv"><span>Lock:</span><span className="muted">{activeLock === selected.cls.name ? <>Locked: {selected.cls.name} is guaranteed</>
                       : selected.cls.lockable ? <>Lockable with this many ores. Press the <Lock size={13} /> by {selected.cls.name} in Forge Chances to lock it.</> : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
-                    {showMolds && <MoldRow item={selected.v} cls={selected.cls} aimed={moldTarget?.id === selected.v.id} aimedName={aimedName} mold={mold} moldName={moldInfo.name} locked={activeLock === selected.cls.name} onAim={aimMolds} />}
+                    {showMolds && <MoldRow item={selected.v} need={isTarget ? mold.need : moldNeed(cat.moldRequirements, selected.v.id)} cls={selected.cls} aimed={isTarget} aimedName={aimedName}
+                      mold={mold} moldName={moldInfo.name} onAim={aimMolds} />}
                   </div>
                 </>
               ) : (
@@ -445,6 +462,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
           </div>
           {kind === "weapon" && showTarget && (
             <Reveal col={4}>
+              {withoutMolds && <p className="small mold-note" style={{ margin: "0 0 8px" }}>The DPS target uses the chances without molds: the effect of your molds isn&apos;t known.</p>}
               <DpsTarget classes={result.classes} pickedDps={selected.v.dps?.total ?? null} pickedId={selected.v.id} ores={total} quality={quality}
                 onPick={(cls, id) => { startTransition(() => setPick({ cls, id })); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
             </Reveal>
@@ -488,24 +506,50 @@ function MoldButton({ mold, count, onChange }: { mold: Mold; count: number; onCh
   );
 }
 
-/** What molds do for the picked item: how many it needs, and whether it's guaranteed. */
-function MoldRow({ item, cls, aimed, aimedName, mold, moldName, locked, onAim }: {
-  item: { id: string; name: string; weight: number }; cls: { name: string; lockable: boolean; lockAt: number };
-  aimed: boolean; aimedName: string | null; mold: MoldState; moldName: string; locked: boolean; onAim: (id: string | null) => void;
+/** "70 molds (player report)", "about 40 molds (rough player estimate)" or "unknown". */
+function needText(need: Need) {
+  if (need.value == null) return "molds needed: unknown";
+  if (need.kind === "approximate") return `about ${need.value} molds, a rough player estimate`;
+  return `${need.value} molds, ${need.kind === "verified" ? "verified" : "player report"}`;
+}
+
+const NEED_BADGE: Record<Need["kind"], string> = { verified: "Verified", reported: "Player report", approximate: "Rough player estimate", unknown: "Unknown" };
+const shortDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
+/** What molds do for the picked item: how many it needs (and how sure that number is), and what's still missing. */
+function MoldRow({ item, need, cls, aimed, aimedName, mold, moldName, onAim }: {
+  item: { id: string; name: string }; need: Need; cls: { name: string; lockable: boolean; lockAt: number };
+  aimed: boolean; aimedName: string | null; mold: MoldState; moldName: string; onAim: (id: string | null) => void;
 }) {
-  const need = moldsNeeded(item.weight);
   const plural = (n: number) => `${n} ${moldName}${n === 1 ? "" : "s"}`;
-  const lockHint = cls.lockable ? <>Press the <Lock size={13} /> by {cls.name} in Forge Chances.</> : <>{cls.name} locks from {cls.lockAt} ores.</>;
+  const label = needLabel(need);
+  const lockStep = mold.classLocked ? null : cls.lockable ? <> Then press the <Lock size={13} /> by {cls.name} in Forge Chances.</> : <> {cls.name} can be locked from {cls.lockAt} ores.</>;
+  const needSentence = need.value == null ? <>How many molds it needs isn&apos;t known yet.</>
+    : need.kind === "approximate" ? <>Players estimate about {plural(need.value)}; the exact number isn&apos;t known.</>
+    : need.kind === "reported" ? <>Players report {plural(need.value)} with {cls.name} locked. Not verified.</>
+    : <>{plural(need.value)} with {cls.name} locked (verified).</>;
   let text: React.ReactNode;
-  if (!aimed) text = <>Needs {plural(need)} and {cls.name} locked to guarantee it.{aimedName && <> Your molds are aimed at {aimedName}.</>}</>;
-  else if (mold.state === "guaranteed") text = <span className="gold"><b>Guaranteed</b>: {plural(mold.need)} with {cls.name} locked.{mold.wasted > 0 && <span className="small faint" style={{ display: "block" }}>{plural(mold.wasted)} more than needed: the extra ones are wasted.</span>}</span>;
-  else if (mold.state === "needs-lock") text = <>{mold.molds}/{mold.need}: enough molds, but lock {cls.name} first to guarantee it. {lockHint}</>;
-  else if (mold.state === "short") text = <>{mold.molds}/{mold.need}: add {mold.need - mold.molds} more{!locked && <> and lock {cls.name}</>} to guarantee it.
-    <span className="small faint" style={{ display: "block" }}>Until then we count its weight as {mold.molds}/{mold.need} instead of 1/{mold.need}. That part is our reading, not confirmed in game.</span></>;
-  else text = <>Molds aimed here. Add {plural(need)} in the forge{!locked && <> and lock {cls.name}</>} to guarantee it.</>;
+  if (!aimed) text = <>{needSentence}{aimedName && <> Your molds are aimed at {aimedName}.</>}</>;
+  else if (mold.state === "aimed") text = <>Molds aimed here. {needSentence}</>;
+  else if (mold.state === "partial") text = <>{mold.molds}/{label}. {need.value == null ? needSentence : <>Add {need.value - mold.molds} more to reach the {need.kind === "approximate" ? "estimated" : need.kind === "verified" ? "verified" : "reported"} {label}.</>}{need.value != null && need.kind !== "approximate" && lockStep}</>;
+  else if (mold.state === "approx-reached") text = <>{mold.molds}/{label}: you&apos;ve entered at least the reported ~{need.value}, but the exact number isn&apos;t known, so this isn&apos;t counted as a guarantee.</>;
+  else if (mold.state === "needs-lock") text = <>{mold.molds}/{label}: enough by the {need.kind === "verified" ? "verified" : "reported"} number, but {cls.name} has to be locked first.{lockStep}</>;
+  else if (mold.state === "conditional") text = <span className="gold"><b>Guaranteed if the player report is right</b>: {plural(need.value!)} with {cls.name} locked. Not verified, so the chances above stay as they are without molds.</span>;
+  else if (mold.state === "guaranteed") text = <span className="gold"><b>Guaranteed</b>: {plural(need.value!)} with {cls.name} locked (verified).</span>;
+  const req = need.req;
   return (
     <div className="kv mold-row"><span>Molds:</span>
-      <span className="muted">{text}
+      <span className="muted">
+        <span className={`badge ${need.kind === "verified" ? "ok" : "der"} mold-badge`}>{NEED_BADGE[need.kind]}{need.kind === "reported" && req ? ` · ${req.reports} report${req.reports === 1 ? "" : "s"}` : ""}</span>
+        {text}
+        {aimed && mold.surplus > 0 && <span className="small faint" style={{ display: "block" }}>{plural(mold.surplus)} more than the {need.kind === "verified" ? "verified" : "reported"} {need.value}: extras add nothing. Whether the game still uses them up isn&apos;t confirmed.</span>}
+        {req && req.sources.length > 0 && (
+          <span className="small faint" style={{ display: "block" }}>
+            Source{req.sources.length === 1 ? "" : "s"}: {req.sources.map((src, i) => (
+              <span key={src.url + i}>{i > 0 && ", "}<a className="inline-link" href={src.url} target="_blank" rel="noreferrer" title={src.note}>Reddit {i + 1}</a>{src.date && ` (${shortDate(src.date)})`}</span>
+            ))}. Checked {shortDate(req.checked)}.
+          </span>
+        )}
         <button className="btn sm mold-aim" onClick={() => onAim(aimed ? null : item.id)}>{aimed ? "Stop aiming molds" : `Aim molds at ${item.name}`}</button>
       </span>
     </div>
@@ -606,15 +650,16 @@ function DpsRow({ dps, withRunes = null, runeLevel = 0 }: { dps: DpsResult; with
 }
 
 /** "How many tries?" in plain words. The maths is on the How it works page. */
-function TriesRow({ chance, ores, compare = null }: { chance: number; ores: number; compare?: { label: string; chance: number } | null }) {
+function TriesRow({ chance, ores, compare = null, moldNote = null }: { chance: number; ores: number; compare?: { label: string; chance: number } | null; moldNote?: string | null }) {
   if (!(chance > 0)) return null;
   if (chance >= 1) return <div className="kv"><span>Tries:</span><span className="muted">Every forge with this mix gives it.</span></div>;
   const avg = averageTries(chance), half = triesFor(chance, 0.5), most = triesFor(chance, 0.9);
   const forges = (n: number) => `${fmt(n, 0)} forge${n === 1 ? "" : "s"}`;
   return (
     <div className="kv"><span>Tries:</span>
-      <span className="muted">About {avg < 100 ? fmt(avg, 1) : fmt(avg, 0)} forges on average. Half of players get it within {forges(half)}, 9 in 10 within {forges(most)}.
+      <span className="muted">{moldNote ? "Normal average: about" : "About"} {avg < 100 ? fmt(avg, 1) : fmt(avg, 0)} forges{moldNote ? "" : " on average"}. Half of players get it within {forges(half)}, 9 in 10 within {forges(most)}.
         <span className="small faint" style={{ display: "block" }}>That&apos;s about {fmt(most * ores, 0)} ores for a 9 in 10 chance. <Link href="/how-it-works#tries" className="inline-link">How this is worked out</Link></span>
+        {moldNote && <span className="small mold-note" style={{ display: "block" }}>{moldNote}</span>}
         {compare && compare.chance > 0 && <span className="small tries-compare" style={{ display: "block" }}>{compare.label}: about {fmt(averageTries(compare.chance), averageTries(compare.chance) < 100 ? 1 : 0)} forges on average, 9 in 10 within {fmt(triesFor(compare.chance, 0.9), 0)}.</span>}
       </span>
     </div>

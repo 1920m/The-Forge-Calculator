@@ -10,7 +10,7 @@ import { cleanDisplayName } from "@/lib/safe-next";
 type PrefKey = "show_dps_target" | "show_molds";
 const PREFS: { key: PrefKey; title: string; text: string }[] = [
   { key: "show_dps_target", title: "Hit a DPS target", text: "Adds a panel under weapon results: pick the DPS you want and an enhancement level, and see the chance a forge from your mix reaches it and how many forges that takes." },
-  { key: "show_molds", title: "Molds", text: "Adds Weapon and Armor Molds to the calculator: a fifth forge slot for molds, and double-click an item in Forge Chances to aim them at it. With its class locked and enough molds, the item is guaranteed." },
+  { key: "show_molds", title: "Molds", text: "Adds Weapon and Armor Molds to the calculator: a fifth forge slot for molds, and double-click an item in Forge Chances to aim them at it. Shows how many molds each item needs, and how sure that number is." },
 ];
 
 export function SettingsPage() {

@@ -721,3 +721,7 @@ body.modal-open { overflow: hidden; }
 .mold-aim { display: block; margin-top: 6px; }
 .slots.with-mold { gap: 8px; padding-top: 22px; }
 @media (min-width: 761px) { .slots.with-mold .mold-slot { margin-left: 6px; } }
+.mold-note { color: var(--gold); }
+.tile.mold-cond { outline: 2px dashed var(--gold); outline-offset: -6px; }
+.mold-badge { display: inline-block; margin: 0 8px 4px 0; vertical-align: 1px; }
+.mold-slot .input.count { width: 54px; }
