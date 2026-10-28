@@ -171,6 +171,38 @@ const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, 
   };
 });
 
+// ---------- molds
+// How many Weapon or Armor Molds guarantee an item (with its class locked). This is NOT the item's 1/N:
+// Dark Knight's Gauntlets is 1/6 but players report 70 molds. Statuses:
+//   verified:   an exact number confirmed in game. Only this can show a 100% guarantee on the site.
+//   reported:   an exact number from player reports. The site shows it as "guaranteed if the report is right".
+//   unverified: an approximate player estimate ("about 40"). Never treated as a guarantee.
+// Items not listed: unknown. Reports collected by Cris on 28 Oct 2026; the Reddit posts weren't readable from
+// our tools, so each note records what the report says as summarised by Cris.
+const REDDIT = "https://www.reddit.com/r/TheForgeRoblox/comments/";
+const moldRequirements = [
+  { itemId: "dark-knights-gauntlets", kind: "weapon", worlds: [1, 2], exact: null, reported: 70, approximate: false, status: "reported", reports: 3, checked: "2026-10-28",
+    sources: [
+      { url: `${REDDIT}1wb8otn/best_dps_in_the_game_vs_my_fav_weapon_i_made/`, date: "2026-09-09", note: "Crafted with 14 Kitsunite and 70 Weapon Molds" },
+      { url: `${REDDIT}1wbx2js/best_weapon_armor_recipes/`, date: null, note: "Recommends 70 molds" },
+      { url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "Lists 70" },
+    ] },
+  { itemId: "excalibur", kind: "weapon", worlds: [4], exact: null, reported: 150, approximate: false, status: "reported", reports: 1, checked: "2026-10-28",
+    sources: [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "Lists 150" }] },
+  { itemId: "shogun-chestplate", kind: "armour", worlds: [4], exact: null, reported: 52, approximate: true, status: "unverified", reports: 1, checked: "2026-10-28",
+    sources: [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "About 52" }] },
+  { itemId: "shogun-helmet", kind: "armour", worlds: [4], exact: null, reported: 40, approximate: true, status: "unverified", reports: 1, checked: "2026-10-28",
+    sources: [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "About 40" }] },
+  { itemId: "shogun-leggings", kind: "armour", worlds: [4], exact: null, reported: 40, approximate: true, status: "unverified", reports: 1, checked: "2026-10-28",
+    sources: [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "About 40" }] },
+];
+for (const r of moldRequirements) {
+  const item = r.kind === "weapon" ? weapons.find((w) => w.id === r.itemId) : armour.find((a) => a.id === r.itemId);
+  if (!item) throw new Error(`Mold requirement for unknown ${r.kind} ${r.itemId}`);
+  if (r.status === "verified" && !(r.exact > 0)) throw new Error(`${r.itemId}: verified needs an exact number`);
+  if (r.status !== "verified" && r.exact != null) throw new Error(`${r.itemId}: only verified entries have an exact number`);
+}
+
 const catalogue = {
   generatedFrom: "docs/PRD.md",
   ores: [...ores.values()].map((o) => ({ ...o, rule: o.rule ?? "fixed" })),
@@ -182,6 +214,7 @@ const catalogue = {
   armourClasses: [["Light", "helmet"], ["Light", "leggings"], ["Light", "chestplate"], ["Medium", "helmet"], ["Medium", "leggings"], ["Medium", "chestplate"], ["Heavy", "helmet"], ["Heavy", "leggings"], ["Heavy", "chestplate"]],
   odds: { weapon: oddsTable("ores,slot1_dagger,"), armour: oddsTable("ores,light_helmet,") },
   locks: { weapon: [3, 9, 14, 18, 24, 31, 50], armour: [3, 11, 15, 20, 24, 30, 35, 42, 52] },
+  moldRequirements,
   qualityTiers: [["Broken", 0], ["Poor", 25], ["Rough", 40], ["Average", 50], ["Good", 65], ["Great", 75], ["Excellent", 85], ["Perfect", 90], ["Masterwork", 95]],
 };
 // Revision goes up by one whenever the data changes, so the site can tell which copy is newer:

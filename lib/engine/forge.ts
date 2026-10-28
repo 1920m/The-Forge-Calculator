@@ -1,6 +1,7 @@
 /** Higher-level forge maths built on the pure functions in ./index. No framework or network imports. */
 import { averageMultiplier, classOdds, primaryOre, rawStat, roundStat, enhancementTable, traitStrength, variantOdds, type CategoryRow, type Kind, type World } from "./index";
 import { weaponDps } from "./dps";
+import type { MoldRequirement } from "./molds";
 
 export type Rarity = "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary" | "Mythic" | "Relic" | "Exotic" | "Divine";
 export type CatalogueOre = {
@@ -18,6 +19,8 @@ export type Catalogue = {
   odds: { weapon: Record<string, number[]>; armour: Record<string, number[]> };
   locks: { weapon: number[]; armour: number[] };
   qualityTiers: [string, number][];
+  /** How many molds guarantee an item, from player reports. Missing from older data releases. */
+  moldRequirements?: MoldRequirement[];
 };
 export type Mix = { ore: CatalogueOre; count: number }[];
 

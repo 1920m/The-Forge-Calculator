@@ -1,62 +1,147 @@
 /**
  * Molds: a fifth forge slot, separate from the ores, that aims the forge at one item.
  *
- * Rules (from a player, 27 Oct 2026; not on the wiki):
- * - An item shown as 1/N needs N molds. With m molds it shows m/N.
- * - With m ≥ N molds AND its class locked, the item is guaranteed. The class has to be lockable first
- *   (enough ores), so molds alone never guarantee anything.
- * - The 1 in 1/N doesn't count: 0 molds is the normal chance, so a 1/1 item (Kunai) still needs 1 mold.
- * - Fewer than N molds can't guarantee it; more than N are wasted.
- * - Molds don't count as ores: they don't change the ore total, the multiplier, traits or stats.
- *
- * Our reading, not confirmed in game: with fewer than N molds (or the class not locked), the item's weight inside its
- * class becomes m/N instead of 1/N, so its share of the class grows. Other items keep their 1/N weight.
+ * What's known (28 Oct 2026):
+ * - Molds raise the chosen item's chance, and enough of them make it 100% (wiki: Armor Mold page).
+ * - How many is enough is NOT the item's 1/N. Players report Dark Knight's Gauntlets (1/6) needs 70.
+ *   Requirements come from the game data (catalogue.moldRequirements), each with a status:
+ *     verified    an exact number confirmed in game: the only status that can show a 100% guarantee;
+ *     reported    an exact number from player reports: "guaranteed if the report is right", chances unchanged;
+ *     approximate an estimate ("about 40"): never a guarantee;
+ *     unknown     not in the data: never a guarantee.
+ * - How much fewer molds help is unknown, so the site never invents a chance for it. `partialChance` is a slot
+ *   for a confirmed formula; nothing uses it yet.
+ * - Whether the game needs the class padlock pressed first is unknown. For now the calculator needs it on.
+ * - Molds don't count as ores: no change to the ore total, multiplier, traits or stats.
  * Pure functions, no framework imports.
  */
 
-export const MAX_MOLDS = 1000;
+export const MAX_MOLDS = 9999;
 
-export type MoldTarget = { cls: string; id: string };
-export type MoldState =
-  | { state: "off" }
-  | { state: "guaranteed"; need: number; molds: number; wasted: number }
-  | { state: "needs-lock"; need: number; molds: number; lockAt: number; lockable: boolean }
-  | { state: "short"; need: number; molds: number };
+export type MoldSource = { url: string; date: string | null; note: string };
+export type MoldRequirement = {
+  itemId: string; kind: "weapon" | "armour"; worlds: number[];
+  /** Exact number confirmed in game (verified entries only). */
+  exact: number | null;
+  /** Number from player reports. */
+  reported: number | null;
+  /** True when the report is an estimate ("about 40"). */
+  approximate: boolean;
+  status: "verified" | "reported" | "unverified";
+  /** How many separate player reports give the number. */
+  reports: number;
+  sources: MoldSource[];
+  /** When the entry was last checked (YYYY-MM-DD). */
+  checked: string;
+};
 
-type V = { id: string; weight: number; chance: number; overall: number };
-type C<T extends V> = { name: string; probability: number; lockable: boolean; lockAt: number; variants: T[] };
+export type NeedKind = "verified" | "reported" | "approximate" | "unknown";
+export type Need = { kind: NeedKind; value: number | null; req: MoldRequirement | null };
 
-/** The molds an item needs: its N in 1/N. */
-export const moldsNeeded = (weight: number) => Math.max(1, Math.round(weight));
-
-/**
- * Applies molds to the class odds (after any class lock). `locked` is the class the player locked, if it's lockable.
- * Chances still add up to 100% and none go below 0. With no molds or no target, the classes come back unchanged.
- */
-export function applyMolds<T extends V, K extends C<T>>(classes: K[], target: MoldTarget | null, molds: number, locked: string | null): { classes: K[]; mold: MoldState } {
-  const m = Math.max(0, Math.min(MAX_MOLDS, Math.floor(Number.isFinite(molds) ? molds : 0)));
-  const cls = target ? classes.find((c) => c.name === target.cls) : undefined;
-  const item = cls?.variants.find((v) => v.id === target?.id);
-  if (!cls || !item || m === 0) return { classes, mold: { state: "off" } };
-
-  const need = moldsNeeded(item.weight);
-  const isLocked = locked === cls.name && cls.lockable;
-  if (m >= need && isLocked) {
-    const out = classes.map((c) => (c !== cls ? c : { ...c, variants: c.variants.map((v) => ({ ...v, chance: v === item ? 100 : 0, overall: v === item ? c.probability : 0 })) }));
-    return { classes: out, mold: { state: "guaranteed", need, molds: m, wasted: m - need } };
-  }
-
-  // Not guaranteed: the item's weight becomes min(m, N)/N against the others' 1/N (our reading; see above).
-  const weights = cls.variants.map((v) => (v === item ? Math.min(m, need) / need : 1 / Math.max(1, v.weight)));
-  const sum = weights.reduce((a, b) => a + b, 0);
-  const out = classes.map((c) => (c !== cls ? c : {
-    ...c, variants: c.variants.map((v, i) => { const chance = (weights[i] / sum) * 100; return { ...v, chance, overall: (c.probability * chance) / 100 }; }),
-  }));
-  const mold: MoldState = m < need ? { state: "short", need, molds: m } : { state: "needs-lock", need, molds: m, lockAt: cls.lockAt, lockable: cls.lockable };
-  return { classes: out, mold };
+/** What the data says an item needs. Anything that doesn't add up is treated as unknown. */
+export function moldNeed(reqs: readonly MoldRequirement[] | undefined, itemId: string): Need {
+  const req = reqs?.find((r) => r.itemId === itemId) ?? null;
+  if (!req) return { kind: "unknown", value: null, req: null };
+  if (req.status === "verified" && req.exact != null && req.exact > 0) return { kind: "verified", value: req.exact, req };
+  if (req.reported != null && req.reported > 0) return { kind: req.approximate ? "approximate" : "reported", value: req.reported, req };
+  return { kind: "unknown", value: null, req };
 }
 
-/** Link format for the mold count and target: "6:dark-knight-gauntlet". Untrusted input. */
+/** "70", "~40" or "?" for an item tile. */
+export const needLabel = (need: Need) => (need.value == null ? "?" : need.kind === "approximate" ? `~${need.value}` : String(need.value));
+
+export type MoldOutcome =
+  | "off"            // no item targeted
+  | "aimed"          // targeted, no molds yet
+  | "partial"        // some molds, fewer than an exact number, or the number is unknown
+  | "approx-reached" // at least an approximate number: still not a guarantee
+  | "needs-lock"     // at least an exact number, but the class padlock isn't on
+  | "conditional"    // a reported exact number with the class locked: guaranteed if the report is right
+  | "guaranteed";    // a verified exact number with the class locked
+
+export type MoldState = {
+  state: MoldOutcome;
+  targetId: string | null;
+  targetClass: string | null;
+  molds: number;
+  need: Need;
+  /** Enough ores to lock the target's class. */
+  classLockable: boolean;
+  /** The target's class padlock is on. */
+  classLocked: boolean;
+  /** Molds over an exact number (verified or reported). 0 for approximate or unknown numbers. */
+  surplus: number;
+  /** False when molds change the real chances in a way nobody has measured: the numbers shown are without molds. */
+  chancesKnown: boolean;
+};
+
+export const NO_MOLDS: MoldState = {
+  state: "off", targetId: null, targetClass: null, molds: 0, need: { kind: "unknown", value: null, req: null },
+  classLockable: false, classLocked: false, surplus: 0, chancesKnown: true,
+};
+
+export type MoldTarget = { cls: string; id: string };
+type V = { id: string; chance: number; overall: number };
+type C<T extends V> = { name: string; probability: number; lockable: boolean; variants: T[] };
+
+/**
+ * A confirmed partial-mold formula would go here: the target's chance inside its class (0–100) for a number of
+ * molds, given its chance without molds. Return null when unknown. Not used yet.
+ */
+export type PartialChance = (molds: number, need: Need, chanceWithout: number) => number | null;
+
+const clampMolds = (n: number) => Math.max(0, Math.min(MAX_MOLDS, Math.floor(Number.isFinite(n) ? n : 0)));
+
+/**
+ * Molds on the class odds (after any class lock). `locked` is the class whose padlock is on.
+ * Only a verified number with the class locked changes the chances (the item 100%, the rest 0%). Anything else
+ * leaves them as they are and says so in `chancesKnown`.
+ */
+export function applyMolds<T extends V, K extends C<T>>(
+  classes: K[], target: MoldTarget | null, moldCount: number, locked: string | null,
+  reqs: readonly MoldRequirement[] | undefined, partialChance?: PartialChance,
+): { classes: K[]; mold: MoldState } {
+  const molds = clampMolds(moldCount);
+  const cls = target ? classes.find((c) => c.name === target.cls) : undefined;
+  const item = cls?.variants.find((v) => v.id === target?.id);
+  if (!cls || !item) return { classes, mold: { ...NO_MOLDS, molds } };
+
+  const need = moldNeed(reqs, item.id);
+  const classLocked = locked === cls.name && cls.lockable;
+  const exact = need.kind === "verified" || need.kind === "reported";
+  const reached = need.value != null && molds >= need.value;
+  const base = { targetId: item.id, targetClass: cls.name, molds, need, classLockable: cls.lockable, classLocked, surplus: exact && reached ? molds - need.value! : 0 };
+
+  let state: MoldOutcome;
+  if (molds === 0) state = "aimed";
+  else if (need.kind === "unknown" || !reached) state = "partial";
+  else if (need.kind === "approximate") state = "approx-reached";
+  else if (!classLocked) state = "needs-lock";
+  else state = need.kind === "verified" ? "guaranteed" : "conditional";
+
+  if (state === "guaranteed") {
+    const out = classes.map((c) => (c !== cls ? c : { ...c, variants: c.variants.map((v) => ({ ...v, chance: v === item ? 100 : 0, overall: v === item ? c.probability : 0 })) }));
+    return { classes: out, mold: { ...base, state, chancesKnown: true } };
+  }
+
+  // A confirmed partial formula (none yet) would set the item's share of its class; the others share the rest.
+  const within = state === "partial" && partialChance ? partialChance(molds, need, item.chance) : null;
+  if (within != null && Number.isFinite(within)) {
+    const t = Math.max(item.chance, Math.min(100, within));
+    const rest = 100 - item.chance;
+    const out = classes.map((c) => (c !== cls ? c : {
+      ...c, variants: c.variants.map((v) => {
+        const chance = v === item ? t : rest > 0 ? (v.chance * (100 - t)) / rest : 0;
+        return { ...v, chance, overall: (c.probability * chance) / 100 };
+      }),
+    }));
+    return { classes: out, mold: { ...base, state, chancesKnown: true } };
+  }
+
+  return { classes, mold: { ...base, state, chancesKnown: molds === 0 } };
+}
+
+/** Link format for the mold count and target: "6:dark-knights-gauntlets". Untrusted input. */
 export function decodeMolds(raw: string | null | undefined): { molds: number; id: string | null } {
   if (!raw) return { molds: 0, id: null };
   const [n, id] = raw.slice(0, 80).split(":");
