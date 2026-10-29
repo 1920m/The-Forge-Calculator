@@ -2,15 +2,16 @@
  * Molds: a fifth forge slot, separate from the ores, that aims the forge at one item.
  *
  * What's known (28 Oct 2026):
- * - Molds raise the chosen item's chance, and enough of them make it 100% (wiki: Armor Mold page).
- * - How many is enough is NOT the item's 1/N. Players report Dark Knight's Gauntlets (1/6) needs 70.
- *   Requirements come from the game data (catalogue.moldRequirements), each with a status:
+ * - Molds raise the chosen item's chance, and enough of them make the game's mold screen show 100%.
+ * - How many is enough is NOT the item's 1/N: Dark Knight's Gauntlets is 1/6 but needs 70. Every weapon and armour
+ *   piece Cris could reach was checked in game (catalogue.moldRequirements). Each entry has a status:
  *     verified    an exact number confirmed in game: the only status that can show a 100% guarantee;
  *     reported    an exact number from player reports: "guaranteed if the report is right", chances unchanged;
  *     approximate an estimate ("about 40"): never a guarantee;
  *     unknown     not in the data: never a guarantee.
- * - How much fewer molds help is unknown, so the site never invents a chance for it. `partialChance` is a slot
- *   for a confirmed formula; nothing uses it yet.
+ * - With fewer molds, the game's mold screen matches (molds ÷ needed)² in all 5 screenshots Cris took (see
+ *   moldScreenChance). How that number combines with the normal forge chance is NOT known yet, so it's shown on
+ *   its own and never replaces the chances. `partialChance` is the slot for a confirmed rule; nothing uses it yet.
  * - Whether the game needs the class padlock pressed first is unknown. For now the calculator needs it on.
  * - Molds don't count as ores: no change to the ore total, multiplier, traits or stats.
  * Pure functions, no framework imports.
@@ -18,7 +19,7 @@
 
 export const MAX_MOLDS = 9999;
 
-export type MoldSource = { url: string; date: string | null; note: string };
+export type MoldSource = { url: string | null; date: string | null; note: string };
 export type MoldRequirement = {
   itemId: string; kind: "weapon" | "armour"; worlds: number[];
   /** Exact number confirmed in game (verified entries only). */
@@ -33,6 +34,8 @@ export type MoldRequirement = {
   sources: MoldSource[];
   /** When the entry was last checked (YYYY-MM-DD). */
   checked: string;
+  /** Minimum ores the game's mold screen showed (the class's lock number). */
+  minOres?: number;
 };
 
 export type NeedKind = "verified" | "reported" | "approximate" | "unknown";
@@ -45,6 +48,16 @@ export function moldNeed(reqs: readonly MoldRequirement[] | undefined, itemId: s
   if (req.status === "verified" && req.exact != null && req.exact > 0) return { kind: "verified", value: req.exact, req };
   if (req.reported != null && req.reported > 0) return { kind: req.approximate ? "approximate" : "reported", value: req.reported, req };
   return { kind: "unknown", value: null, req };
+}
+
+/**
+ * The chance the game's mold screen shows for some molds: (molds ÷ needed)², capped at 100%.
+ * Matches all 5 of Cris's screenshots (35 of 70 → 25%, 35 of 40 → 77%, 35 of 38 → 85%), but it isn't confirmed
+ * how it combines with the normal forge chance, so it is shown separately. Null when the number needed isn't exact.
+ */
+export function moldScreenChance(molds: number, need: Need): number | null {
+  if (need.value == null || need.kind === "approximate" || need.kind === "unknown") return null;
+  return Math.min(1, (Math.max(0, molds) / need.value) ** 2);
 }
 
 /** "70", "~40" or "?" for an item tile. */
