@@ -157,16 +157,33 @@ for (const w of allWeapons) if (WORLD_1_ONLY.has(w.name)) { w.worlds = [1]; w.ta
 const weapons = allWeapons.map((w) => ({ ...w, worlds: w.worlds.sort() }));
 
 // ---------- armour
-const W4_SETS = new Set(["Ninja's", "Rootguard", "Vanguard", "Shogun"]);
-// Sets that can't be forged in World 4 (players' feedback, 27 Oct 2026).
-const NOT_W4_SETS = new Set(["Knight", "Wolf", "Raven's"]);
+// Where each set can be forged, from the wiki's armour pages (rechecked 29 Oct 2026). Worlds: 1 Stonewake's Cross,
+// 2 Forgotten Kingdom, 3 Frostspire Expanse, 4 Crimson Sakura. A list uses the set's normal 1/N everywhere;
+// an object gives the 1/N in each world where it differs (e.g. Knight is 1/1 in Worlds 1–2 but 1/5 in World 3).
+const ARMOUR_WORLDS = {
+  "Basic": [1, 2, 3], // Light and Medium: not in Crimson Sakura
+  "Ninja's": [4],
+  "Samurai": { 2: 2, 3: 2, 4: 1 }, // not in Stonewake's Cross
+  "Viking": [3],
+  "Rootguard": [4],
+  "Knight": { 1: 1, 2: 1, 3: 5 },
+  "Dark Knight": { 2: 2, 3: 1, 4: 1 }, // not in Stonewake's Cross
+  "Wolf": [3],
+  "Goblin's": [3, 4],
+  "Raven's": [3],
+  "Vanguard": [4],
+  "Shogun": [4],
+};
 const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, slot, hp, price, chance]) => {
   const set = name.replace(/ (Helmet|Chestplate|Leggings|Armor|Crown)$/, "").replace(/^(Light|Medium)$/, "Basic");
-  const s = W4_SETS.has(set) ? set : set;
+  const where = ARMOUR_WORLDS[set];
+  if (!where) throw new Error(`No worlds for armour set ${set}`);
+  const weight = num(chance); // Wolf 1/3 and Raven 1/8 confirmed in game by Cris, 24 Oct 2026
+  const worlds = Array.isArray(where) ? where : Object.keys(where).map(Number);
+  const worldWeights = Array.isArray(where) ? null : Object.fromEntries(Object.entries(where).filter(([, w]) => w !== weight));
   return {
-    id: slug(name), name, weightClass: cls, set: s, slot, healthPct: num(hp), price: num(price),
-    weight: num(chance), // Wolf 1/3 and Raven 1/8 confirmed in game by Cris, 24 Oct 2026
-    worlds: W4_SETS.has(s) ? [4] : NOT_W4_SETS.has(s) ? [1, 2, 3] : [1, 2, 3, 4],
+    id: slug(name), name, weightClass: cls, set, slot, healthPct: num(hp), price: num(price), weight, worlds,
+    ...(worldWeights && Object.keys(worldWeights).length ? { worldWeights } : {}),
     verified: !(name === "Vanguard Helmet" || name === "Vanguard Leggings"),
   };
 });
