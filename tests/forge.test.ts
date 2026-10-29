@@ -62,6 +62,21 @@ describe("catalogue forge results match Cris's in-game crafts", () => {
     expect(heavy.find((v) => v.name === "Wolf Chestplate")?.weight).toBe(3);
     expect(heavy.find((v) => v.name === "Raven's Chestplate")?.weight).toBe(8);
   });
+  it("matches the wiki's armour lists for each world", () => {
+    const list = (w: 2 | 3 | 4, cls: string) => classVariants(cat, "armour", w, cls).map((v) => `${v.name} 1/${v.weight}`);
+    // Worlds 1–2: Knight and Dark Knight are the only heavy armour; Samurai is the only extra medium set.
+    expect(list(2, "Heavy Helmet")).toEqual(["Knight Helmet 1/1", "Dark Knight Helmet 1/2"]);
+    expect(list(2, "Heavy Chestplate")).toEqual(["Knight Chestplate 1/1", "Dark Knight Chestplate 1/2"]);
+    expect(list(2, "Medium Chestplate")).toEqual(["Medium Chestplate 1/1", "Samurai Chestplate 1/2"]);
+    expect(list(2, "Light Helmet")).toEqual(["Light Helmet 1/1"]);
+    // World 3: Knight drops to 1/5 and Dark Knight rises to 1/1; Viking, Wolf and Raven's only here.
+    expect(list(3, "Heavy Helmet")).toEqual(["Knight Helmet 1/5", "Dark Knight Helmet 1/1", "Wolf Helmet 1/3", "Goblin's Crown 1/6", "Raven's Helmet 1/8"]);
+    expect(list(3, "Medium Helmet")).toEqual(["Medium Helmet 1/1", "Samurai Helmet 1/2", "Viking Helmet 1/4"]);
+    // World 4: no plain Light or Medium; Samurai 1/1, Dark Knight 1/1.
+    expect(list(4, "Light Chestplate")).toEqual(["Ninja's Armor 1/1"]);
+    expect(list(4, "Medium Leggings")).toEqual(["Samurai Leggings 1/1", "Rootguard Leggings 1/2"]);
+    expect(list(4, "Heavy Helmet")).toEqual(["Dark Knight Helmet 1/1", "Goblin's Crown 1/6", "Vanguard Helmet 1/4", "Shogun Helmet 1/8"]);
+  });
   it("can't forge Knight, Wolf or Raven's armour in World 4 (players' feedback)", () => {
     for (const slot of ["Heavy Helmet", "Heavy Chestplate", "Heavy Leggings", "Medium Helmet", "Medium Chestplate", "Medium Leggings"]) {
       const names = classVariants(cat, "armour", 4, slot).map((v) => v.name);

@@ -10,7 +10,11 @@ export type CatalogueOre = {
   traits: { kinds: Kind[]; text: string }[];
 };
 export type CatalogueWeapon = { id: string; name: string; class: string; baseDamage: number; indexSpeed: number; trueSpeed: number; range: number; price: number; weight: number; worlds: number[]; verified: boolean; tag?: "shop" | "halloween" | "world1" | null };
-export type CatalogueArmour = { id: string; name: string; weightClass: "Light" | "Medium" | "Heavy"; set: string; slot: "helmet" | "chestplate" | "leggings"; healthPct: number; price: number; weight: number; worlds: number[]; verified: boolean };
+export type CatalogueArmour = {
+  id: string; name: string; weightClass: "Light" | "Medium" | "Heavy"; set: string; slot: "helmet" | "chestplate" | "leggings"; healthPct: number; price: number;
+  /** The usual 1 in N; worldWeights overrides it in worlds where the game uses a different one. */
+  weight: number; worldWeights?: Record<string, number>; worlds: number[]; verified: boolean;
+};
 export type Catalogue = {
   ores: CatalogueOre[]; weapons: CatalogueWeapon[]; armour: CatalogueArmour[];
   /** Per world ("2" = Worlds 1–2, "3", "4"): the weapon classes in slot order and each class's variants. */
@@ -52,7 +56,7 @@ export function classVariants(cat: Catalogue, kind: Kind, world: World, classNam
         const w = byId.get(id);
         return w ? [{ id: w.id, name: w.name, weight: weight ?? w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, interval: w.trueSpeed, range: w.range, tag: w.tag ?? null }] : [];
       })
-    : cat.armour.filter((a) => armourClassName([a.weightClass, a.slot]) === className && a.worlds.includes(world)).map((a) => ({ id: a.id, name: a.name, weight: a.weight, base: a.healthPct, verified: a.verified }));
+    : cat.armour.filter((a) => armourClassName([a.weightClass, a.slot]) === className && a.worlds.includes(world)).map((a) => ({ id: a.id, name: a.name, weight: a.worldWeights?.[String(world)] ?? a.weight, base: a.healthPct, verified: a.verified }));
   const odds = variantOdds(list.map((v) => v.weight));
   return list.map((v, i) => ({ ...v, chance: odds[i] }));
 }
