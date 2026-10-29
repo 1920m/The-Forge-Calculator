@@ -517,7 +517,7 @@ function needText(need: Need) {
   return `${need.value} molds${need.kind === "verified" ? "" : ", player report"}`;
 }
 
-const NEED_BADGE: Record<Need["kind"], string> = { verified: "Checked in game", reported: "Player report", approximate: "Rough player estimate", unknown: "Unknown" };
+const NEED_BADGE: Record<"reported" | "approximate", string> = { reported: "Player report", approximate: "Rough player estimate" };
 const worldList = (ws: number[]) => ws.map((w) => (w <= 2 ? "1–2" : String(w))).filter((w, i, a) => a.indexOf(w) === i).join(", ");
 
 /** Where a mold number comes from: checked in game (with the worlds), plus any earlier player reports. */
@@ -562,10 +562,10 @@ function MoldRow({ item, need, cls, aimed, aimedName, mold, moldName, onAim }: {
   return (
     <div className="kv mold-row"><span>Molds:</span>
       <span className="muted">
-        <span className={`badge ${need.kind === "verified" ? "ok" : "der"} mold-badge`}>{NEED_BADGE[need.kind]}{need.kind === "reported" && req ? ` · ${req.reports} report${req.reports === 1 ? "" : "s"}` : ""}</span>
+        {(need.kind === "reported" || need.kind === "approximate") && <span className="badge der mold-badge">{NEED_BADGE[need.kind as "reported" | "approximate"]}{need.kind === "reported" && req ? ` · ${req.reports} report${req.reports === 1 ? "" : "s"}` : ""}</span>}
         {text}
         {aimed && mold.surplus > 0 && <span className="small faint" style={{ display: "block" }}>{plural(mold.surplus)} more than the {need.kind === "verified" ? "" : "reported "}{need.value} needed: extras add nothing. Whether the game still uses them up isn&apos;t confirmed.</span>}
-        {req && req.sources.length > 0 && <MoldSources req={req} />}
+        {req && req.status !== "verified" && req.sources.length > 0 && <MoldSources req={req} />}
         <button className="btn sm mold-aim" onClick={() => onAim(aimed ? null : item.id)}>{aimed ? "Stop aiming molds" : `Aim molds at ${item.name}`}</button>
       </span>
     </div>
