@@ -2,7 +2,7 @@
 
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { enhancementTable, forge, lockClass, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
-import type { Kind } from "@/lib/engine";
+import { MAX_ENHANCE, enhanceFactor, type Kind } from "@/lib/engine";
 import type { DpsResult } from "@/lib/engine/dps";
 import { imageUrl } from "@/lib/data/supabase";
 import { SHOW_STATUS_LABELS, fmt, multLabel, pct, rarityColour } from "@/lib/ui";
@@ -48,7 +48,7 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
     const e = Number(store("e"));
     const runes: Runes = { weapon: decodeRunes(store("rw"), "weapon"), armour: decodeRunes(store("ra"), "armour") };
     return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined,
-      enhance: Number.isInteger(e) && e >= 0 && e <= 10 && store("e") != null ? e : undefined, runes,
+      enhance: Number.isInteger(e) && e >= 0 && e <= 10 && store("e") != null ? Math.min(e, MAX_ENHANCE) : undefined, runes, // old links may say +10
       lock: (p.get("l") ?? (fromUrl == null ? window.localStorage.getItem("forge.lock") : null))?.slice(0, 60) || undefined,
       molds: decodeMolds(p.get("m") ?? (fromUrl == null ? window.localStorage.getItem("forge.molds") : null)),
       // Race for the DPS (r): a race id, or "me" (your Profile's race) remembered on this device only.
@@ -196,7 +196,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   // With weapon runes chosen, DPS at each level counts the runes whose slots that level opens (+3, +6, +9).
   const runeWeapon = kind === "weapon" && hasRunes(runes.weapon) && selected?.v.raw != null && selected.v.interval
     ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval } : null;
-  const dpsAt = (level: number) => (baseDps == null ? null : runeWeapon ? dpsAtLevel(runeWeapon, level, runes.weapon).total : baseDps * (1 + 0.05 * level));
+  const dpsAt = (level: number) => (baseDps == null ? null : runeWeapon ? dpsAtLevel(runeWeapon, level, runes.weapon).total : baseDps * enhanceFactor(level));
   const runeDps = runeWeapon ? dpsAtLevel(runeWeapon, runeEnhance, runes.weapon).total : null;
   // The weapon for the race and Full Loadout comparison, at the same level as above (+0 without runes).
   const combatWeapon = useMemo(() => kind === "weapon" && selected?.v.raw != null && selected.v.interval
@@ -465,7 +465,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
             <Reveal col={4} className="lower-right">
               <section className="gp">
                 <button className="enh-head" aria-expanded={enhanceOpen} aria-controls="enh-rest" onClick={() => setEnhanceOpen((o) => !o)}>
-                  <Chevron open={enhanceOpen} /><span>Enhance Equipment</span><span className="small" style={{ marginLeft: "auto", color: "#cfc7e6" }}>{enhanceOpen ? "Show less" : "Show +1 to +10"}</span>
+                  <Chevron open={enhanceOpen} /><span>Enhance Equipment</span><span className="small" style={{ marginLeft: "auto", color: "#cfc7e6" }}>{enhanceOpen ? "Show less" : `Show +1 to +${MAX_ENHANCE}`}</span>
                 </button>
                 <div className="pad">
                   <div className="stat-head enh-cols"><span><span className="enh-long">Stat Improvement:</span><span className="enh-short">Level</span></span>{baseDps != null && <><span className="enh-v">{unit}</span><span className="enh-d">DPS</span></>}</div>
@@ -473,7 +473,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                   <div id="enh-rest" className={`collapse ${enhanceOpen ? "open" : ""}`}><div>
                     {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={dpsAt(l.level)} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
                   </div></div>
-                  <p className="note">Every stat rises 5% per level, from +0 to +10. Values use your quality setting.{baseDps != null && (runeWeapon ? " DPS includes your runes from the level their slot opens (+3, +6, +9)." : " DPS rises by the same 5% per level, because hits and trait procs all scale with weapon damage.")}</p>
+                  <p className="note">Every stat rises 5% per level up to +8, and +9 (the top level) is ×1.50. Values use your quality setting.{baseDps != null && (runeWeapon ? " DPS includes your runes from the level their slot opens (+3, +6, +9)." : " DPS rises by the same multiplier, because hits and trait procs all scale with weapon damage.")}</p>
                 </div>
               </section>
             </Reveal>

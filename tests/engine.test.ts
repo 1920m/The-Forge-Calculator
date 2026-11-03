@@ -37,7 +37,7 @@ describe("golden in-game examples and exact arithmetic", () => {
     const levels = enhancementTable(raw, "armour");
     expect(levels[0].stat).toBe(626);
     expect(levels[1].stat).toBe(657);
-    expect(levels[10].stat).toBe(938);
+    expect(levels[9].stat).toBe(938); // ×1.50 at +9
   });
 });
 
@@ -88,13 +88,14 @@ describe("traits and rounding boundaries", () => {
     expect(stat(1, 78, 1, "armour")).toBe(156);
   });
   it("keeps weapon enhancement values at two decimals", () => {
-    expect(enhancementTable(rawStat(8.25, 10.88, 1), "weapon")[10].stat).toBe(269.28);
+    expect(enhancementTable(rawStat(8.25, 10.88, 1), "weapon")[9].stat).toBe(269.28);
   });
-  it("has eleven enhancement levels and no success-chance fields", () => {
+  it("has ten enhancement levels (+0 to +9) and no success-chance fields", () => {
     const levels = enhancementTable(100, "armour");
-    expect(levels).toHaveLength(11);
+    expect(levels).toHaveLength(10);
     expect(levels[0]).toEqual({ level: 0, multiplier: 1, stat: 100 });
-    expect(levels[10]).toEqual({ level: 10, multiplier: 1.5, stat: 150 });
+    expect(levels[8]).toEqual({ level: 8, multiplier: 1.4, stat: 140 });
+    expect(levels[9]).toEqual({ level: 9, multiplier: 1.5, stat: 150 });
   });
 });
 

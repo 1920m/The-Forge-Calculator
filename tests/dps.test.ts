@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { statAtShare, weaponDps } from "../lib/engine/dps";
+import { enhanceFactor } from "../lib/engine";
 
 // Expected values come from running the wiki's own DPS calculator (MediaWiki:ForgeCalculator.js) on the same builds.
 describe("weapon DPS", () => {
@@ -39,8 +40,8 @@ describe("DPS and enhancement", () => {
     const ores = [{ id: "kitsunite", count: 5 }, { id: "galaxite", count: 5 }, { id: "fichilliumorite", count: 4 }];
     const base = weaponDps({ ores, damage: 504.46, interval: 0.51 });
     expect(base.parts.length).toBeGreaterThan(3);
-    for (const level of [1, 5, 10]) {
-      const m = 1 + 0.05 * level;
+    for (const level of [1, 5, 9]) {
+      const m = enhanceFactor(level);
       const up = weaponDps({ ores, damage: 504.46 * m, interval: 0.51 });
       expect(up.total).toBeCloseTo(base.total * m, 6);
     }

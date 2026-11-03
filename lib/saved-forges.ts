@@ -1,4 +1,4 @@
-import type { Kind, World } from "./engine";
+import { MAX_ENHANCE, type Kind, type World } from "./engine";
 import { MAX_TYPES, parseRecipe, type Entry } from "./forge-slots";
 import { decodeRunes, encodeRunes, hasRunes } from "./engine/runes";
 
@@ -61,7 +61,7 @@ export function readSavedForge(row: unknown): SavedForge | null {
     id: r.id, name, kind, world: world as World, class_name: r.class_name, variant_id: r.variant_id, quality: Math.round(quality), ores,
     catalogue_revision: Number.isFinite(rev) ? rev : null,
     created_at: typeof r.created_at === "string" ? r.created_at : "",
-    runes, enhance: runes && Number.isInteger(enhance) && enhance >= 0 && enhance <= 10 ? enhance : null,
+    runes, enhance: runes && Number.isInteger(enhance) && enhance >= 0 && enhance <= 10 ? Math.min(enhance, MAX_ENHANCE) : null, // +10 saves are from before +9 was the top
   };
 }
 

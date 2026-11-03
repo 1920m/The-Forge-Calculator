@@ -163,13 +163,15 @@ describe("conditions never touch the normal DPS", () => {
 });
 
 describe("enhancement", () => {
-  it("keeps today's rule (+5% a level) until the game check", () => {
-    expect(enhanceFactor(9)).toBeCloseTo(1.45, 9);
+  it("uses the game's table: +5% a level to +8, ×1.50 at +9 (the top)", () => {
+    expect(enhanceFactor(8)).toBeCloseTo(1.4, 9);
+    expect(enhanceFactor(9)).toBeCloseTo(1.5, 9);
     expect(enhanceFactor(10)).toBeCloseTo(1.5, 9);
     const r0 = run({ weapon: plainMace, level: 0 }).total, r9 = run({ weapon: plainMace, level: 9 }).total;
-    expect(r9 / r0).toBeCloseTo(1.45, 9);
+    expect(r9 / r0).toBeCloseTo(1.5, 9);
+    expect(r9).toBeCloseTo(6.282, 3); // the wiki's calculator, Mace (14 Iron) at +9
   });
-  it.todo("switch +9 to ×1.50 and stop scaling procs with enhancement, if the game check matches the wiki script");
+  it.todo("stop scaling procs with enhancement, if the game shows procs use the damage before enhancing (as the wiki's script does)");
 });
 
 /*

@@ -14,6 +14,7 @@ import { forgeCombat, type Worked } from "@/lib/forge-stats";
 import type { CombatResult } from "@/lib/engine/loadout-dps";
 import { useAuth } from "./auth";
 import { GameImage } from "./game-image";
+import { Chevron } from "./icons";
 
 export type Card = { f: SavedForge; r: Worked };
 
@@ -161,6 +162,7 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
   const traits = [...new Set([...armour, ...(weapon ? [weapon] : [])].flatMap((c) => c.r.traits))];
   const target = drag ? slotFor(drag.card.f) : null;
   const slotProps = (s: Slot) => ({ slot: s, target, over: drag?.over ?? null, dragging: !!drag, onOpen, onClear, readOnly });
+  const [showDps, setShowDps] = useState(false);
 
   return (
     <section className="gp loadout" aria-labelledby="loadout-h">
@@ -175,10 +177,11 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
             <Stat label="Armor defense" value={known.length ? fmt(defence) : "–"} note={`${armour.length} of 3 pieces`} />
             <Stat label="Weapon damage" value={weapon?.r.value != null ? fmt(weapon.r.value) : "–"} note={weapon?.f.class_name ?? "No weapon"} />
             <Stat label="Loadout DPS" value={combat ? fmt(combat.total) : weapon?.r.dps != null ? fmt(weapon.r.dps) : "–"}
-              note={combat ? `At +${weapon?.r.runeLevel ?? 0}${weapon?.r.runeLevel != null ? " with runes" : ""}${counted.length ? ", armour and race" : ""}` : weapon?.r.speed != null ? `${weapon.r.speed}s per swing` : ""} />
+              note={combat ? `At +${weapon?.r.runeLevel ?? 0}${weapon?.r.runeLevel != null ? " with runes" : ""}${counted.length ? ", armour and race" : ""}` : weapon?.r.speed != null ? `${weapon.r.speed}s per swing` : ""}
+              toggle={combat ? { open: showDps, onToggle: () => setShowDps((o) => !o), controls: "lo-dps" } : undefined} />
             <Stat label="Pickaxe" value={pick ? pick.name.replace(/ Pickaxe$/, "") : "–"} note={pick ? pick.region : "None"} />
           </div>
-          {combat && <DpsBreakdown combat={combat} race={race} />}
+          {combat && <DpsBreakdown combat={combat} race={race} open={showDps} />}
           <div className="loadout-traits">
             <span className="small muted">Defence and effects</span>
             <span>{traits.length ? `Ore traits: ${traits.join(", ")}` : "No ore traits yet"}</span>
@@ -196,15 +199,13 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
   );
 }
 
-/** What each part of the loadout adds to the DPS. Folded away on phones, always open on wider screens. */
-function DpsBreakdown({ combat, race }: { combat: CombatResult; race: Race | null }) {
-  const [open, setOpen] = useState(false);
+/** What each part of the loadout adds to the DPS. Hidden until you press the Loadout DPS box. */
+function DpsBreakdown({ combat, race, open }: { combat: CombatResult; race: Race | null; open: boolean }) {
   const rows = combat.breakdown.filter((b, i) => i === 0 || Math.abs(b.dps) >= 0.005);
   const situational = race?.combat?.conditions?.length ? race.name : null;
   return (
-    <div className={`lo-dps${open ? " open" : ""}`}>
-      <button className="lo-dps-toggle small" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Show"} the DPS breakdown</button>
-      <div className="lo-dps-body">
+    <div id="lo-dps" className={`collapse${open ? " open" : ""}`} aria-hidden={!open} inert={!open}><div>
+      <div className="lo-dps">
         {rows.map((b) => <div key={b.key} className="kv"><span>{b.label}</span><span>{b.key === "base" ? fmt(b.dps) : `${b.dps < 0 ? "−" : "+"}${fmt(Math.abs(b.dps))}`}</span></div>)}
         <div className="kv"><span>Loadout DPS</span><b>{fmt(combat.total)}</b></div>
         {combat.lowHp != null && <div className="kv"><span>Below 35% HP</span><span className="gold">{fmt(combat.lowHp)}</span></div>}
@@ -212,12 +213,19 @@ function DpsBreakdown({ combat, race }: { combat: CombatResult; race: Race | nul
           {situational ? `${situational}'s situational bonuses and other` : "Situational"} effects aren&apos;t in the normal DPS. <Link className="inline-link" href="/how-it-works#loadout-dps">How this is worked out</Link>
         </p>
       </div>
-    </div>
+    </div></div>
   );
 }
 
-function Stat({ label, value, note }: { label: string; value: string; note: string }) {
-  return <div className="loadout-stat"><span className="small muted">{label}</span><b>{value}</b><span className="small faint">{note}</span></div>;
+function Stat({ label, value, note, toggle }: { label: string; value: string; note: string; toggle?: { open: boolean; onToggle: () => void; controls: string } }) {
+  const body = <><span className="small muted">{label}</span><b>{value}</b><span className="small faint">{note}</span></>;
+  if (!toggle) return <div className="loadout-stat">{body}</div>;
+  return (
+    <button className="loadout-stat lo-stat-btn" aria-expanded={toggle.open} aria-controls={toggle.controls} onClick={toggle.onToggle}
+      title={toggle.open ? "Hide the DPS breakdown" : "Show the DPS breakdown"}>
+      {body}<span className="lo-stat-chev" aria-hidden="true"><Chevron open={toggle.open} /></span>
+    </button>
+  );
 }
 
 type SlotBoxProps = { slot: Slot; target: ForgeSlot | null; over: string | null; dragging: boolean; onOpen: (s: Slot) => void; onClear: (s: Slot) => void; readOnly?: boolean };
