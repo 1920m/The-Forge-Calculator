@@ -1,5 +1,6 @@
 import { EMPTY_LOADOUT, FORGE_SLOTS, cleanLoadout, slotFor, type Loadout } from "./loadout";
 import { pickaxeById } from "@/data/pickaxes";
+import { raceById } from "@/data/races";
 import { readSavedForge, type SavedForge } from "./saved-forges";
 
 /** Share link ids: 12 lowercase hex characters (the database makes them and checks the same). */
@@ -23,5 +24,6 @@ export function readSharedProfile(raw: unknown): SharedProfile | null {
     if (f && slotFor(f) === s) { forges.push(f); loadout[s] = f.id; }
   }
   loadout.pickaxe = typeof r.pickaxe === "string" && pickaxeById.has(r.pickaxe) ? r.pickaxe : null;
+  loadout.race = typeof r.race === "string" && raceById.has(r.race) ? r.race : null;
   return { name, avatarUrl, forges, loadout: cleanLoadout(loadout, new Map(forges.map((f) => [f.id, f]))) };
 }

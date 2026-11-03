@@ -3,8 +3,8 @@
 import { memo, startTransition, useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { qualityLabel, type Catalogue } from "@/lib/engine/forge";
-import { work } from "@/lib/forge-stats";
-import { SLOT_LABEL, slotFor, type ForgeSlot, type Slot } from "@/lib/loadout";
+import { forgeCombat, work } from "@/lib/forge-stats";
+import { ARMOUR_SLOTS, SLOT_LABEL, slotFor, type ForgeSlot, type Slot } from "@/lib/loadout";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, rarityColour } from "@/lib/ui";
 import { MAX_NAME, MAX_SAVED, calculatorHref } from "@/lib/saved-forges";
@@ -39,6 +39,12 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
     const slot = slotFor(c.f);
     if (slot) void set(slot, loadout[slot] === c.f.id ? null : c.f.id);
   }, [set, loadout]);
+  // Each saved weapon's DPS with the armour and race in the loadout (only once there's armour or a race to add).
+  const inLoadout = useMemo(() => {
+    const armour = ARMOUR_SLOTS.map((s) => (loadout[s] ? byId.get(loadout[s]!) ?? null : null));
+    if (!armour.some(Boolean) && !loadout.race) return new Map<string, number>();
+    return new Map(cards.flatMap((c) => { const t = forgeCombat(c, armour, loadout.race)?.total; return t == null ? [] : [[c.f.id, t] as const]; }));
+  }, [cards, byId, loadout]);
   const shown = useMemo(() => {
     const list = cards.filter(({ f, r }) => (kind === "all" || f.kind === kind)
       && (!query || f.name.toLowerCase().includes(query) || (r.variantName ?? "").toLowerCase().includes(query) || r.mix.some((m) => m.ore.name.toLowerCase().includes(query))));
@@ -129,7 +135,7 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
 
       {shown.length > 0 && (
         <div className="forge-grid">
-          {shown.map((c) => <ForgeCard key={c.f.id} card={c} cat={cat} equipped={equippedIn(c.f.id)} onEquip={toggleEquip} onDragStart={start} />)}
+          {shown.map((c) => <ForgeCard key={c.f.id} card={c} cat={cat} equipped={equippedIn(c.f.id)} loadoutDps={inLoadout.get(c.f.id) ?? null} onEquip={toggleEquip} onDragStart={start} />)}
         </div>
       )}
 
@@ -142,9 +148,9 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
   );
 }
 
-type CardProps = { card: Card; cat: Catalogue; equipped: ForgeSlot | null; onEquip: (c: Card) => void; onDragStart: (c: Card, e: React.PointerEvent) => void };
+type CardProps = { card: Card; cat: Catalogue; equipped: ForgeSlot | null; loadoutDps: number | null; onEquip: (c: Card) => void; onDragStart: (c: Card, e: React.PointerEvent) => void };
 
-const ForgeCard = memo(function ForgeCard({ card, cat, equipped, onEquip, onDragStart }: CardProps) {
+const ForgeCard = memo(function ForgeCard({ card, cat, equipped, loadoutDps, onEquip, onDragStart }: CardProps) {
   const { f, r } = card;
   const fits = slotFor(f);
   const { setWorld } = useShell();
@@ -227,6 +233,7 @@ const ForgeCard = memo(function ForgeCard({ card, cat, equipped, onEquip, onDrag
             <div className="kv"><span>{unit}</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(r.value ?? 0)}</span></div>
             {f.kind === "weapon" && r.dps != null && <div className="kv"><span>DPS</span><span className="strong">{fmt(r.dps)}</span></div>}
             {r.runeDps != null && <div className="kv"><span>With runes</span><span className="strong" style={{ color: "var(--gold)" }}>{fmt(r.runeDps)} <span className="small muted">at +{r.runeLevel}</span></span></div>}
+            {loadoutDps != null && <div className="kv"><span>In your Loadout</span><span className="strong" title="With the armour and race in your loadout">{fmt(loadoutDps)} DPS</span></div>}
             {f.kind === "armour" && r.hasRunes && <div className="kv"><span>Runes</span><span className="small muted">Saved · open in calculator</span></div>}
             {f.kind === "weapon" && r.speed != null && <div className="kv"><span>ATK Speed</span><span className="muted">{r.speed}s per swing</span></div>}
             <div className="kv"><span>Quality</span><span className="gold">{qualityLabel(cat, f.quality)} ({f.quality}%)</span></div>

@@ -15,3 +15,5 @@ export const worldLabel = (worlds: number[]) => (worlds.length >= 4 ? "All" : wo
  * Hidden until the site partners with the game's developers; set to true to bring them all back.
  */
 export const SHOW_STATUS_LABELS = false;
+/** Race rarities use the same colours; the game calls Mythic "Mythical" for races. */
+export const raceColour = (r: string | null | undefined) => rarityColour(r === "Mythical" ? "Mythic" : r);

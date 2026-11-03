@@ -23,13 +23,15 @@ import { RunesPanel, type RuneItem } from "./runes-panel";
 import { decodeRunes, dpsAtLevel, encodeRunes, hasRunes, type RuneSlot } from "@/lib/engine/runes";
 import { MAX_MOLDS, NO_MOLDS, applyMolds, decodeMolds, encodeMolds, moldNeed, moldScreenChance, needLabel, type MoldState, type Need, type MoldRequirement } from "@/lib/engine/molds";
 import { MOLDS, type Mold } from "@/data/molds";
+import { PROFILE_RACE, readRaceChoice } from "@/lib/loadout";
+import { RaceCompare } from "./race-compare";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
 type Runes = Record<Kind, (RuneSlot | null)[]>;
 const NO_RUNES: Runes = { weapon: [null, null, null], armour: [null, null, null] };
 
-function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes; lock?: string; molds?: { molds: number; id: string | null } } {
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes; lock?: string; molds?: { molds: number; id: string | null }; race?: string | null } {
   try {
     const p = new URLSearchParams(window.location.search);
     const fromUrl = p.get("o");
@@ -48,7 +50,9 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
     return { kind: kind === "weapon" || kind === "armour" ? kind : undefined, quality: q > 0 && q <= 100 ? q : undefined, entries, pick: cls && id ? { cls, id } : undefined,
       enhance: Number.isInteger(e) && e >= 0 && e <= 10 && store("e") != null ? e : undefined, runes,
       lock: (p.get("l") ?? (fromUrl == null ? window.localStorage.getItem("forge.lock") : null))?.slice(0, 60) || undefined,
-      molds: decodeMolds(p.get("m") ?? (fromUrl == null ? window.localStorage.getItem("forge.molds") : null)) };
+      molds: decodeMolds(p.get("m") ?? (fromUrl == null ? window.localStorage.getItem("forge.molds") : null)),
+      // Race for the DPS (r): a race id, or "me" (your Profile's race) remembered on this device only.
+      race: readRaceChoice(p.get("r") ?? (fromUrl == null ? window.localStorage.getItem("forge.race") : null)) };
   } catch { return {}; }
 }
 
@@ -73,6 +77,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const [locked, setLocked] = useState<string | null>(null); // the class the player locked in Forge Chances
   const [molds, setMolds] = useState(0); // molds in the fifth forge slot
   const [moldId, setMoldId] = useState<string | null>(null); // the item the molds are aimed at
+  const [raceChoice, setRaceChoice] = useState<string | null>(null); // race for the DPS; never written to the Profile
   const lastTap = useRef<{ id: string; t: number } | null>(null);
 
   // Restore the recipe from the URL or the last visit, once.
@@ -87,6 +92,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.runes) setRunes(r.runes);
       if (r.lock) setLocked(r.lock);
       if (r.molds) { setMolds(r.molds.molds); setMoldId(r.molds.id); }
+      if (r.race) setRaceChoice(r.race);
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
@@ -141,12 +147,15 @@ export function Calculator({ cat }: { cat: Catalogue }) {
         if (v == null) url.searchParams.delete(k); else url.searchParams.set(k, v);
         window.localStorage.setItem(`forge.${k}`, k === "e" ? String(runeEnhance) : (v ?? ""));
       }
+      // A chosen race goes in the link; "your Profile race" means something different for each player, so it stays here.
+      if (raceChoice && raceChoice !== PROFILE_RACE) url.searchParams.set("r", raceChoice); else url.searchParams.delete("r");
+      if (raceChoice) window.localStorage.setItem("forge.race", raceChoice); else window.localStorage.removeItem("forge.race");
       window.history.replaceState(null, "", url);
       window.localStorage.setItem("forge.recipe", o);
       window.localStorage.setItem("forge.kind", kind);
       window.localStorage.setItem("forge.quality", String(quality));
     } catch { /* storage unavailable */ }
-  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock, molds, moldId, showMolds, settingsKnown]);
+  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock, molds, moldId, showMolds, settingsKnown, raceChoice]);
 
   // Selected result: the user's pick if still valid, else the most likely variant.
   const selected = useMemo(() => {
@@ -189,6 +198,9 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval } : null;
   const dpsAt = (level: number) => (baseDps == null ? null : runeWeapon ? dpsAtLevel(runeWeapon, level, runes.weapon).total : baseDps * (1 + 0.05 * level));
   const runeDps = runeWeapon ? dpsAtLevel(runeWeapon, runeEnhance, runes.weapon).total : null;
+  // The weapon for the race and Full Loadout comparison, at the same level as above (+0 without runes).
+  const combatWeapon = useMemo(() => kind === "weapon" && selected?.v.raw != null && selected.v.interval
+    ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval, cls: selected.cls.name } : null, [kind, selected, mix]);
   const runeItem = useMemo<RuneItem | null>(() => selected ? {
     kind, name: selected.v.name, raw: selected.v.raw,
     ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), interval: selected.v.interval,
@@ -363,6 +375,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
                     {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="The real time between swings. The game's item card shows a different 'index' number, which isn't the real speed.">{selected.v.interval}s per swing · range {selected.v.range}<span className="small faint" style={{ display: "block" }}>Card shows {selected.v.speed}s (the game&apos;s index value)</span></span></div>}
                     {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} withRunes={runeDps} runeLevel={runeEnhance} />}
+                    {combatWeapon && <RaceCompare cat={cat} weapon={combatWeapon} level={runeWeapon ? runeEnhance : 0} runes={runeWeapon ? runes.weapon : undefined}
+                      choice={raceChoice} onChoice={(v) => startTransition(() => setRaceChoice(v))} />}
                     <div className="kv"><span>Chance:</span><span className="muted">{moldChanceNote && <>Normal chance: </>}{changedBy.length > 0
                       ? <>{pct(selected.v.overall, 2)} with {changedBy.join(" and ")} <span className="small faint">({pct(normalChance(selected.cls.name, selected.v.id), 2)} without {withoutWhat})</span></>
                       : <>{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</>}

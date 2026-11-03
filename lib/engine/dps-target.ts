@@ -10,7 +10,8 @@ export type TargetClass = { name: string; probability: number; variants: TargetV
 
 export type TargetRow = { cls: string; id: string; name: string; dps: number; chance: number; hits: boolean };
 
-export const enhanceFactor = (level: number) => 1 + 0.05 * Math.min(10, Math.max(0, Math.round(level)));
+import { enhanceFactor } from "./index";
+export { enhanceFactor };
 
 /** Every weapon this mix can forge, best DPS first, marked by whether it reaches the target. Chances are 0 to 1. */
 export function dpsTarget(classes: readonly TargetClass[], target: number, level = 0) {
