@@ -79,9 +79,16 @@ export function stat(base: number, multiplier: number, quality: number, kind: Ki
 }
 
 /** Pass rawStat(...), not the rounded card value. Rounding order remains provisional. */
+/**
+ * Enhancement: each level adds 5% of the stat, +0 to +10. The single place this rule lives.
+ * Not settled (Nov 2026): the wiki's DPS script uses ×1.50 at +9 (not ×1.45), has no +10, and doesn't scale procs
+ * with enhancement. Kept as is until checked in game; tests/loadout-dps.test.ts has the alternative ready.
+ */
+export const enhanceFactor = (level: number) => 1 + 0.05 * Math.min(10, Math.max(0, Math.round(level)));
+
 export function enhancementTable(levelZero: number, kind: Kind) {
   nonNegative(levelZero, "Level zero stat");
-  return Array.from({ length: 11 }, (_, level) => ({ level, multiplier: 1 + 0.05 * level, stat: roundStat(levelZero * (1 + 0.05 * level), kind) }));
+  return Array.from({ length: 11 }, (_, level) => ({ level, multiplier: enhanceFactor(level), stat: roundStat(levelZero * enhanceFactor(level), kind) }));
 }
 
 /** Inputs are 1/N denominators; outputs are conditional percentages. */

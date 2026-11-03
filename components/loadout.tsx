@@ -4,12 +4,14 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { imageUrl } from "@/lib/data/supabase";
-import { fmt, rarityColour } from "@/lib/ui";
+import { fmt, raceColour, rarityColour } from "@/lib/ui";
 import { supabase } from "@/lib/supabase/browser";
 import { PICKAXES, pickaxeById, type Pickaxe } from "@/data/pickaxes";
+import { RACES, raceById, type Race } from "@/data/races";
 import { ARMOUR_SLOTS, EMPTY_LOADOUT, LOADOUT_COLUMNS, SLOT_LABEL, cleanLoadout, readLoadout, slotFor, type ForgeSlot, type Loadout, type Slot } from "@/lib/loadout";
 import { calculatorHref, type SavedForge } from "@/lib/saved-forges";
-import type { Worked } from "@/lib/forge-stats";
+import { forgeCombat, type Worked } from "@/lib/forge-stats";
+import type { CombatResult } from "@/lib/engine/loadout-dps";
 import { useAuth } from "./auth";
 import { GameImage } from "./game-image";
 
@@ -146,6 +148,14 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
   const armour = ARMOUR_SLOTS.map(card).filter((c): c is Card => !!c);
   const weapon = card("weapon");
   const pick = loadout.pickaxe ? pickaxeById.get(loadout.pickaxe) ?? null : null;
+  const race = loadout.race ? raceById.get(loadout.race) ?? null : null;
+  // Weapon DPS with everything worn: the weapon's runes, the armour's damage traits and the race.
+  const combat = useMemo(() => {
+    const at = (s: ForgeSlot) => (loadout[s] ? byId.get(loadout[s]!) ?? null : null);
+    return forgeCombat(at("weapon"), ARMOUR_SLOTS.map(at), loadout.race);
+  }, [loadout, byId]);
+  const oreName = new Map(armour.flatMap((c) => c.r.mix.map((m) => [m.ore.id, m.ore.name] as const)));
+  const counted = combat?.counted.map((id) => (oreName.has(id) ? `${oreName.get(id)} (armour)` : `${id} (race)`)) ?? [];
   const known = armour.filter((c) => c.r.value != null);
   const defence = known.reduce((n, c) => n + c.r.value!, 0);
   const traits = [...new Set([...armour, ...(weapon ? [weapon] : [])].flatMap((c) => c.r.traits))];
@@ -164,21 +174,45 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
           <div className="loadout-stats">
             <Stat label="Armor defense" value={known.length ? fmt(defence) : "–"} note={`${armour.length} of 3 pieces`} />
             <Stat label="Weapon damage" value={weapon?.r.value != null ? fmt(weapon.r.value) : "–"} note={weapon?.f.class_name ?? "No weapon"} />
-            <Stat label="Weapon DPS" value={weapon?.r.runeDps != null ? fmt(weapon.r.runeDps) : weapon?.r.dps != null ? fmt(weapon.r.dps) : "–"}
-              note={weapon?.r.runeDps != null ? `+${weapon.r.runeLevel} with runes` : weapon?.r.speed != null ? `${weapon.r.speed}s per swing` : ""} />
+            <Stat label="Loadout DPS" value={combat ? fmt(combat.total) : weapon?.r.dps != null ? fmt(weapon.r.dps) : "–"}
+              note={combat ? `At +${weapon?.r.runeLevel ?? 0}${weapon?.r.runeLevel != null ? " with runes" : ""}${counted.length ? ", armour and race" : ""}` : weapon?.r.speed != null ? `${weapon.r.speed}s per swing` : ""} />
             <Stat label="Pickaxe" value={pick ? pick.name.replace(/ Pickaxe$/, "") : "–"} note={pick ? pick.region : "None"} />
           </div>
+          {combat && <DpsBreakdown combat={combat} race={race} />}
           <div className="loadout-traits">
-            <span className="small muted">Traits</span>
-            <span>{traits.length ? traits.join(", ") : "None yet"}</span>
+            <span className="small muted">Defence and effects</span>
+            <span>{traits.length ? `Ore traits: ${traits.join(", ")}` : "No ore traits yet"}</span>
+            {race && <span className="small">{race.name}: {race.traits.map((t) => `${t.name} (${t.text.replace(/\.$/, "")})`).join(", ")}</span>}
+            {counted.length > 0 && <span className="small faint">Counted in the DPS: {counted.join(", ")}. Health, defence and other effects are listed but not added up.</span>}
           </div>
         </div>
         <div className="loadout-col right">
           <ForgeSlotBox {...slotProps("weapon")} card={weapon} />
           <PickaxeSlotBox {...slotProps("pickaxe")} pick={pick} />
+          <RaceSlotBox {...slotProps("race")} race={race} />
         </div>
       </div>
     </section>
+  );
+}
+
+/** What each part of the loadout adds to the DPS. Folded away on phones, always open on wider screens. */
+function DpsBreakdown({ combat, race }: { combat: CombatResult; race: Race | null }) {
+  const [open, setOpen] = useState(false);
+  const rows = combat.breakdown.filter((b, i) => i === 0 || Math.abs(b.dps) >= 0.005);
+  const situational = race?.combat?.conditions?.length ? race.name : null;
+  return (
+    <div className={`lo-dps${open ? " open" : ""}`}>
+      <button className="lo-dps-toggle small" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Show"} the DPS breakdown</button>
+      <div className="lo-dps-body">
+        {rows.map((b) => <div key={b.key} className="kv"><span>{b.label}</span><span>{b.key === "base" ? fmt(b.dps) : `${b.dps < 0 ? "−" : "+"}${fmt(Math.abs(b.dps))}`}</span></div>)}
+        <div className="kv"><span>Loadout DPS</span><b>{fmt(combat.total)}</b></div>
+        {combat.lowHp != null && <div className="kv"><span>Below 35% HP</span><span className="gold">{fmt(combat.lowHp)}</span></div>}
+        <p className="small faint" style={{ margin: "4px 0 0" }}>
+          {situational ? `${situational}'s situational bonuses and other` : "Situational"} effects aren&apos;t in the normal DPS. <Link className="inline-link" href="/how-it-works#loadout-dps">How this is worked out</Link>
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -261,6 +295,29 @@ function PickaxeSlotBox(p: SlotBoxProps & { pick: Pickaxe | null }) {
   );
 }
 
+function RaceSlotBox(p: SlotBoxProps & { race: Race | null }) {
+  const { race, onOpen, onClear } = p;
+  return (
+    <div className={slotClass(p, !!race)} data-slot="race">
+      <SlotMain readOnly={p.readOnly} href={race ? "/races" : null} onClick={() => onOpen("race")} label={p.readOnly ? `Race: ${race?.name ?? "none"}` : race ? `Race: ${race.name}. Change` : "Race: empty. Choose your race"}>
+        <span className="tile lo-pic lo-race" style={{ ["--rc" as string]: race ? raceColour(race.rarity) : "#3a3834" }}>
+          {race ? <span className="lo-race-mark" aria-hidden="true">{race.name.slice(0, 2)}</span> : <SlotIcon slot="race" />}
+        </span>
+        <span className="lo-text">
+          <span className="lo-label">Race</span>
+          {race ? (
+            <>
+              <span className="lo-name">{race.name}</span>
+              <span className="lo-stat small"><span style={{ color: raceColour(race.rarity) }}>{race.rarity}</span>{race.combat ? " · counted in DPS" : " · no damage effect"}</span>
+            </>
+          ) : <span className="lo-empty small">Empty</span>}
+        </span>
+      </SlotMain>
+      {race && !p.readOnly && <button className="lo-clear" onClick={() => onClear("race")} aria-label={`Clear race ${race.name}`} title="Clear">×</button>}
+    </div>
+  );
+}
+
 /** Outline icons for empty slots. */
 function SlotIcon({ slot }: { slot: Slot }) {
   const d: Record<Slot, string> = {
@@ -269,13 +326,14 @@ function SlotIcon({ slot }: { slot: Slot }) {
     leggings: "M7 4h10l1 16h-4l-2-10-2 10H6z",
     weapon: "M18 3l3 3-11 11-3-3zM5 16l3 3-3 2-2-2z",
     pickaxe: "M4 7c4-4 12-4 16 0-4-1-6-1-8 1M12 8l-7 13",
+    race: "M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM4 21c0-4 4-7 8-7s8 3 8 7",
   };
   return <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" className="lo-icon"><path d={d[slot]} /></svg>;
 }
 
 /* ------------------------------------------------------------------ picker */
 
-/** Tap a slot: choose from the saved forges that fit it, or from every pickaxe. */
+/** Tap a slot: choose from the saved forges that fit it, from every pickaxe, or from every race. */
 export function SlotPicker({ slot, cards, current, onPick, onClose }: { slot: Slot; cards: Card[]; current: string | null; onPick: (id: string | null) => void; onClose: () => void }) {
   const titleId = useId();
   const box = useRef<HTMLDivElement>(null);
@@ -289,14 +347,16 @@ export function SlotPicker({ slot, cards, current, onPick, onClose }: { slot: Sl
     return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
   }, [onClose]);
 
-  const fits = slot === "pickaxe" ? [] : cards.filter((c) => slotFor(c.f) === slot);
+  const forgeSlot = slot !== "pickaxe" && slot !== "race";
+  const fits = forgeSlot ? cards.filter((c) => slotFor(c.f) === slot) : [];
+  const races = slot === "race" ? RACES : [];
   const picks = slot === "pickaxe" ? PICKAXES.filter((p) => world === "all" || p.world === world || (world === 0 && p.world === null)) : [];
 
   return createPortal(
     <div className="picker-backdrop" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="picker gp" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={box}>
         <div className="tb">
-          <h2 id={titleId}>Choose {slot === "weapon" ? "a weapon" : `a ${SLOT_LABEL[slot].toLowerCase()}`}</h2>
+          <h2 id={titleId}>{slot === "race" ? "Choose your race" : `Choose ${slot === "weapon" ? "a weapon" : `a ${SLOT_LABEL[slot].toLowerCase()}`}`}</h2>
           <button className="lo-clear static" onClick={onClose} aria-label="Close">×</button>
         </div>
         {slot === "pickaxe" && (
@@ -307,8 +367,8 @@ export function SlotPicker({ slot, cards, current, onPick, onClose }: { slot: Sl
           </div>
         )}
         <div className="picker-list">
-          {current && <button className="picker-item none" onClick={() => onPick(null)}>Take off</button>}
-          {slot !== "pickaxe" && fits.length === 0 && (
+          {current && <button className="picker-item none" onClick={() => onPick(null)}>{slot === "race" ? "Clear race" : "Take off"}</button>}
+          {forgeSlot && fits.length === 0 && (
             <p className="muted" style={{ margin: 8 }}>No saved {slot === "weapon" ? "weapons" : `${SLOT_LABEL[slot].toLowerCase()}s`} yet. Make one in the calculator and press ☆ to save it.</p>
           )}
           {fits.map(({ f, r }) => (
@@ -323,7 +383,15 @@ export function SlotPicker({ slot, cards, current, onPick, onClose }: { slot: Sl
               <span className="picker-text"><b>{p.name}</b><span className="small"><span style={{ color: rarityColour(p.rarity) }}>{p.rarity}</span> <span className="muted">· {p.region}</span></span></span>
             </button>
           ))}
+          {races.map((r) => (
+            <button key={r.id} className={`picker-item${current === r.id ? " on" : ""}`} onClick={() => onPick(r.id)} aria-pressed={current === r.id}>
+              <span className="tile lo-race" style={{ width: 48, height: 48, ["--rc" as string]: raceColour(r.rarity) }}><span className="lo-race-mark" aria-hidden="true">{r.name.slice(0, 2)}</span></span>
+              <span className="picker-text"><b>{r.name}</b><span className="small"><span style={{ color: raceColour(r.rarity) }}>{r.rarity}</span> <span className="muted">· {r.combat ? "changes weapon DPS" : "no damage effect"}</span></span>
+                <span className="small faint">{r.traits.map((t) => t.name).join(", ")}</span></span>
+            </button>
+          ))}
         </div>
+        {slot === "race" && <p className="note" style={{ margin: "0 14px 12px" }}>Race traits from the community wiki (CC BY-SA 4.0). Saved with your loadout and shown on your shared profile.</p>}
         {slot === "pickaxe" && <p className="note" style={{ margin: "0 14px 12px" }}>Pickaxe list and pictures from the community wiki (CC BY-SA 4.0).</p>}
       </div>
     </div>,

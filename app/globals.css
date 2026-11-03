@@ -446,6 +446,17 @@ a.lo-main:hover .lo-name { text-decoration: underline; }
 .lo-clear { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; display: grid; place-items: center; background: none; border: 1px solid transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
 .lo-clear:hover { color: #fff; border-color: var(--bd2); }
 .lo-clear.static { position: static; }
+.lo-race-mark { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--rc, #fff); }
+.lo-dps { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--bd); background: var(--row); }
+.lo-dps .kv { padding: 2px 0; }
+.lo-dps-toggle { display: none; background: none; border: 0; padding: 0; color: var(--acc); cursor: pointer; font: inherit; text-align: left; }
+@media (max-width: 720px) {
+  .lo-dps-toggle { display: block; }
+  .lo-dps-body { display: none; }
+  .lo-dps.open .lo-dps-body { display: block; margin-top: 6px; }
+}
+.calc-race select { max-width: 100%; }
+.race-compare { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
 .drag-handle { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .equipped-mark { position: absolute; top: 2px; right: 4px; color: var(--acc); font-weight: 700; font-size: 14px; }
 body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }

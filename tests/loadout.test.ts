@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanLoadout, readLoadout, slotFor, EMPTY_LOADOUT } from "@/lib/loadout";
+import { cleanLoadout, readLoadout, readRaceChoice, slotFor, EMPTY_LOADOUT, LOADOUT_COLUMNS } from "@/lib/loadout";
 import { PICKAXES, pickaxeById } from "@/data/pickaxes";
 import images from "@/data/images.json";
 import type { SavedForge } from "@/lib/saved-forges";
@@ -25,12 +25,31 @@ describe("readLoadout", () => {
     expect(readLoadout({ pickaxe: "<script>" }).pickaxe).toBeNull();
     expect(readLoadout(null)).toEqual(EMPTY_LOADOUT);
   });
+  it("keeps a saved race, and reads old loadouts without one", () => {
+    expect(readLoadout({ helmet: A, race: "kitsune" })).toEqual({ ...EMPTY_LOADOUT, helmet: A, race: "kitsune" });
+    expect(readLoadout({ helmet: A }).race).toBeNull();
+    expect(readLoadout({ race: "<script>" }).race).toBeNull();
+    expect(LOADOUT_COLUMNS).toContain("race");
+  });
+});
+
+describe("calculator race choice (r in the link)", () => {
+  it("takes a race id or your Profile race, nothing else", () => {
+    expect(readRaceChoice("orc-lord")).toBe("orc-lord");
+    expect(readRaceChoice("me")).toBe("me");
+    expect(readRaceChoice("dragon")).toBeNull();
+    expect(readRaceChoice(null)).toBeNull();
+    expect(readRaceChoice("")).toBeNull();
+  });
 });
 
 describe("cleanLoadout", () => {
+  it("keeps the race and pickaxe while emptying forge slots", () => {
+    expect(cleanLoadout({ ...EMPTY_LOADOUT, weapon: A, race: "orc", pickaxe: "oni-pickaxe" }, new Map())).toEqual({ ...EMPTY_LOADOUT, race: "orc", pickaxe: "oni-pickaxe" });
+  });
   it("empties slots whose forge is gone or in the wrong slot", () => {
     const forges = new Map([[A, forge(A, "armour", "Heavy Helmet")], [B, forge(B, "weapon", "Katana")]]);
-    expect(cleanLoadout({ helmet: A, chestplate: B, leggings: C, weapon: B, pickaxe: null }, forges)).toEqual({ ...EMPTY_LOADOUT, helmet: A, weapon: B });
+    expect(cleanLoadout({ helmet: A, chestplate: B, leggings: C, weapon: B, pickaxe: null, race: null }, forges)).toEqual({ ...EMPTY_LOADOUT, helmet: A, weapon: B });
   });
 });
 

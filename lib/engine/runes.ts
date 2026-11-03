@@ -4,6 +4,7 @@
  */
 import { RUNES, SECONDARIES, runeById, secondaryById, type RuneKind, type RuneLevel, type RuneProc, type SecondaryId } from "@/data/runes";
 import { weaponDps, type DpsResult } from "./dps";
+import { enhanceFactor } from "./index";
 
 export const MAX_RUNE_SLOTS = 3;
 /** A slot opens at +3, +6 and +9. */
@@ -74,7 +75,7 @@ export const secondariesFor = (kind: RuneKind) => SECONDARIES.filter((s) => s.ki
  */
 export function dpsAtLevel(w: { ores: { id: string; count: number }[]; raw: number; interval: number }, level: number, slots: readonly (RuneSlot | null)[] = []): DpsResult {
   const t = runeTotals(slots, slotsAt(level));
-  return weaponDps({ ores: w.ores, damage: w.raw * (1 + 0.05 * level), interval: w.interval, extra: { stats: t.stats, procs: t.procs } });
+  return weaponDps({ ores: w.ores, damage: w.raw * enhanceFactor(level), interval: w.interval, extra: { stats: t.stats, procs: t.procs } });
 }
 
 export const hasRunes = (slots: readonly (RuneSlot | null)[]) => slots.some(Boolean);

@@ -2,7 +2,7 @@
  * Weapon DPS, including ore traits. A port of the community DPS calculator on the wiki
  * (MediaWiki:ForgeCalculator.js, with the stat ranges from Data:Ores.json), limited to what a forge
  * result decides: the ores, the weapon and its damage, plus runes when the player adds them (see `extra`).
- * Race, achievements and armour are not included.
+ * Armour, race and conditions come in through `extra` (see lib/engine/loadout-dps.ts); achievements are not included.
  *
  * - Hits:      damage × (1 + lethality) × crit blend × attacks per second
  * - Crit:      blend = chance × (1.45 + crit damage) + (1 − chance), chance capped at 100%
@@ -38,11 +38,30 @@ export function statAtShare(r: Range, share: number): number {
   return v;
 }
 
-/** Extra stats and on-hit procs from runes (best rolls), added to the ore traits. */
+type CoreStat = "lethality" | "crit_chance" | "crit_dmg" | "atk_speed";
+
+/** A race ability that deals damage of its own. Shares are of weapon damage; seconds for cooldowns and durations. */
+export type SpecialProc = { label: string } & (
+  | { type: "cooldown"; dmg: number; chance: number; cd: number } // chance on hit, then a cooldown (Orc Lord's slam, Archangel's beams)
+  | { type: "spirits"; dmg: number; chance: number; max: number } // summons on hit, at most `max` a second (Kitsune's fox claws)
+  | { type: "foxfire"; dmg: number; chance: number; dur: number } // damage over time that Lethality boosts (Kitsune's foxfire)
+  | { type: "aura"; dmg: number }); // constant damage per second while fighting (Demon's cursed aura)
+
+/** What's added to the weapon's own ore traits. Everything is optional; without it the result is the weapon alone. */
 export type DpsExtra = {
-  stats?: Partial<Record<"lethality" | "crit_chance" | "crit_dmg" | "atk_speed", number>>;
+  /** Rune secondary traits (best rolls), added to the ores' before the caps. */
+  stats?: Partial<Record<CoreStat, number>>;
+  /** Rune on-hit procs. Each rune is its own source. */
   procs?: ({ label: string; chance: number; dmg: number } & (
     | { type: "poison" | "burn"; dur: number } | { type: "explosion" } | { type: "lightning"; cd: number }))[];
+  /** Stat values from armour and race, already scaled by share, treated exactly like extra weapon ores (same sums, maxes and caps). */
+  vals?: Partial<Record<DpsStat, number[]>>;
+  /** Added after the caps: race exceptions (Kitsune, Fairy) and conditional effects. */
+  uncapped?: Partial<Record<CoreStat, number>>;
+  /** Multiplies fire, poison, black hole and lightning damage (Vital Power). Default 1. */
+  dotMultiplier?: number;
+  /** Race abilities with damage of their own. */
+  specials?: SpecialProc[];
 };
 export type DpsInput = { ores: { id: string; count: number }[]; damage: number; interval: number; extra?: DpsExtra };
 export type DpsResult = {
@@ -54,24 +73,27 @@ export type DpsResult = {
 
 export function weaponDps({ ores, damage, interval, extra }: DpsInput): DpsResult {
   const total = ores.reduce((n, o) => n + o.count, 0);
-  const vals = (stat: DpsStat) => ores.flatMap((o) => {
+  const vals = (stat: DpsStat) => [...ores.flatMap((o) => {
     const r = DPS_STATS[o.id]?.[stat];
     if (!r || !total) return [];
     const share = o.count / total;
     return !r.ungated && share < GATE ? [] : [statAtShare(r, share)];
-  });
+  }), ...(extra?.vals?.[stat] ?? []).filter((v) => v !== 0)];
   const sum = (s: DpsStat, cap = Infinity) => vals(s).reduce((a, v) => a + Math.min(cap, v), 0);
   const max = (s: DpsStat) => Math.max(0, ...vals(s));
   const minPositive = (s: DpsStat) => { const v = vals(s); return v.length ? Math.min(...v) : 0; };
 
-  // Rune secondary traits add to the ores' before the caps.
+  // Rune secondary traits add to the ores' before the caps; race exceptions and conditions come after them.
   const add = extra?.stats ?? {};
-  const lethality = Math.min(sum("lethality") + (add.lethality ?? 0), CAPS.lethality);
-  const critChance = Math.min(sum("crit_chance") + (add.crit_chance ?? 0), CAPS.crit_chance);
-  const critDamage = Math.min(sum("crit_dmg") + (add.crit_dmg ?? 0), CAPS.crit_dmg);
-  const atkSpeed = Math.min(sum("atk_speed") + (add.atk_speed ?? 0), CAPS.atk_speed);
+  const over = extra?.uncapped ?? {};
+  const lethality = Math.min(sum("lethality") + (add.lethality ?? 0), CAPS.lethality) + (over.lethality ?? 0);
+  const critChance = Math.min(sum("crit_chance") + (add.crit_chance ?? 0), CAPS.crit_chance) + (over.crit_chance ?? 0);
+  const critDamage = Math.min(sum("crit_dmg") + (add.crit_dmg ?? 0), CAPS.crit_dmg) + (over.crit_dmg ?? 0);
+  const atkSpeed = Math.min(sum("atk_speed") + (add.atk_speed ?? 0), CAPS.atk_speed) + (over.atk_speed ?? 0);
   const rate = interval > 0 ? (1 + atkSpeed) / interval : 0;
-  const blend = critChance * (BASE_CRIT_DMG + critDamage) + (1 - critChance);
+  const hitCrit = Math.min(critChance, 1); // a hit can't crit more than every time
+  const blend = hitCrit * (BASE_CRIT_DMG + critDamage) + (1 - hitCrit);
+  const dotK = extra?.dotMultiplier ?? 1;
 
   // Damage over time: refreshed by hits, so it is up for a share of the time.
   const dot = (dmg: number, chance: number, dur: number) => (rate ? damage * dmg * Math.min(1, chance * rate * Math.min(dur, DOT_TIME_CAP)) : 0);
@@ -83,19 +105,29 @@ export function weaponDps({ ores, damage, interval, extra }: DpsInput): DpsResul
   const blackHoleDmg = sum("blackhole_dmg") + (hasGalaxite && ores.some((o) => o.id === "bismuth") ? 1.25 : 0);
 
   const hit = damage * (1 + lethality) * blend * rate;
+  // A chance on hit followed by a cooldown: the average time between procs is the cooldown plus the wait for the next one.
+  const cooldownRate = (chance: number, cd: number) => (chance > 0 && rate > 0 ? 1 / (cd + 1 / (Math.min(chance, 1) * rate)) : 0);
   const parts = [
     { label: "Explosion", dps: damage * sum("explosion_dmg", EXPLOSION_CAP) * max("explosion_chance") * rate },
-    { label: "Burn", dps: dot(sum("fire_dmg"), max("fire_chance"), fireDur) },
-    { label: "Poison", dps: dot(sum("poison_dmg"), max("poison_chance"), poisonDur) },
+    { label: "Burn", dps: dotK * dot(sum("fire_dmg"), max("fire_chance"), fireDur) },
+    { label: "Poison", dps: dotK * dot(sum("poison_dmg"), max("poison_chance"), poisonDur) },
     { label: "Smite", dps: damage * rate * Math.min(SMITE_CAP, sum("smite_dmg")) * Math.min(max("smite_chance"), 1) },
-    { label: "Black hole", dps: hasGalaxite ? damage * blackHoleDmg * BLACK_HOLE_CHANCE * Math.max(1, rate) : 0 },
-    { label: "Lightning", dps: rate ? damage * sum("lightning_dmg") * max("lightning_chance") * (lightningCd > 0 ? Math.min(rate, 1 / lightningCd) : rate) : 0 },
+    { label: "Black hole", dps: hasGalaxite ? dotK * damage * blackHoleDmg * BLACK_HOLE_CHANCE * Math.max(1, rate) : 0 },
+    { label: "Lightning", dps: rate ? dotK * damage * sum("lightning_dmg") * max("lightning_chance") * (lightningCd > 0 ? Math.min(rate, 1 / lightningCd) : rate) : 0 },
     // Rune procs: each rune is its own source (copies of a rune add up), worked out like the ore procs above.
     ...(extra?.procs ?? []).map((r) => ({
       label: r.label,
       dps: r.type === "explosion" ? damage * r.dmg * Math.min(r.chance, 1) * rate
-        : r.type === "lightning" ? (rate ? damage * r.dmg * Math.min(r.chance, 1) * Math.min(rate, 1 / r.cd) : 0)
-        : dot(r.dmg, r.chance, r.dur),
+        : r.type === "lightning" ? (rate ? dotK * damage * r.dmg * Math.min(r.chance, 1) * Math.min(rate, 1 / r.cd) : 0)
+        : dotK * dot(r.dmg, r.chance, r.dur),
+    })),
+    // Race abilities. Lethality only boosts foxfire ("of your Total Damage"); the others are shares of weapon damage.
+    ...(extra?.specials ?? []).map((s) => ({
+      label: s.label,
+      dps: s.type === "cooldown" ? damage * s.dmg * cooldownRate(s.chance, s.cd)
+        : s.type === "spirits" ? damage * s.dmg * Math.min(Math.min(s.chance, 1) * rate, s.max)
+        : s.type === "foxfire" ? damage * (1 + lethality) * s.dmg * (1 - Math.exp(-Math.min(s.chance, 1) * rate * s.dur))
+        : damage * s.dmg,
     })),
   ].filter((p) => p.dps > 0);
   const procs = parts.reduce((a, p) => a + p.dps, 0);
