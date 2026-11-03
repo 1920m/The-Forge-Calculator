@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabase/browser";
-import { FEEDBACK_KINDS, MAX_FILES, MAX_FILE_BYTES, cleanMessage, fileExt, friendlyFeedbackError, type FeedbackKind } from "@/lib/feedback";
+import { FEEDBACK_KINDS, MAX_FILES, MAX_FILE_BYTES, cleanMessage, fileExt, friendlyFeedbackError, shrinkImage, type FeedbackKind } from "@/lib/feedback";
 
 /* ------------------------------------------------------------------ opening it from anywhere */
 
@@ -64,7 +64,7 @@ function FeedbackDialog({ initialKind, onClose }: { initialKind: FeedbackKind; o
     const add: Picked[] = [];
     for (const file of Array.from(list ?? [])) {
       if (!fileExt(file.type)) { problem = "Only PNG, JPG or WebP images can be attached."; continue; }
-      if (file.size > MAX_FILE_BYTES) { problem = "Each image must be 5 MB or smaller."; continue; }
+      if (file.size > MAX_FILE_BYTES) { problem = "Each image must be 20 MB or smaller."; continue; }
       if (files.length + add.length >= MAX_FILES) { problem = `You can attach up to ${MAX_FILES} images.`; break; }
       add.push({ file, key: crypto.randomUUID() });
     }
@@ -84,8 +84,11 @@ function FeedbackDialog({ initialKind, onClose }: { initialKind: FeedbackKind; o
     const paths: string[] = [];
     try {
       for (const [i, { file }] of files.entries()) {
-        const path = `${id}/${i + 1}.${fileExt(file.type)}`;
-        const { error: up } = await sb.storage.from("feedback-files").upload(path, file, { contentType: file.type, upsert: false });
+        // Screenshots are shrunk to a WebP first, so uploads stay small (the bucket takes 2 MB at most).
+        const small = await shrinkImage(file);
+        if (!small) throw new Error("too large");
+        const path = `${id}/${i + 1}.webp`;
+        const { error: up } = await sb.storage.from("feedback-files").upload(path, small, { contentType: "image/webp", upsert: false });
         if (up) throw new Error(up.message);
         paths.push(path);
       }
