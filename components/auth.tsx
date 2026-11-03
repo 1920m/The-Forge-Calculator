@@ -7,7 +7,7 @@ import { safeNext } from "@/lib/safe-next";
 
 export type Provider = "google" | "discord";
 /** Calculator extras, off unless turned on in Settings: the "Hit a DPS target" panel and molds. */
-export type Profile = { id: string; display_name: string; avatar_url: string | null; show_dps_target: boolean; show_molds: boolean };
+export type Profile = { id: string; display_name: string; avatar_url: string | null; show_dps_target: boolean; show_molds: boolean; golem_slot2: boolean };
 
 type AuthState = {
   user: User | null;
@@ -34,9 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadProfile = useCallback(async (u: User | null) => {
     if (!u) { setProfile(null); return; }
-    const { data } = await supabase().from("profiles").select("id, display_name, avatar_url, show_dps_target, show_molds").eq("id", u.id).maybeSingle();
-    const row = data as (Omit<Profile, "show_dps_target" | "show_molds"> & { show_dps_target?: unknown; show_molds?: unknown }) | null;
-    setProfile(row ? { ...row, show_dps_target: row.show_dps_target === true, show_molds: row.show_molds === true } : null);
+    const { data } = await supabase().from("profiles").select("id, display_name, avatar_url, show_dps_target, show_molds, golem_slot2").eq("id", u.id).maybeSingle();
+    const row = data as (Omit<Profile, "show_dps_target" | "show_molds" | "golem_slot2"> & { show_dps_target?: unknown; show_molds?: unknown; golem_slot2?: unknown }) | null;
+    setProfile(row ? { ...row, show_dps_target: row.show_dps_target === true, show_molds: row.show_molds === true, golem_slot2: row.golem_slot2 === true } : null);
   }, []);
 
   useEffect(() => {

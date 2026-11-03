@@ -6,15 +6,17 @@ import type { SavedForge } from "./saved-forges";
 export const ARMOUR_SLOTS = ["helmet", "chestplate", "leggings"] as const;
 export type ArmourSlot = (typeof ARMOUR_SLOTS)[number];
 export type ForgeSlot = ArmourSlot | "weapon";
-export type Slot = ForgeSlot | "pickaxe" | "race";
+export const GOLEM_SLOTS = ["golem1", "golem2"] as const;
+export type GolemSlot = (typeof GOLEM_SLOTS)[number];
+export type Slot = ForgeSlot | "pickaxe" | "race" | GolemSlot;
 export const FORGE_SLOTS: ForgeSlot[] = [...ARMOUR_SLOTS, "weapon"];
 
-export const SLOT_LABEL: Record<Slot, string> = { helmet: "Helmet", chestplate: "Chestplate", leggings: "Leggings", weapon: "Weapon", pickaxe: "Pickaxe", race: "Race" };
+export const SLOT_LABEL: Record<Slot, string> = { helmet: "Helmet", chestplate: "Chestplate", leggings: "Leggings", weapon: "Weapon", pickaxe: "Pickaxe", race: "Race", golem1: "Golemite", golem2: "Golemite 2" };
 
-/** `race` is the race the player plays (null for loadouts saved before races were added). */
-export type Loadout = Record<ForgeSlot, string | null> & { pickaxe: string | null; race: string | null };
-export const EMPTY_LOADOUT: Loadout = { helmet: null, chestplate: null, leggings: null, weapon: null, pickaxe: null, race: null };
-export const LOADOUT_COLUMNS = "helmet, chestplate, leggings, weapon, pickaxe, race";
+/** `race` is the race the player plays, `golem1`/`golem2` their Golemites (null in loadouts saved before these existed). */
+export type Loadout = Record<ForgeSlot | GolemSlot, string | null> & { pickaxe: string | null; race: string | null };
+export const EMPTY_LOADOUT: Loadout = { helmet: null, chestplate: null, leggings: null, weapon: null, pickaxe: null, race: null, golem1: null, golem2: null };
+export const LOADOUT_COLUMNS = "helmet, chestplate, leggings, weapon, pickaxe, race, golem1, golem2";
 
 /** Which slot a saved forge goes in: any weapon in Weapon; armour by its class ("Heavy Helmet" → helmet). */
 export function slotFor(f: Pick<SavedForge, "kind" | "class_name">): ForgeSlot | null {
@@ -34,15 +36,23 @@ export function readLoadout(row: unknown): Loadout {
     helmet: id(r.helmet), chestplate: id(r.chestplate), leggings: id(r.leggings), weapon: id(r.weapon),
     pickaxe: typeof r.pickaxe === "string" && pickaxeById.has(r.pickaxe) ? r.pickaxe : null,
     race: typeof r.race === "string" && raceById.has(r.race) ? r.race : null,
+    golem1: id(r.golem1), golem2: id(r.golem2),
   };
 }
 
-/** Drops slots whose forge is gone or no longer fits (the database does the same when a forge is deleted). */
-export function cleanLoadout(l: Loadout, forges: Map<string, SavedForge>): Loadout {
+/**
+ * Drops slots whose forge is gone or no longer fits (the database does the same when a forge is deleted).
+ * With `golems` given, Golem slots whose Golemite is gone are emptied too, and slot 2 while it's locked.
+ */
+export function cleanLoadout(l: Loadout, forges: Map<string, SavedForge>, golems?: { ids: Set<string>; slot2: boolean }): Loadout {
   const out = { ...l };
   for (const s of FORGE_SLOTS) {
     const f = out[s] ? forges.get(out[s]!) : undefined;
     if (!f || slotFor(f) !== s) out[s] = null;
+  }
+  if (golems) {
+    for (const s of GOLEM_SLOTS) if (out[s] && !golems.ids.has(out[s]!)) out[s] = null;
+    if (!golems.slot2 || out.golem2 === out.golem1) out.golem2 = null;
   }
   return out;
 }

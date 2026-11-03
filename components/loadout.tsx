@@ -8,11 +8,14 @@ import { fmt, raceColour, rarityColour } from "@/lib/ui";
 import { supabase } from "@/lib/supabase/browser";
 import { PICKAXES, pickaxeById, type Pickaxe } from "@/data/pickaxes";
 import { RACES, raceById, type Race } from "@/data/races";
-import { ARMOUR_SLOTS, EMPTY_LOADOUT, LOADOUT_COLUMNS, SLOT_LABEL, cleanLoadout, readLoadout, slotFor, type ForgeSlot, type Loadout, type Slot } from "@/lib/loadout";
+import { ARMOUR_SLOTS, GOLEM_SLOTS, EMPTY_LOADOUT, LOADOUT_COLUMNS, SLOT_LABEL, cleanLoadout, readLoadout, slotFor, type ForgeSlot, type Loadout, type Slot } from "@/lib/loadout";
 import { calculatorHref, type SavedForge } from "@/lib/saved-forges";
 import { forgeCombat, type Worked } from "@/lib/forge-stats";
 import type { CombatResult } from "@/lib/engine/loadout-dps";
 import { useAuth } from "./auth";
+import type { GolemCard } from "./golemites";
+import { GOLEMITE } from "@/data/golemites";
+import { golemiteHref } from "@/lib/golemites";
 import { GameImage } from "./game-image";
 import { Chevron } from "./icons";
 
@@ -20,8 +23,11 @@ export type Card = { f: SavedForge; r: Worked };
 
 /* ------------------------------------------------------------------ data */
 
-/** The player's loadout: loaded once, saved on every change (the screen updates first and undoes on failure). */
-export function useLoadout(byId: Map<string, Card>, forgesLoaded: boolean) {
+/**
+ * The player's loadout: loaded once, saved on every change (the screen updates first and undoes on failure).
+ * `golems` (once the player's Golemites have loaded) also cleans the Golem slots; slot 2 stays empty while it's locked.
+ */
+export function useLoadout(byId: Map<string, Card>, forgesLoaded: boolean, golems?: { ids: Set<string>; slot2: boolean }) {
   const { user } = useAuth();
   const uid = user?.id ?? null;
   const [raw, setRaw] = useState<Loadout>(EMPTY_LOADOUT);
@@ -42,7 +48,7 @@ export function useLoadout(byId: Map<string, Card>, forgesLoaded: boolean) {
 
   const forges = useMemo(() => new Map([...byId].map(([id, c]) => [id, c.f])), [byId]);
   // Until the saved forges arrive, keep slot ids as they are; afterwards hide any that no longer fit.
-  const loadout = useMemo(() => (forgesLoaded ? cleanLoadout(raw, forges) : raw), [raw, forges, forgesLoaded]);
+  const loadout = useMemo(() => (forgesLoaded ? cleanLoadout(raw, forges, golems) : raw), [raw, forges, forgesLoaded, golems]);
 
   const latest = useRef(loadout);
   useEffect(() => { latest.current = loadout; }, [loadout]);
@@ -141,10 +147,13 @@ type PanelProps = {
   onClear: (slot: Slot) => void;
   /** A shared profile: no editing; each forge opens in the calculator. */
   readOnly?: boolean;
+  /** Golemites that can be in the Golem slots, and whether slot 2 is open (level 300). */
+  golems?: Map<string, GolemCard>;
+  golemSlot2?: boolean;
 };
 
 /** The LOADOUT panel: armour on the left, weapon and pickaxe on the right, totals in the middle. */
-export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readOnly = false }: PanelProps) {
+export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readOnly = false, golems, golemSlot2 = false }: PanelProps) {
   const card = (s: ForgeSlot) => (loadout[s] ? byId.get(loadout[s]!) ?? null : null);
   const armour = ARMOUR_SLOTS.map(card).filter((c): c is Card => !!c);
   const weapon = card("weapon");
@@ -195,6 +204,15 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
           <RaceSlotBox {...slotProps("race")} race={race} />
         </div>
       </div>
+      {golems && (!readOnly || loadout.golem1 || loadout.golem2) && (
+        <div className="loadout-golems" role="group" aria-label="Golemites">
+          {GOLEM_SLOTS.map((s) => {
+            const open = s === "golem1" || golemSlot2;
+            if (readOnly && (!open || !loadout[s])) return null;
+            return <GolemSlotBox key={s} {...slotProps(s)} card={loadout[s] ? golems.get(loadout[s]!) ?? null : null} locked={!open} />;
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -326,6 +344,42 @@ function RaceSlotBox(p: SlotBoxProps & { race: Race | null }) {
   );
 }
 
+function GolemSlotBox(p: SlotBoxProps & { card: GolemCard | null; locked: boolean }) {
+  const { card, onOpen, onClear, slot, locked } = p;
+  const label = SLOT_LABEL[slot];
+  if (locked) {
+    return (
+      <div className="lo-slot locked-slot" data-slot={slot}>
+        <div className="lo-main static">
+          <span className="tile lo-pic" style={{ ["--rc" as string]: "#3a3834" }}><SlotIcon slot={slot} /></span>
+          <span className="lo-text"><span className="lo-label">{label}</span><span className="lo-empty small">Opens at level {GOLEMITE.secondSlotLevel}. Reached it? Turn it on in <Link className="inline-link" href="/settings">Settings</Link>.</span></span>
+        </div>
+      </div>
+    );
+  }
+  const g = card?.g, r = card?.r;
+  return (
+    <div className={slotClass(p, !!card)} data-slot={slot}>
+      <SlotMain readOnly={p.readOnly} href={g ? golemiteHref(g) : null} onClick={() => onOpen(slot)}
+        label={p.readOnly ? `${label}: ${g?.name}. Open in the Golemite forge` : g ? `${label}: ${g.name}. Change` : `${label}: empty. Choose a Golemite`}>
+        <span className="tile lo-pic" style={{ ["--rc" as string]: r?.rarity ? rarityColour(r.rarity) : "#3a3834" }}>
+          {r?.primary ? <GameImage src={imageUrl("ores", r.primary.id)} alt="" size={22} /> : <SlotIcon slot={slot} />}
+        </span>
+        <span className="lo-text">
+          <span className="lo-label">{label}</span>
+          {card ? (
+            <>
+              <span className="lo-name">{g!.name}</span>
+              <span className="lo-stat small"><span style={{ color: r!.rarity ? rarityColour(r!.rarity) : undefined }}>{r!.rarity ?? "Unknown"}</span> · level {g!.level} · {r!.mining != null ? `${Math.round(r!.mining * 100)}% mining help` : ""}</span>
+            </>
+          ) : <span className="lo-empty small">Empty</span>}
+        </span>
+      </SlotMain>
+      {card && !p.readOnly && <button className="lo-clear" onClick={() => onClear(slot)} aria-label={`Take off ${g!.name}`} title="Take off">×</button>}
+    </div>
+  );
+}
+
 /** Outline icons for empty slots. */
 function SlotIcon({ slot }: { slot: Slot }) {
   const d: Record<Slot, string> = {
@@ -335,6 +389,8 @@ function SlotIcon({ slot }: { slot: Slot }) {
     weapon: "M18 3l3 3-11 11-3-3zM5 16l3 3-3 2-2-2z",
     pickaxe: "M4 7c4-4 12-4 16 0-4-1-6-1-8 1M12 8l-7 13",
     race: "M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM4 21c0-4 4-7 8-7s8 3 8 7",
+    golem1: "M8 4h8v5H8zM6 10h12v7H6zM7 17h3v4H7zM14 17h3v4h-3zM4 11h2v5H4zM18 11h2v5h-2z",
+    golem2: "M8 4h8v5H8zM6 10h12v7H6zM7 17h3v4H7zM14 17h3v4h-3zM4 11h2v5H4zM18 11h2v5h-2z",
   };
   return <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" className="lo-icon"><path d={d[slot]} /></svg>;
 }
@@ -342,7 +398,10 @@ function SlotIcon({ slot }: { slot: Slot }) {
 /* ------------------------------------------------------------------ picker */
 
 /** Tap a slot: choose from the saved forges that fit it, from every pickaxe, or from every race. */
-export function SlotPicker({ slot, cards, current, onPick, onClose }: { slot: Slot; cards: Card[]; current: string | null; onPick: (id: string | null) => void; onClose: () => void }) {
+export function SlotPicker({ slot, cards, golems = [], current, other = null, onPick, onClose }: {
+  slot: Slot; cards: Card[]; golems?: GolemCard[]; current: string | null; /** The Golemite in the other Golem slot. */ other?: string | null;
+  onPick: (id: string | null) => void; onClose: () => void;
+}) {
   const titleId = useId();
   const box = useRef<HTMLDivElement>(null);
   const [world, setWorld] = useState<number | "all">("all");
@@ -355,7 +414,9 @@ export function SlotPicker({ slot, cards, current, onPick, onClose }: { slot: Sl
     return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
   }, [onClose]);
 
-  const forgeSlot = slot !== "pickaxe" && slot !== "race";
+  const golemSlot = slot === "golem1" || slot === "golem2";
+  const forgeSlot = slot !== "pickaxe" && slot !== "race" && !golemSlot;
+  const golemList = golemSlot ? golems.filter((c) => c.g.id !== other) : [];
   const fits = forgeSlot ? cards.filter((c) => slotFor(c.f) === slot) : [];
   const races = slot === "race" ? RACES : [];
   const picks = slot === "pickaxe" ? PICKAXES.filter((p) => world === "all" || p.world === world || (world === 0 && p.world === null)) : [];
@@ -364,7 +425,7 @@ export function SlotPicker({ slot, cards, current, onPick, onClose }: { slot: Sl
     <div className="picker-backdrop" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="picker gp" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={box}>
         <div className="tb">
-          <h2 id={titleId}>{slot === "race" ? "Choose your race" : `Choose ${slot === "weapon" ? "a weapon" : `a ${SLOT_LABEL[slot].toLowerCase()}`}`}</h2>
+          <h2 id={titleId}>{golemSlot ? "Choose a Golemite" : slot === "race" ? "Choose your race" : `Choose ${slot === "weapon" ? "a weapon" : `a ${SLOT_LABEL[slot].toLowerCase()}`}`}</h2>
           <button className="lo-clear static" onClick={onClose} aria-label="Close">×</button>
         </div>
         {slot === "pickaxe" && (
@@ -389,6 +450,15 @@ export function SlotPicker({ slot, cards, current, onPick, onClose }: { slot: Sl
             <button key={p.id} className={`picker-item${current === p.id ? " on" : ""}`} onClick={() => onPick(p.id)} aria-pressed={current === p.id}>
               <span className="tile" style={{ width: 48, height: 48, ["--rc" as string]: rarityColour(p.rarity) }}><GameImage src={imageUrl("pickaxes", p.id)} alt="" size={18} /></span>
               <span className="picker-text"><b>{p.name}</b><span className="small"><span style={{ color: rarityColour(p.rarity) }}>{p.rarity}</span> <span className="muted">· {p.region}</span></span></span>
+            </button>
+          ))}
+          {golemSlot && golemList.length === 0 && (
+            <p className="muted" style={{ margin: 8 }}>No saved Golemites{golems.length ? " left to choose" : " yet"}. Make one in the <Link className="inline-link" href="/golemite">Golemite forge</Link> and save it.</p>
+          )}
+          {golemList.map(({ g, r }) => (
+            <button key={g.id} className={`picker-item${current === g.id ? " on" : ""}`} onClick={() => onPick(g.id)} aria-pressed={current === g.id}>
+              <span className="tile" style={{ width: 48, height: 48, ["--rc" as string]: r.rarity ? rarityColour(r.rarity) : "#3a3834" }}>{r.primary && <GameImage src={imageUrl("ores", r.primary.id)} alt="" size={18} />}</span>
+              <span className="picker-text"><b>{g.name}</b><span className="small"><span style={{ color: r.rarity ? rarityColour(r.rarity) : undefined }}>{r.rarity ?? "Unknown"}</span> <span className="muted">· level {g.level}</span></span><span className="small faint">{r.mix.map((m) => `${m.count} ${m.ore.name}`).join(", ")}</span></span>
             </button>
           ))}
           {races.map((r) => (

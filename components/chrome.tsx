@@ -12,6 +12,7 @@ const NAV = [
   ["/ores", "Ores"],
   ["/gear", "Weapons/Armour"],
   ["/races", "Races"],
+  ["/golemite", "Golemites"],
   ["/builds", "Builds"],
   ["/how-it-works", "How it works"],
 ] as const;

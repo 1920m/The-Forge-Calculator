@@ -460,6 +460,24 @@ a.lo-main:hover .lo-name { text-decoration: underline; }
 .lo-stat-chev svg { width: 16px; height: 16px; }
 .calc-race select { max-width: 100%; }
 .race-compare { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+/* ---------- Golemites ---------- */
+.loadout-golems { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 0 14px 14px; }
+.loadout-golems > .lo-slot { display: flex; flex-direction: column; justify-content: center; }
+.locked-slot { opacity: .7; border-style: dashed; }
+.golem-traits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.golem-traits li { padding: 6px 10px; border: 1px solid var(--bd); background: var(--row); }
+.golem-level { display: inline-flex; align-items: center; gap: 8px; }
+.golem-level b { min-width: 2ch; text-align: center; color: #fff; }
+.golem-mix { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; align-items: stretch; }
+.golem-mix-item { display: flex; align-items: center; gap: 10px; padding: 6px; border: 1px solid var(--bd); background: var(--row); }
+.golem-mix-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.golem-mix-text b { color: #fff; }
+.golem-mix > .btn { align-self: flex-start; }
+.golem-slider { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.golem-slider input { width: 100%; accent-color: var(--acc); }
+.golem-save { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.golem-save .input { flex: 1 1 180px; min-width: 0; }
+@media (max-width: 560px) { .loadout-golems { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 0 10px 10px; } }
 .drag-handle { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .equipped-mark { position: absolute; top: 2px; right: 4px; color: var(--acc); font-weight: 700; font-size: 14px; }
 body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }

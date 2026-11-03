@@ -49,7 +49,7 @@ describe("cleanLoadout", () => {
   });
   it("empties slots whose forge is gone or in the wrong slot", () => {
     const forges = new Map([[A, forge(A, "armour", "Heavy Helmet")], [B, forge(B, "weapon", "Katana")]]);
-    expect(cleanLoadout({ helmet: A, chestplate: B, leggings: C, weapon: B, pickaxe: null, race: null }, forges)).toEqual({ ...EMPTY_LOADOUT, helmet: A, weapon: B });
+    expect(cleanLoadout({ helmet: A, chestplate: B, leggings: C, weapon: B, pickaxe: null, race: null, golem1: null, golem2: null }, forges)).toEqual({ ...EMPTY_LOADOUT, helmet: A, weapon: B });
   });
 });
 

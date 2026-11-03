@@ -14,7 +14,7 @@ describe("shared profile", () => {
     const p = readSharedProfile({ name: "Alice", avatar_url: "https://x/a.png", slots: { weapon, helmet: helm }, pickaxe: "yin-yang-pickaxe" })!;
     expect(p.name).toBe("Alice");
     expect(p.avatarUrl).toBe("https://x/a.png");
-    expect(p.loadout).toEqual({ helmet: helm.id, chestplate: null, leggings: null, weapon: weapon.id, pickaxe: "yin-yang-pickaxe", race: null });
+    expect(p.loadout).toEqual({ helmet: helm.id, chestplate: null, leggings: null, weapon: weapon.id, pickaxe: "yin-yang-pickaxe", race: null, golem1: null, golem2: null });
     expect(p.forges.map((f) => f.name)).toEqual(["Helm", "DKG"]);
   });
 
@@ -26,7 +26,7 @@ describe("shared profile", () => {
     expect(p.name).toBe("bEve/b");
     expect(p.avatarUrl).toBeNull();
     expect(p.forges).toEqual([]);
-    expect(p.loadout).toEqual({ helmet: null, chestplate: null, leggings: null, weapon: null, pickaxe: null, race: null });
+    expect(p.loadout).toEqual({ helmet: null, chestplate: null, leggings: null, weapon: null, pickaxe: null, race: null, golem1: null, golem2: null });
   });
 
   it("reads the race, and old profiles without one", () => {

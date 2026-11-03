@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase/browser";
 import { SHARE_ID, readSharedProfile, type SharedProfile } from "@/lib/shared-profile";
 import { Avatar } from "./account-menu";
 import { LoadoutPanel, type Card } from "./loadout";
+import { workGolemite, type GolemCard } from "./golemites";
 import { Reveal } from "./shell";
 
 const noop = () => {};
@@ -31,6 +32,7 @@ export function SharedProfilePage({ cat, id }: { cat: Catalogue; id: string }) {
 
   const oreById = useMemo(() => new Map(cat.ores.map((o) => [o.id, o])), [cat]);
   const byId = useMemo(() => new Map<string, Card>(state.status === "ok" ? state.p.forges.map((f) => [f.id, { f, r: work(cat, oreById, f) }]) : []), [state, cat, oreById]);
+  const golems = useMemo(() => new Map<string, GolemCard>(state.status === "ok" ? state.p.golems.map((g) => [g.id, { g, r: workGolemite(oreById, g) }]) : []), [state, oreById]);
 
   if (state.status === "loading") return <div className="page"><p className="muted">Loading profile…</p></div>;
   if (state.status !== "ok") {
@@ -60,7 +62,7 @@ export function SharedProfilePage({ cat, id }: { cat: Catalogue; id: string }) {
         </div>
       </Reveal>
       <Reveal col={2}>
-        <LoadoutPanel name={p.name} loadout={p.loadout} byId={byId} drag={null} onOpen={noop} onClear={noop} readOnly />
+        <LoadoutPanel name={p.name} loadout={p.loadout} byId={byId} drag={null} onOpen={noop} onClear={noop} readOnly golems={golems} golemSlot2={p.golemSlot2} />
       </Reveal>
     </div>
   );

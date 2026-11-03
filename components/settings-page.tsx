@@ -7,9 +7,10 @@ import { Avatar } from "./account-menu";
 import { supabase } from "@/lib/supabase/browser";
 import { cleanDisplayName } from "@/lib/safe-next";
 
-type PrefKey = "show_dps_target" | "show_molds";
+type PrefKey = "show_dps_target" | "show_molds" | "golem_slot2";
 const PREFS: { key: PrefKey; title: string; text: string }[] = [
   { key: "show_dps_target", title: "Hit a DPS target", text: "Adds a panel under weapon results: pick the DPS you want and an enhancement level, and see the chance a forge from your mix reaches it and how many forges that takes." },
+  { key: "golem_slot2", title: "Second Golemite slot", text: "Turn this on once you've reached level 300 in the game: your Loadout gets a second Golemite slot, and your shared profile shows both. We can't see your game level, so this is up to you." },
   { key: "show_molds", title: "Molds", text: "Adds Weapon and Armor Molds to the calculator: a fifth forge slot for molds, and double-click an item in Forge Chances to aim them at it. Shows how many molds each item needs, and how sure that number is." },
 ];
 

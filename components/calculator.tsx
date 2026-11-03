@@ -496,7 +496,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   );
 }
 
-const OreButton = memo(function OreButton({ ore, count, locked, onAdd }: { ore: CatalogueOre; count: number; locked: boolean; onAdd: (id: string, n?: number) => void }) {
+export const OreButton = memo(function OreButton({ ore, count, locked, onAdd }: { ore: CatalogueOre; count: number; locked: boolean; onAdd: (id: string, n?: number) => void }) {
   return (
     <button className={`tile${locked ? " locked" : ""}`} style={{ height: 88, ["--rc" as string]: rarityColour(ore.rarity) }} onClick={() => onAdd(ore.id)} aria-disabled={locked}
       onContextMenu={(e) => { e.preventDefault(); onAdd(ore.id, -1); }} aria-label={locked ? `${ore.name}: the forge already has ${MAX_TYPES} ore types` : `Add ${ore.name}, ${ore.rarity}, ${ore.rule === "average" ? "takes the average multiplier" : `${ore.multiplier}x`}`} title={`${ore.name} · ${ore.rarity} · ${ore.rule === "average" ? "takes the other ores' average multiplier" : `${ore.multiplier}x`}${oreCategory(ore).weapon ? " · weapon trait" : ""}${oreCategory(ore).armour ? " · armour trait" : ""}`}>
