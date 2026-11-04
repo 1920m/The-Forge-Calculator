@@ -79,9 +79,8 @@ export function ApiDashboard() {
         <span className="small muted"><Link className="inline-link" href="/developers">Developer docs</Link> · <a className="inline-link" href="/developers#discord">Examples</a> · <button className="link-btn small" onClick={() => void load()}>Refresh</button></span>
       </div>
       {error && <p className="login-error" role="alert">{error}</p>}
-      {secret && <SecretBox secret={secret} onDone={() => setSecret(null)} />}
       {stats && <Overview stats={stats} />}
-      <Keys keys={keys} stats={stats} onChanged={load} onSecret={setSecret} onError={setError} />
+      <Keys keys={keys} stats={stats} secret={secret} onSecretDone={() => setSecret(null)} onChanged={load} onSecret={setSecret} onError={setError} />
       {anon && <Settings value={anon} onSaved={load} onError={setError} />}
       {stats && <Activity stats={stats} />}
     </div>
@@ -133,13 +132,14 @@ function lastDays(rows: ApiStats["per_day"], n: number) {
 
 /* ------------------------------------------------------------------ keys */
 
-function Keys({ keys, stats, onChanged, onSecret, onError }: { keys: ApiKeyRow[]; stats: ApiStats | null; onChanged: () => Promise<void>; onSecret: (s: Secret) => void; onError: (e: string | null) => void }) {
+function Keys({ keys, stats, secret, onSecretDone, onChanged, onSecret, onError }: { keys: ApiKeyRow[]; stats: ApiStats | null; secret: Secret | null; onSecretDone: () => void; onChanged: () => Promise<void>; onSecret: (s: Secret) => void; onError: (e: string | null) => void }) {
   const [creating, setCreating] = useState(false);
   const usage = new Map((stats?.per_key ?? []).map((k) => [k.id, k]));
   return (
     <section className="gp" aria-labelledby="dash-keys-h">
       <div className="tb"><h2 id="dash-keys-h">API keys</h2><button className="btn sm gb" onClick={() => setCreating((c) => !c)} aria-expanded={creating}>{creating ? "Close" : "New key"}</button></div>
       <div className="pad">
+        {secret && <SecretBox secret={secret} onDone={onSecretDone} />}
         {creating && <CreateKey onCreated={async (s) => { onSecret(s); setCreating(false); await onChanged(); }} onError={onError} />}
         {keys.length === 0 ? <p className="muted" style={{ margin: 0 }}>No keys yet. Press New key to make the first one (for example, for the Discord bot).</p> : (
           <div className="dash-keys">
@@ -270,21 +270,54 @@ function KeyCard({ k, replacedBy, usage, onChanged, onSecret, onError }: {
   );
 }
 
-/** The new key, shown once. */
+/** The new key, shown once, right where it was made, and scrolled into view. */
 function SecretBox({ secret, onDone }: { secret: Secret; onDone: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(secret.key); setCopied(true); } catch { setCopied(false); }
+  const [copied, setCopied] = useState<"no" | "yes" | "manual">("no");
+  const box = useRef<HTMLElement>(null);
+  const code = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    box.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    box.current?.focus({ preventScroll: true });
+    // Leaving the page would lose the key for good, so the browser asks first.
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [secret.key]);
+
+  const selectKey = () => {
+    const el = code.current;
+    if (!el) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
   };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(secret.key);
+      setCopied("yes");
+    } catch {
+      // Some browsers block the clipboard API; fall back to selecting the key and the older copy command.
+      selectKey();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch { ok = false; }
+      setCopied(ok ? "yes" : "manual");
+    }
+  };
+
   return (
-    <section className="gp dash-secret" role="alert" aria-labelledby="dash-secret-h">
+    <section ref={box} tabIndex={-1} className="gp dash-secret" role="alert" aria-labelledby="dash-secret-h">
       <div className="tb"><h2 id="dash-secret-h">New key for {secret.label}</h2></div>
       <div className="pad">
         <p style={{ marginTop: 0 }}><b>Copy it now.</b> This is the only time it&apos;s shown: only a fingerprint of it is stored, so nobody (including you) can see it again.</p>
         <div className="dash-secret-row">
-          <code className="dash-code" aria-label="API key">{secret.key}</code>
-          <button className="btn sm gb" onClick={() => void copy()}>{copied ? "Copied" : "Copy"}</button>
+          <code ref={code} className="dash-code" aria-label="API key" onClick={selectKey}>{secret.key}</code>
+          <button className="btn sm gb" onClick={() => void copy()}>{copied === "yes" ? "Copied" : "Copy"}</button>
         </div>
+        {copied === "manual" && <p className="small" role="status">Your browser blocked copying. The key is selected: press Ctrl+C (or long-press and Copy on a phone).</p>}
         <p className="small muted">{secret.note} It goes in the bot&apos;s environment variables (for example FORGE_API_KEY), never in code or a public repository.</p>
         <button className="btn sm" onClick={onDone}>I&apos;ve saved it, hide the key</button>
       </div>
