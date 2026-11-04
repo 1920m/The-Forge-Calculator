@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   keywords: ["The Forge calculator", "Forge calculator", "The Forge", "Roblox The Forge", "forge odds", "ore calculator", "weapon DPS", "race spins"],
   openGraph: { type: "website", url: SITE_URL, siteName: "Forge Calculator", title: "The Forge Calculator", description: DESCRIPTION, locale: "en_GB" },
   twitter: { card: "summary", title: "The Forge Calculator", description: DESCRIPTION },
+  // Google Search Console ownership check.
+  verification: { google: "ULKwUwWRCAjEHzBSoO870ZbFu1O9V4tgs-NWm5ZOc20" },
 };
 
 /** Tells search engines what the site is (a free web app), so results can show it as one. */
