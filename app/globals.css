@@ -499,7 +499,9 @@ a.lo-main:hover .lo-name { text-decoration: underline; }
 .dash-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
 .dash-row label { display: flex; flex-direction: column; gap: 4px; }
 .dash-form > .btn { align-self: flex-start; }
-.dash-secret { border-color: var(--gold); }
+.dash-secret { border-color: var(--gold); margin-bottom: 14px; scroll-margin-top: 90px; }
+.dash-secret:focus { outline: none; }
+.dash-secret .dash-code { cursor: text; }
 .dash-secret-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
 .dash-secret-row .dash-code { flex: 1 1 260px; font-size: 14px; user-select: all; }
 .dash-num { width: 90px; display: inline-block; margin-left: 6px; padding: 3px 6px; }
