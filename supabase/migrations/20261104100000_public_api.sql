@@ -144,11 +144,11 @@ declare
   k record;
   kid uuid;
   s record;
-  endpoint text;
-  bucket text;
+  v_endpoint text;
+  v_bucket text;
   lim integer;
   win timestamptz := date_trunc('minute', now());
-  hits integer;
+  v_hits integer;
   fails integer;
   log_id bigint;
   tok text;
@@ -158,7 +158,7 @@ begin
      or (p_key_hash is not null and p_key_hash !~ '^[0-9a-f]{64}$') then
     return jsonb_build_object('ok', false, 'status', 400, 'code', 'BAD_REQUEST');
   end if;
-  endpoint := case p_scope when 'catalogue:read' then 'catalogue' else 'calculate' end;
+  v_endpoint := case p_scope when 'catalogue:read' then 'catalogue' else 'calculate' end;
   perform private.api_cleanup();
 
   -- An IP that sent 20 wrong keys in the last 10 minutes is refused until that window passes.
@@ -171,10 +171,10 @@ begin
   if p_key_hash is null then
     select * into s from private.api_settings where id;
     if p_scope <> 'catalogue:read' or not s.anonymous_catalogue then
-      insert into private.api_requests (endpoint, status, error_code, finished) values (endpoint, 401, 'MISSING_API_KEY', true);
+      insert into private.api_requests (endpoint, status, error_code, finished) values (v_endpoint, 401, 'MISSING_API_KEY', true);
       return jsonb_build_object('ok', false, 'status', 401, 'code', 'MISSING_API_KEY');
     end if;
-    bucket := 'ip:' || p_ip_hash;
+    v_bucket := 'ip:' || p_ip_hash;
     lim := s.anonymous_catalogue_rpm;
   else
     select * into k from private.api_keys where key_hash = p_key_hash;
@@ -182,32 +182,32 @@ begin
       insert into private.api_ip_failures as f (ip_hash, window_start, failures)
       values (p_ip_hash, date_trunc('minute', now()), 1)
       on conflict (ip_hash, window_start) do update set failures = f.failures + 1;
-      insert into private.api_requests (endpoint, status, error_code, finished) values (endpoint, 401, 'INVALID_API_KEY', true);
+      insert into private.api_requests (endpoint, status, error_code, finished) values (v_endpoint, 401, 'INVALID_API_KEY', true);
       return jsonb_build_object('ok', false, 'status', 401, 'code', 'INVALID_API_KEY');
     end if;
     if k.revoked_at is not null then
-      insert into private.api_requests (key_id, endpoint, status, error_code, finished) values (k.id, endpoint, 401, 'API_KEY_REVOKED', true);
+      insert into private.api_requests (key_id, endpoint, status, error_code, finished) values (k.id, v_endpoint, 401, 'API_KEY_REVOKED', true);
       return jsonb_build_object('ok', false, 'status', 401, 'code', 'API_KEY_REVOKED');
     end if;
     if k.expires_at is not null and k.expires_at <= now() then
-      insert into private.api_requests (key_id, endpoint, status, error_code, finished) values (k.id, endpoint, 401, 'API_KEY_EXPIRED', true);
+      insert into private.api_requests (key_id, endpoint, status, error_code, finished) values (k.id, v_endpoint, 401, 'API_KEY_EXPIRED', true);
       return jsonb_build_object('ok', false, 'status', 401, 'code', 'API_KEY_EXPIRED');
     end if;
     if not (p_scope = any (k.scopes)) then
-      insert into private.api_requests (key_id, endpoint, status, error_code, finished) values (k.id, endpoint, 403, 'INSUFFICIENT_SCOPE', true);
+      insert into private.api_requests (key_id, endpoint, status, error_code, finished) values (k.id, v_endpoint, 403, 'INSUFFICIENT_SCOPE', true);
       return jsonb_build_object('ok', false, 'status', 403, 'code', 'INSUFFICIENT_SCOPE');
     end if;
     kid := k.id;
-    bucket := 'key:' || kid::text;
+    v_bucket := 'key:' || kid::text;
     lim := case p_scope when 'catalogue:read' then k.catalogue_rpm else k.calculator_rpm end;
   end if;
 
   -- One atomic upsert per request: concurrent requests on any number of servers each get a distinct count.
-  insert into private.api_rate as r (bucket, scope, window_start, hits) values (bucket, p_scope, win, 1)
+  insert into private.api_rate as r (bucket, scope, window_start, hits) values (v_bucket, p_scope, win, 1)
   on conflict (bucket, scope, window_start) do update set hits = r.hits + 1
-  returning r.hits into hits;
-  if hits > lim then
-    insert into private.api_requests (key_id, endpoint, status, error_code, finished) values (kid, endpoint, 429, 'RATE_LIMITED', true);
+  returning r.hits into v_hits;
+  if v_hits > lim then
+    insert into private.api_requests (key_id, endpoint, status, error_code, finished) values (kid, v_endpoint, 429, 'RATE_LIMITED', true);
     return jsonb_build_object('ok', false, 'status', 429, 'code', 'RATE_LIMITED', 'retry_after', retry, 'limit', lim, 'remaining', 0);
   end if;
 
@@ -217,8 +217,8 @@ begin
     end if;
   end if;
   tok := encode(extensions.gen_random_bytes(16), 'hex');
-  insert into private.api_requests (key_id, endpoint, token) values (kid, endpoint, tok) returning id into log_id;
-  return jsonb_build_object('ok', true, 'key_id', kid, 'limit', lim, 'remaining', greatest(0, lim - hits), 'reset', retry,
+  insert into private.api_requests (key_id, endpoint, token) values (kid, v_endpoint, tok) returning id into log_id;
+  return jsonb_build_object('ok', true, 'key_id', kid, 'limit', lim, 'remaining', greatest(0, lim - v_hits), 'reset', retry,
     'log_id', log_id, 'log_token', tok);
 end;
 $$;
@@ -396,6 +396,50 @@ begin
 end;
 $$;
 
+-- Usage for the dashboard (the log keeps 30 days): totals, per day, per key and the latest requests.
+create or replace function public.api_admin_stats()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  out jsonb;
+begin
+  perform private.require_api_admin();
+  select jsonb_build_object(
+    'total_30d', (select count(*) from private.api_requests),
+    'last_24h', (select count(*) from private.api_requests where at > now() - interval '24 hours'),
+    'last_7d', (select count(*) from private.api_requests where at > now() - interval '7 days'),
+    'failed_7d', (select count(*) from private.api_requests where at > now() - interval '7 days' and status >= 400),
+    'rate_limited_7d', (select count(*) from private.api_requests where at > now() - interval '7 days' and status = 429),
+    'active_keys', (select count(*) from private.api_keys where revoked_at is null and (expires_at is null or expires_at > now())),
+    'latency_ms_7d', (select jsonb_build_object(
+        'avg', round(avg(latency_ms)),
+        'p95', percentile_disc(0.95) within group (order by latency_ms))
+      from private.api_requests where at > now() - interval '7 days' and latency_ms is not null),
+    'per_day', (select coalesce(jsonb_agg(d order by d->>'day'), '[]'::jsonb) from (
+        select jsonb_build_object('day', to_char(date_trunc('day', at), 'YYYY-MM-DD'), 'requests', count(*),
+          'failed', count(*) filter (where status >= 400), 'rate_limited', count(*) filter (where status = 429)) d
+        from private.api_requests where at > now() - interval '30 days' group by date_trunc('day', at)) x),
+    'per_key', (select coalesce(jsonb_agg(x), '[]'::jsonb) from (
+        select k.id, k.label, k.prefix, count(r.*) filter (where r.at > now() - interval '7 days') as requests_7d,
+          count(r.*) filter (where r.at > now() - interval '7 days' and r.status >= 400) as failed_7d
+        from private.api_keys k left join private.api_requests r on r.key_id = k.id
+        group by k.id order by requests_7d desc) x),
+    'errors_7d', (select coalesce(jsonb_agg(x), '[]'::jsonb) from (
+        select error_code as code, count(*) as count from private.api_requests
+        where at > now() - interval '7 days' and error_code is not null group by error_code order by count(*) desc limit 20) x),
+    'recent', (select coalesce(jsonb_agg(x), '[]'::jsonb) from (
+        select r.at, r.endpoint, r.status, r.latency_ms, r.error_code, k.label as key_label, k.prefix as key_prefix
+        from private.api_requests r left join private.api_keys k on k.id = r.key_id
+        order by r.at desc limit 50) x)
+  ) into out;
+  return out;
+end;
+$$;
+
 do $$
 declare
   f text;
@@ -403,7 +447,8 @@ begin
   foreach f in array array[
     'public.api_admin_check()', 'public.api_admin_list_keys()',
     'public.api_admin_create_key(text, text[], timestamptz, integer, integer)', 'public.api_admin_revoke_key(uuid)',
-    'public.api_admin_rotate_key(uuid, integer)', 'public.api_admin_settings()', 'public.api_admin_set_settings(boolean, integer)'] loop
+    'public.api_admin_rotate_key(uuid, integer)', 'public.api_admin_settings()', 'public.api_admin_set_settings(boolean, integer)',
+    'public.api_admin_stats()'] loop
     execute format('revoke all on function %s from public, anon', f);
     execute format('grant execute on function %s to authenticated', f);
   end loop;
