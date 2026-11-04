@@ -76,7 +76,7 @@ export function ApiDashboard() {
     <div className="page dash">
       <div className="dash-head">
         <h1 className="title">API dashboard</h1>
-        <span className="small muted"><Link className="inline-link" href="/developers">Developer docs</Link> · <a className="inline-link" href="/developers#examples">Examples</a> · <button className="link-btn small" onClick={() => void load()}>Refresh</button></span>
+        <span className="small muted"><Link className="inline-link" href="/developers">Developer docs</Link> · <a className="inline-link" href="/developers#discord">Examples</a> · <button className="link-btn small" onClick={() => void load()}>Refresh</button></span>
       </div>
       {error && <p className="login-error" role="alert">{error}</p>}
       {secret && <SecretBox secret={secret} onDone={() => setSecret(null)} />}

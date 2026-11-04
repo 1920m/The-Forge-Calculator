@@ -505,6 +505,35 @@ a.lo-main:hover .lo-name { text-decoration: underline; }
 .dash-num { width: 90px; display: inline-block; margin-left: 6px; padding: 3px 6px; }
 .dash-table td, .dash-table th { white-space: nowrap; }
 .dash-bad { color: #e08b88; font-weight: 700; }
+.api-doc { max-width: 1040px; width: 100%; margin: 0 auto; }
+.api-doc p, .api-doc li { color: #cfc7b2; line-height: 1.55; }
+.api-doc code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .86em; color: var(--strong); overflow-wrap: anywhere; }
+.api-hero { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.api-kicker { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--acc) !important; margin: 0; }
+.api-links { display: flex; gap: 8px 20px; flex-wrap: wrap; }
+.api-toc { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.api-toc a { border: 1px solid var(--bd); background: var(--panel); padding: 6px 10px; font-size: 15px; color: var(--muted); }
+.api-toc a:hover, .api-toc a:focus-visible { border-color: var(--bd2); color: var(--strong); }
+.api-section { scroll-margin-top: 80px; min-width: 0; }
+.api-body { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.api-body p, .api-body ul, .api-body ol { margin: 0; }
+.api-body ul, .api-body ol { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.api-body h3 { font-family: var(--sans); font-weight: 700; font-size: 18px; color: #fff; margin: 4px 0 0; }
+.api-mode { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; border-top: 1px solid var(--bd); scroll-margin-top: 80px; min-width: 0; }
+.api-code { min-width: 0; border: 1px solid var(--bd); background: var(--well); }
+.api-code-label { font-size: 13px; color: var(--faint); padding: 6px 12px 0; }
+.api-code pre { margin: 0; padding: 10px 12px; overflow: auto; max-height: 460px; }
+.api-code pre code { font-size: 13px; line-height: 1.5; white-space: pre; overflow-wrap: normal; color: var(--strong); }
+.api-code pre:focus-visible, .api-table-wrap:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
+.api-details > summary { cursor: pointer; color: var(--acc); padding: 4px 0; }
+.api-details[open] > summary { margin-bottom: 8px; }
+.api-table-wrap { overflow-x: auto; min-width: 0; }
+.api-table { border-collapse: collapse; width: 100%; font-size: 15px; }
+.api-table th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--bd2); }
+.api-table td { padding: 7px 10px; border-bottom: 1px solid var(--bd); vertical-align: top; color: #cfc7b2; }
+.api-table td:first-child { white-space: nowrap; }
+.api-doc .api-name { overflow-wrap: normal; }
+@media (max-width: 720px) { .api-table { font-size: 14px; } .api-table td { padding: 7px 6px; } .api-table td:first-child { white-space: normal; } }
 .drag-handle { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .equipped-mark { position: absolute; top: 2px; right: 4px; color: var(--acc); font-weight: 700; font-size: 14px; }
 body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }

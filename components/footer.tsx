@@ -26,7 +26,7 @@ export function Footer() {
           </nav>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", marginTop: 30, fontSize: 15, color: "#8d8c92" }}>
-          <span>Data as of {DATA_DATE}. <Link href="/privacy" style={{ textDecoration: "underline" }}>Privacy</Link>. Fan-made tool, not affiliated with the game&apos;s developers or Roblox. Game data from the community wiki (CC BY-SA).</span>
+          <span>Data as of {DATA_DATE}. <Link href="/privacy" style={{ textDecoration: "underline" }}>Privacy</Link>. <Link href="/developers" style={{ textDecoration: "underline" }}>API</Link>. Fan-made tool, not affiliated with the game&apos;s developers or Roblox. Game data from the community wiki (CC BY-SA).</span>
           {SHOW_STATUS_LABELS && <span style={{ border: "1px dashed #4a4850", padding: "2px 12px" }}>Official partner badge: reserved</span>}
         </div>
         {SHOW_STATUS_LABELS && (
