@@ -472,6 +472,39 @@ a.lo-main:hover .lo-name { text-decoration: underline; }
 .golem-level { display: inline-flex; align-items: center; gap: 8px; }
 .golem-level b { min-width: 2ch; text-align: center; color: #fff; }
 @media (max-width: 560px) { .loadout-golems { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 0 10px 10px; } }
+/* ---------- API dashboard ---------- */
+.dash { display: flex; flex-direction: column; gap: 18px; }
+.dash-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.dash-head .title { margin: 0; }
+.dash-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.dash-chart { display: flex; align-items: flex-end; gap: 6px; height: 140px; margin-top: 16px; padding: 8px; border: 1px solid var(--bd); background: var(--well); }
+.dash-bar { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; min-width: 0; }
+.dash-bar-fill { width: 100%; min-height: 1px; background: var(--acc); display: flex; flex-direction: column; justify-content: flex-start; }
+.dash-bar-bad { width: 100%; background: #c0504d; }
+.dash-bar-day { font-size: 11px; color: var(--faint); }
+.dash-keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.dash-key { border: 1px solid var(--bd); background: var(--row); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.dash-key.off { opacity: .6; }
+.dash-key-h { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.dash-key-h b { color: #fff; overflow-wrap: anywhere; }
+.dash-code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; color: var(--strong); background: var(--well); border: 1px solid var(--bd); padding: 4px 8px; overflow-wrap: anywhere; }
+.dash-dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; font-size: 15px; }
+.dash-dl dt { color: var(--muted); }
+.dash-dl dd { margin: 0; color: var(--strong); }
+.dash-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.dash-select { width: auto; display: inline-block; padding: 3px 6px; }
+.dash-form { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin-bottom: 14px; border: 1px solid var(--bd2); background: var(--well); }
+.dash-fieldset { border: 0; padding: 0; margin: 4px 0; display: flex; flex-direction: column; gap: 6px; }
+.dash-check { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.dash-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.dash-row label { display: flex; flex-direction: column; gap: 4px; }
+.dash-form > .btn { align-self: flex-start; }
+.dash-secret { border-color: var(--gold); }
+.dash-secret-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.dash-secret-row .dash-code { flex: 1 1 260px; font-size: 14px; user-select: all; }
+.dash-num { width: 90px; display: inline-block; margin-left: 6px; padding: 3px 6px; }
+.dash-table td, .dash-table th { white-space: nowrap; }
+.dash-bad { color: #e08b88; font-weight: 700; }
 .drag-handle { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .equipped-mark { position: absolute; top: 2px; right: 4px; color: var(--acc); font-weight: 700; font-size: 14px; }
 body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
