@@ -3,7 +3,8 @@
  *
  * Each forge gives exactly one weapon, so the chance of "any weapon at or above the target" is the sum of those
  * weapons' overall chances (class chance × chance inside the class). The tries maths in odds.ts then applies.
- * Enhancement multiplies DPS by 1 + 0.05 × level, the same as damage, because every DPS term scales with damage.
+ * Enhancement multiplies DPS by the level's multiplier (enhanceFactor), the same as damage, because every DPS term
+ * scales with damage.
  */
 export type TargetVariant = { id: string; name: string; overall: number; dps?: { total: number } | null };
 export type TargetClass = { name: string; probability: number; variants: TargetVariant[] };

@@ -30,8 +30,9 @@ describe("DPS target", () => {
 
   it("scales DPS by 5% per enhancement level", () => {
     expect(enhanceFactor(0)).toBe(1);
-    expect(enhanceFactor(10)).toBeCloseTo(1.5, 12);
-    expect(enhanceFactor(14)).toBeCloseTo(1.5, 12); // capped at +10
+    expect(enhanceFactor(8)).toBeCloseTo(1.4, 12);
+    expect(enhanceFactor(9)).toBeCloseTo(1.5, 12);
+    expect(enhanceFactor(14)).toBeCloseTo(1.5, 12); // +9 is the top level
     // Dagger A (1,000) reaches 1,400 only at +8 (1,400) or above.
     expect(dpsTarget(classes, 1400, 7).rows.find((x) => x.id === "d1")!.hits).toBe(false);
     expect(dpsTarget(classes, 1400, 8).rows.find((x) => x.id === "d1")!.hits).toBe(true);

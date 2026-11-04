@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { startTransition, useMemo, useState } from "react";
 import { dpsTarget, enhanceFactor, type TargetClass } from "@/lib/engine/dps-target";
+import { MAX_ENHANCE } from "@/lib/engine";
 import { averageTries, triesFor } from "@/lib/engine/odds";
 import { fmt, pct } from "@/lib/ui";
 
-const LEVELS = Array.from({ length: 11 }, (_, i) => i);
+const LEVELS = Array.from({ length: MAX_ENHANCE + 1 }, (_, i) => i);
 const chanceText = (c: number) => (c >= 0.9995 ? "100%" : c > 0 && c < 0.001 ? "under 0.1%" : pct(c * 100, c < 0.1 ? 2 : 1));
 
 /**
@@ -52,7 +53,7 @@ export function DpsTarget({ classes, pickedDps, pickedId, ores, quality, onPick 
             <div className="level-row" role="group" aria-label="Enhancement level">
               {LEVELS.map((l) => <button key={l} className="btn sm" aria-pressed={level === l} onClick={() => startTransition(() => setLevel(l))}>+{l}</button>)}
             </div>
-            <p className="note" style={{ marginTop: 6 }}>Each level adds 5% DPS. At +{level}: ×{k.toFixed(2)}.</p>
+            <p className="note" style={{ marginTop: 6 }}>5% DPS a level up to +8, ×1.50 at +9. At +{level}: ×{k.toFixed(2)}.</p>
           </div>
 
           <TargetResult chance={chance} target={target} level={level} hitCount={hitCount} best={best} ores={ores} />

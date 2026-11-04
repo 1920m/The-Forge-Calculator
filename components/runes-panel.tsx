@@ -7,11 +7,11 @@ import { RUNES_SOURCE, runeById, runeImage, runeImageScale, secondaryById, type 
 import { roman, runeTotals, runesFor, secondariesFor, slotOpensAt, slotsAt, MAX_RUNE_SLOTS, type RuneSlot, type RuneTotals } from "@/lib/engine/runes";
 import { weaponDps, type DpsResult } from "@/lib/engine/dps";
 import { enhanceFactor } from "@/lib/engine/dps-target";
-import { roundStat } from "@/lib/engine";
+import { MAX_ENHANCE, roundStat } from "@/lib/engine";
 import { fmt, pct } from "@/lib/ui";
 import { Lock } from "./icons";
 
-const LEVELS = Array.from({ length: 11 }, (_, i) => i);
+const LEVELS = Array.from({ length: MAX_ENHANCE + 1 }, (_, i) => i);
 
 export type RuneItem = {
   kind: RuneKind; name: string; raw: number | null;

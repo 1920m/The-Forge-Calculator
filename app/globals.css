@@ -407,8 +407,10 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .forger-who { display: flex; align-items: center; gap: 14px; }
 .forger-who .title { margin: 0; }
 .loadout-title { letter-spacing: .14em; text-transform: uppercase; }
-.loadout-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; padding: 14px; align-items: start; }
+.loadout-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 14px; padding: 14px; align-items: stretch; }
 .loadout-col { display: flex; flex-direction: column; gap: 10px; }
+/* The slots share the column's height, so the sides line up with the middle panel (also while it opens). */
+.loadout-col > .lo-slot { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
 .loadout-centre { align-self: stretch; display: flex; flex-direction: column; gap: 12px; padding: 14px; background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.05), transparent 70%), var(--well); border: 1px solid var(--bd); }
 .loadout-name { text-align: center; font-family: var(--serif); font-size: 22px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loadout-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -449,12 +451,13 @@ a.lo-main:hover .lo-name { text-decoration: underline; }
 .lo-race-mark { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--rc, #fff); }
 .lo-dps { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--bd); background: var(--row); }
 .lo-dps .kv { padding: 2px 0; }
-.lo-dps-toggle { display: none; background: none; border: 0; padding: 0; color: var(--acc); cursor: pointer; font: inherit; text-align: left; }
-@media (max-width: 720px) {
-  .lo-dps-toggle { display: block; }
-  .lo-dps-body { display: none; }
-  .lo-dps.open .lo-dps-body { display: block; margin-top: 6px; }
-}
+#lo-dps { margin-top: -12px; } /* no gap while folded; the panel brings its own once open */
+#lo-dps.open { margin-top: 0; }
+.lo-stat-btn { position: relative; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.lo-stat-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
+.lo-stat-btn:hover b { color: var(--gold); }
+.lo-stat-chev { position: absolute; top: 6px; right: 6px; opacity: .7; line-height: 0; }
+.lo-stat-chev svg { width: 16px; height: 16px; }
 .calc-race select { max-width: 100%; }
 .race-compare { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
 .drag-handle { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
