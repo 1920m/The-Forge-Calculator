@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { enhancementTable, forge, lockClass, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
+import { activeLockFor, moldTargetFor, pickItem, withLockAndMolds } from "@/lib/engine/forge-eval";
+import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
 import { MAX_ENHANCE, enhanceFactor, type Kind } from "@/lib/engine";
 import type { DpsResult } from "@/lib/engine/dps";
 import { imageUrl } from "@/lib/data/supabase";
@@ -21,7 +22,7 @@ import { DpsTarget } from "./dps-target";
 import { useAuth } from "./auth";
 import { RunesPanel, type RuneItem } from "./runes-panel";
 import { decodeRunes, dpsAtLevel, encodeRunes, hasRunes, type RuneSlot } from "@/lib/engine/runes";
-import { MAX_MOLDS, NO_MOLDS, applyMolds, decodeMolds, encodeMolds, moldNeed, moldScreenChance, needLabel, type MoldState, type Need, type MoldRequirement } from "@/lib/engine/molds";
+import { MAX_MOLDS, decodeMolds, encodeMolds, moldNeed, moldScreenChance, needLabel, type MoldState, type Need, type MoldRequirement } from "@/lib/engine/molds";
 import { MOLDS, type Mold } from "@/data/molds";
 import { PROFILE_RACE, readRaceChoice } from "@/lib/loadout";
 import { RaceCompare } from "./race-compare";
@@ -114,17 +115,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     ? { name: golemR.name, ores: entries, level: 0, quality, catalogue_revision: Number((cat as { revision?: number }).revision) || null } : null), [golemR, entries, quality, cat]);
   const normal = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
   // A locked class only counts while the ores still allow locking it.
-  const activeLock = locked && normal.classes.some((c) => c.name === locked && c.lockable) ? locked : null;
+  const activeLock = activeLockFor(normal.classes, locked);
   // Molds (when turned on in Settings) aim the forge at one item inside its class.
-  const moldTarget = useMemo(() => {
-    const c = moldId ? normal.classes.find((x) => x.variants.some((v) => v.id === moldId)) : undefined;
-    return c && moldId ? { cls: c.name, id: moldId } : null;
-  }, [normal, moldId]);
-  const { result, mold } = useMemo(() => {
-    const lockedClasses = lockClass(normal.classes, activeLock);
-    const m = showMolds ? applyMolds(lockedClasses, moldTarget, molds, activeLock, cat.moldRequirements) : { classes: lockedClasses, mold: NO_MOLDS };
-    return { result: { ...normal, classes: m.classes }, mold: m.mold };
-  }, [normal, activeLock, showMolds, moldTarget, molds, cat]);
+  const moldTarget = useMemo(() => moldTargetFor(normal.classes, moldId), [normal, moldId]);
+  const { result, mold } = useMemo(() => withLockAndMolds(cat, normal, activeLock, { on: showMolds, count: molds, target: moldTarget }), [normal, activeLock, showMolds, moldTarget, molds, cat]);
   // With molds whose effect nobody has measured, every chance on the page is the chance WITHOUT them.
   const withoutMolds = showMolds && !mold.chancesKnown;
   const total = result.total;
@@ -170,17 +164,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   }, [entries, kind, quality, runes, runeEnhance, pick, activeLock, molds, moldId, showMolds, settingsKnown, raceChoice, golem]);
 
   // Selected result: the user's pick if still valid, else the most likely variant.
-  const selected = useMemo(() => {
-    const live = result.classes.filter((c) => c.probability > 0);
-    if (pick) {
-      const c = result.classes.find((x) => x.name === pick.cls);
-      const v = c?.variants.find((x) => x.id === pick.id);
-      if (c && v) return { cls: c, v };
-    }
-    let best: { cls: (typeof result.classes)[number]; v: (typeof result.classes)[number]["variants"][number] } | null = null;
-    for (const c of live) for (const v of c.variants) if (!best || v.overall > best.v.overall) best = { cls: c, v };
-    return best;
-  }, [result, pick]);
+  const selected = useMemo(() => pickItem(result, pick), [result, pick]);
 
   // Stable so the ore tiles (memoised) only re-render when their own count changes.
   // Recalculating re-renders most of the page, so clicks run it as a transition: the browser paints the press first.
