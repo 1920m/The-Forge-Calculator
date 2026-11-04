@@ -48,7 +48,11 @@ const config: NextConfig = {
       // Google's sign-in popup has to talk back to the page that opened it.
       { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
       { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-    ] }];
+    ] }, {
+      // The developer page's example code: plain text, so browsers show it instead of guessing (.ts is also a video type).
+      source: "/developers/examples/:file",
+      headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
+    }];
   },
 };
 
