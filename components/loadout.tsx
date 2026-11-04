@@ -361,7 +361,7 @@ function GolemSlotBox(p: SlotBoxProps & { card: GolemCard | null; locked: boolea
   return (
     <div className={slotClass(p, !!card)} data-slot={slot}>
       <SlotMain readOnly={p.readOnly} href={g ? golemiteHref(g) : null} onClick={() => onOpen(slot)}
-        label={p.readOnly ? `${label}: ${g?.name}. Open in the Golemite forge` : g ? `${label}: ${g.name}. Change` : `${label}: empty. Choose a Golemite`}>
+        label={p.readOnly ? `${label}: ${g?.name}. Open in the calculator` : g ? `${label}: ${g.name}. Change` : `${label}: empty. Choose a Golemite`}>
         <span className="tile lo-pic" style={{ ["--rc" as string]: r?.rarity ? rarityColour(r.rarity) : "#3a3834" }}>
           {r?.primary ? <GameImage src={imageUrl("ores", r.primary.id)} alt="" size={22} /> : <SlotIcon slot={slot} />}
         </span>
@@ -453,7 +453,7 @@ export function SlotPicker({ slot, cards, golems = [], current, other = null, on
             </button>
           ))}
           {golemSlot && golemList.length === 0 && (
-            <p className="muted" style={{ margin: 8 }}>No saved Golemites{golems.length ? " left to choose" : " yet"}. Make one in the <Link className="inline-link" href="/golemite">Golemite forge</Link> and save it.</p>
+            <p className="muted" style={{ margin: 8 }}>No saved Golemites{golems.length ? " left to choose" : " yet"}. Make one in the <Link className="inline-link" href="/?k=golemite">calculator&apos;s Golemite forge</Link> and save it.</p>
           )}
           {golemList.map(({ g, r }) => (
             <button key={g.id} className={`picker-item${current === g.id ? " on" : ""}`} onClick={() => onPick(g.id)} aria-pressed={current === g.id}>

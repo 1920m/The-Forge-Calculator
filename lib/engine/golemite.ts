@@ -1,7 +1,7 @@
 /**
- * A Golemite from its ores: rarity from the primary ore (the same rule as weapons and armour), mining help and trait
- * scaling from the rarity, and which ores' weapon traits carry over at what strength. No combat damage: the wiki
- * doesn't say how a Golemite fights yet.
+ * A Golemite from its ores: rarity from the primary ore (the same rule as weapons and armour, checked in game), mining
+ * help and trait share from the rarity, and which ores' weapon traits carry over at what strength. No combat damage:
+ * how a Golemite fights isn't known.
  */
 import { GOLEMITE, GOLEMITE_RARITY } from "@/data/golemites";
 import { scaleTraitText, transferredTraits, type Mix, type Rarity } from "./forge";
@@ -19,7 +19,7 @@ export function golemite(mix: Mix) {
     const golem = t.strength * (scale?.traits ?? 0);
     return { ore: t.ore, share: t.share, strength: t.strength, golem, lines: t.fullLines.map((l) => scaleTraitText(l, golem)) };
   });
-  return { mix: used, total, enough: total >= GOLEMITE.minOres, primary, rarity, mining: scale?.mining ?? null, traitScale: scale?.traits ?? null, traits };
+  return { mix: used, total, enough: total >= GOLEMITE.minOres, tooMany: total > GOLEMITE.maxOres, name: primary ? `${primary.name} Golemite` : "Golemite", primary, rarity, mining: scale?.mining ?? null, traitScale: scale?.traits ?? null, traits };
 }
 
 /** What a growth level means: size, whether it can fight, and snacks (days) still needed. */

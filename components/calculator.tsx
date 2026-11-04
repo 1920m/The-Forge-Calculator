@@ -25,18 +25,22 @@ import { MAX_MOLDS, NO_MOLDS, applyMolds, decodeMolds, encodeMolds, moldNeed, mo
 import { MOLDS, type Mold } from "@/data/molds";
 import { PROFILE_RACE, readRaceChoice } from "@/lib/loadout";
 import { RaceCompare } from "./race-compare";
+import { GOLEMITE } from "@/data/golemites";
+import { golemite } from "@/lib/engine/golemite";
+import { GolemSaveStar, GolemiteTiers, GolemiteTraits } from "./golemites";
+import type { NewGolemite } from "@/lib/golemites";
 const QUALITY_PRESETS = [25, 50, 75, 90, 100];
 
 /** `c` and `v` in the URL pre-select a class and variant (used by the Builds page). */
 type Runes = Record<Kind, (RuneSlot | null)[]>;
 const NO_RUNES: Runes = { weapon: [null, null, null], armour: [null, null, null] };
 
-function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes; lock?: string; molds?: { molds: number; id: string | null }; race?: string | null } {
+function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?: { cls: string; id: string }; enhance?: number; runes?: Runes; lock?: string; molds?: { molds: number; id: string | null }; race?: string | null; golem?: boolean } {
   try {
     const p = new URLSearchParams(window.location.search);
     const fromUrl = p.get("o");
     const raw = fromUrl ?? window.localStorage.getItem("forge.recipe");
-    const kind = (p.get("k") ?? window.localStorage.getItem("forge.kind")) as Kind | null;
+    const kind = (p.get("k") ?? window.localStorage.getItem("forge.kind")) as Kind | "golemite" | null;
     const q = Number(p.get("q") ?? window.localStorage.getItem("forge.quality"));
     const entries = raw ? parseRecipe(raw) : undefined;
     // The picked item: from the link (shared links, the Builds page), or the one picked last time when the recipe
@@ -52,6 +56,7 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
       lock: (p.get("l") ?? (fromUrl == null ? window.localStorage.getItem("forge.lock") : null))?.slice(0, 60) || undefined,
       molds: decodeMolds(p.get("m") ?? (fromUrl == null ? window.localStorage.getItem("forge.molds") : null)),
       // Race for the DPS (r): a race id, or "me" (your Profile's race) remembered on this device only.
+      golem: kind === "golemite",
       race: readRaceChoice(p.get("r") ?? (fromUrl == null ? window.localStorage.getItem("forge.race") : null)) };
   } catch { return {}; }
 }
@@ -60,7 +65,9 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const { world } = useShell();
   const { user, profile, loading: authLoading } = useAuth();
   const showTarget = profile?.show_dps_target === true; // a setting players turn on themselves
-  const showMolds = profile?.show_molds === true; // likewise
+  const [golemMode, setGolemMode] = useState(false); // the Golemites button (Worlds 3 and 4)
+  const golem = golemMode && GOLEMITE.worlds.includes(world);
+  const showMolds = profile?.show_molds === true && !golem; // likewise; Golemites don't use molds
   const settingsKnown = !authLoading && (!user || profile != null);
   const oreById = useMemo(() => new Map(cat.ores.map((o) => [o.id, o])), [cat]);
   const [kind, setKind] = useState<Kind>("armour");
@@ -93,6 +100,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.lock) setLocked(r.lock);
       if (r.molds) { setMolds(r.molds.molds); setMoldId(r.molds.id); }
       if (r.race) setRaceChoice(r.race);
+      if (r.golem) setGolemMode(true);
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
@@ -100,6 +108,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
 
 
   const mix: Mix = useMemo(() => entries.flatMap((e) => { const ore = oreById.get(e.id); return ore ? [{ ore, count: e.count }] : []; }), [entries, oreById]);
+  // Golemite mode: the craft gives a Golem whose rarity is the main ore's.
+  const golemR = useMemo(() => (golem ? golemite(mix) : null), [golem, mix]);
+  const golemSave = useMemo<NewGolemite | null>(() => (golemR && golemR.enough && !golemR.tooMany
+    ? { name: golemR.name, ores: entries, level: 0, quality, catalogue_revision: Number((cat as { revision?: number }).revision) || null } : null), [golemR, entries, quality, cat]);
   const normal = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
   // A locked class only counts while the ores still allow locking it.
   const activeLock = locked && normal.classes.some((c) => c.name === locked && c.lockable) ? locked : null;
@@ -126,7 +138,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     try {
       const url = new URL(window.location.href);
       if (o) url.searchParams.set("o", o); else url.searchParams.delete("o");
-      url.searchParams.set("k", kind);
+      url.searchParams.set("k", golem ? "golemite" : kind);
       url.searchParams.set("q", String(quality));
       // The item the player picked stays picked, in the link and for next time (it falls back to the most likely
       // item if the ores change so it can't come out).
@@ -152,10 +164,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (raceChoice) window.localStorage.setItem("forge.race", raceChoice); else window.localStorage.removeItem("forge.race");
       window.history.replaceState(null, "", url);
       window.localStorage.setItem("forge.recipe", o);
-      window.localStorage.setItem("forge.kind", kind);
+      window.localStorage.setItem("forge.kind", golem ? "golemite" : kind);
       window.localStorage.setItem("forge.quality", String(quality));
     } catch { /* storage unavailable */ }
-  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock, molds, moldId, showMolds, settingsKnown, raceChoice]);
+  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock, molds, moldId, showMolds, settingsKnown, raceChoice, golem]);
 
   // Selected result: the user's pick if still valid, else the most likely variant.
   const selected = useMemo(() => {
@@ -172,8 +184,14 @@ export function Calculator({ cat }: { cat: Catalogue }) {
 
   // Stable so the ore tiles (memoised) only re-render when their own count changes.
   // Recalculating re-renders most of the page, so clicks run it as a transition: the browser paints the press first.
-  const add = useCallback((id: string, n = 1) => startTransition(() => setEntries((cur) => addOre(cur, id, n))), []);
-  const setCount = (id: string, count: number) => setEntries((cur) => cur.flatMap((e) => (e.id !== id ? [e] : count > 0 ? [{ id, count: Math.min(MAX_ORES, count) }] : [])));
+  // A Golemite craft takes at most 50 ores in all, so adding stops there.
+  const oreCap = golem ? GOLEMITE.maxOres : Infinity;
+  const room = (cur: Entry[], id: string) => oreCap - cur.reduce((t, e) => t + (e.id === id ? 0 : e.count), 0);
+  const add = useCallback((id: string, n = 1) => startTransition(() => setEntries((cur) => {
+    const left = oreCap - cur.reduce((t, e) => t + e.count, 0);
+    return addOre(cur, id, n > 0 ? Math.min(n, left) : n);
+  })), [oreCap]);
+  const setCount = (id: string, count: number) => setEntries((cur) => cur.flatMap((e) => (e.id !== id ? [e] : count > 0 ? [{ id, count: Math.min(MAX_ORES, count, room(cur, id)) }] : [])));
 
   const countOf = (id: string) => entries.find((e) => e.id === id)?.count ?? 0;
   const full = entries.length >= MAX_TYPES;
@@ -240,6 +258,17 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     <div className="page calc">
       <div className="row">
         {/* ---------- Forge Chances ---------- */}
+        {golem ? (
+          <Reveal col={1} className="calc-left">
+            <section className="gp" aria-labelledby="golem-h">
+              <div className="tb"><h2 id="golem-h">Golemite</h2><span className="small muted">{total} of {GOLEMITE.maxOres} ores</span></div>
+              <div style={{ padding: "12px 14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                <p className="small muted" style={{ margin: 0 }}>Every Golemite craft gives a Golem. The ore you use most sets its rarity, and the rarity sets how much it helps you mine and how much of each ore trait it gets.</p>
+                <GolemiteTiers rarity={golemR?.enough && !golemR.tooMany ? golemR.rarity : null} />
+              </div>
+            </section>
+          </Reveal>
+        ) : (
         <Reveal col={1} className="calc-left">
           <section className="gp" aria-labelledby="chances-h">
             <div className="tb"><h2 id="chances-h">Forge Chances</h2><span className="small muted">{total} ores</span></div>
@@ -294,12 +323,13 @@ export function Calculator({ cat }: { cat: Catalogue }) {
             </div>
           </section>
         </Reveal>
+        )}
 
         {/* ---------- Forge + result ---------- */}
         <div className="calc-mid">
           <Reveal col={2}>
             <section className="gp forge-panel" style={{ padding: "20px 22px 22px", textAlign: "center" }} aria-label="Forge">
-              <SaveStar forge={toSave} />
+              {golem ? <GolemSaveStar golem={golemSave} /> : <SaveStar forge={toSave} />}
               <div className={`slots${showMolds ? " with-mold" : ""}`}>
                   {mix.map(({ ore, count }) => (
                     <div key={ore.id} className="slot">
@@ -358,7 +388,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
 
           <Reveal col={2}>
             <section className="gp result" aria-live="polite" aria-label="Result">
-              {selected ? (
+              {golem && golemR ? <GolemResult r={golemR} quality={quality} qualityName={qualityLabel(cat, quality)} /> : selected ? (
                 <>
                   <h2 className="result-name">{selected.v.name}{SHOW_STATUS_LABELS && !selected.v.verified && <> <span className="badge unv">Unverified</span></>}</h2>
                   <div style={{ display: "flex", justifyContent: "center" }}>
@@ -428,8 +458,12 @@ export function Calculator({ cat }: { cat: Catalogue }) {
               {visibleOres.length === 0 && <p className="muted" style={{ margin: "4px 0 0" }}>No ores match these filters. Try widening the multiplier range or press Reset.</p>}
               <p className="note">{visibleOres.length} ores. Click to add one; right-click to remove one. <span style={{ color: "#e8c27a" }}>Sword</span> = weapon trait, <span style={{ color: "#8fd0f2" }}>shield</span> = armour trait.</p>
               <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
-                <button className={`big-toggle ${kind === "armour" ? "gb" : "btn"}`} aria-pressed={kind === "armour"} onClick={() => startTransition(() => { if (kind !== "armour") { setMolds(0); setMoldId(null); } setKind("armour"); setPick(null); })}>Armor</button>
-                <button className={`big-toggle ${kind === "weapon" ? "gb" : "btn"}`} aria-pressed={kind === "weapon"} onClick={() => startTransition(() => { if (kind !== "weapon") { setMolds(0); setMoldId(null); } setKind("weapon"); setPick(null); })}>Weapon</button>
+                <button className={`big-toggle ${!golem && kind === "armour" ? "gb" : "btn"}`} aria-pressed={!golem && kind === "armour"} onClick={() => startTransition(() => { if (kind !== "armour") { setMolds(0); setMoldId(null); } setKind("armour"); setGolemMode(false); setPick(null); })}>Armor</button>
+                <button className={`big-toggle ${!golem && kind === "weapon" ? "gb" : "btn"}`} aria-pressed={!golem && kind === "weapon"} onClick={() => startTransition(() => { if (kind !== "weapon") { setMolds(0); setMoldId(null); } setKind("weapon"); setGolemMode(false); setPick(null); })}>Weapon</button>
+                {GOLEMITE.worlds.includes(world) && (
+                  <button className={`big-toggle ${golem ? "gb" : "btn"}`} aria-pressed={golem} onClick={() => startTransition(() => { setGolemMode(true); setPick(null); })}
+                    title={`Craft a Golemite: ${GOLEMITE.minOres} to ${GOLEMITE.maxOres} ores`}>Golemites</button>
+                )}
               </div>
             </div>
           </section>
@@ -437,7 +471,18 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       </div>
 
       {/* ---------- traits first (the key information, especially on phones), then variants (left) and enhancement (right) ---------- */}
-      {selected && (
+      {golem && golemR && golemR.enough && !golemR.tooMany && (
+        <Reveal col={4}>
+          <section className="gp">
+            <div className="tb"><h2>Traits your Golemite gets</h2></div>
+            <div className="pad">
+              <p className="small muted" style={{ margin: "0 0 12px" }}>Each ore&apos;s weapon traits, at its share strength (10% to 30% rule) times your Golemite&apos;s ore-trait share ({golemR.traitScale != null ? pct(golemR.traitScale * 100, 0) : "–"} for {golemR.rarity ?? "this rarity"}). Golemites can fight from growth level {GOLEMITE.combatLevel}; how much damage they do isn&apos;t known, so there&apos;s no DPS.</p>
+              <GolemiteTraits r={golemR} />
+            </div>
+          </section>
+        </Reveal>
+      )}
+      {!golem && selected && (
         <>
           <Reveal col={4}><TraitsPanel traits={result.traits} kind={kind} /></Reveal>
           <div className="row">
@@ -493,6 +538,33 @@ export function Calculator({ cat }: { cat: Catalogue }) {
         </>
       )}
     </div>
+  );
+}
+
+/** The Golemite card, laid out like the game's: name, quality, materials, class, rarity, mining and traits. */
+function GolemResult({ r, quality, qualityName }: { r: ReturnType<typeof golemite>; quality: number; qualityName: string }) {
+  if (!r.enough || r.tooMany) {
+    const n = r.total;
+    return <p className="muted" style={{ textAlign: "center", margin: "18px 0" }}>{n > GOLEMITE.maxOres ? `A Golemite takes at most ${GOLEMITE.maxOres} ores. Take ${n - GOLEMITE.maxOres} out.` : `Add ${GOLEMITE.minOres - n} more ore${GOLEMITE.minOres - n === 1 ? "" : "s"}: a Golemite takes ${GOLEMITE.minOres} to ${GOLEMITE.maxOres}.`}</p>;
+  }
+  return (
+    <>
+      <h2 className="result-name">{r.name}</h2>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div className="tile" style={{ width: 110, height: 110, ["--rc" as string]: r.rarity ? rarityColour(r.rarity) : "#3a3834" }}>
+          {r.primary && <GameImage src={imageUrl("ores", r.primary.id)} alt={r.primary.name} size={40} />}
+        </div>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        <div className="kv"><span>Craft Quality:</span><span className="gold" style={{ fontWeight: 700 }}>{qualityName} ({quality}%)</span></div>
+        <div className="kv"><span>Materials:</span><span className="small" style={{ color: "#cfc7b2" }}>{r.mix.map((m) => `${m.ore.name}(${pct((m.count / r.total) * 100, 0)})`).join(" + ")}</span></div>
+        <div className="kv"><span>Class:</span><span className="muted">Golem</span></div>
+        <div className="kv"><span>Rarity:</span><span style={{ fontWeight: 700, color: r.rarity ? rarityColour(r.rarity) : undefined }}>{r.rarity ?? "–"}</span></div>
+        <div className="kv"><span>Mining:</span><span className="strong" style={{ fontWeight: 700 }}>{r.mining != null ? `${pct(r.mining * 100, 0)} mining help` : "–"}</span></div>
+        <div className="kv"><span>Traits:</span><span className="muted">{r.traitScale != null ? `${pct(r.traitScale * 100, 0)} ore traits` : "–"}</span></div>
+        <div className="kv"><span>Growth:</span><span className="muted">Starts at level 0. One Golem Snack a day adds a level, up to {GOLEMITE.maxLevel}; it fights from level {GOLEMITE.combatLevel}.</span></div>
+      </div>
+    </>
   );
 }
 

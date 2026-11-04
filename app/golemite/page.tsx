@@ -1,14 +1,8 @@
-import type { Metadata } from "next";
-import { GolemitePage } from "@/components/golemite-page";
-import { getCatalogue } from "@/lib/data/catalogue";
+import { redirect } from "next/navigation";
 
-export const revalidate = 3600;
-
-export const metadata: Metadata = {
-  title: "Golemite forge",
-  description: "Golemite calculator for The Forge: pick 10 or more ores and see your Golemite's rarity, mining help, ore traits and growth.",
-};
-
-export default async function Page() {
-  return <GolemitePage cat={await getCatalogue()} />;
+/** The Golemite forge is now part of the calculator; old links open it there with the same ores. */
+export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const o = (await searchParams).o;
+  const ores = typeof o === "string" && /^[a-z0-9:,-]{1,2000}$/.test(o) ? o : null;
+  redirect(ores ? `/?k=golemite&world=4&o=${encodeURIComponent(ores)}` : "/?k=golemite&world=4");
 }

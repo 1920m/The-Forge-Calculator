@@ -161,7 +161,7 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
           <div className="pad">
             {golemites.error && <p className="login-error" role="alert">{golemites.error}</p>}
             {!golemites.loading && golemites.list.length === 0 && !golemites.error && (
-              <p className="muted" style={{ margin: 0 }}>No Golemites yet. Forge one from 10 or more ores in the <Link className="inline-link" href="/golemite">Golemite forge</Link> and save it here.</p>
+              <p className="muted" style={{ margin: 0 }}>No Golemites yet. In the <Link className="inline-link" href="/?k=golemite">calculator</Link>, press Golemites (Worlds 3 and 4), add 10 to 50 ores and press ☆ to save it here.</p>
             )}
             {golemCards.length > 0 && (
               <div className="forge-grid">

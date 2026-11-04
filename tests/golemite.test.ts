@@ -28,9 +28,15 @@ describe("Golemite from its ores", () => {
     expect(r.rarity).toBe("Divine");
     expect(r.traits.find((t) => t.ore.name === "Bismuth")!.golem).toBeCloseTo(0.1 * 0.3, 9);
   });
-  it("needs 10 ores", () => {
+  it("matches the game's Lucky Cat Golemite card: Epic, 23% mining help, 15% ore traits", () => {
+    const r = golemite(mix(["Lucky Cat", 10]));
+    expect(r).toMatchObject({ name: "Lucky Cat Golemite", rarity: "Epic", mining: 0.23, traitScale: 0.15 });
+  });
+  it("takes 10 to 50 ores", () => {
     expect(golemite(mix(["Vanegos", 9])).enough).toBe(false);
     expect(golemite(mix(["Vanegos", 10])).enough).toBe(true);
+    expect(golemite(mix(["Vanegos", 30], ["Kitsunite", 20])).tooMany).toBe(false);
+    expect(golemite(mix(["Vanegos", 30], ["Kitsunite", 21])).tooMany).toBe(true);
     expect(golemite([]).rarity).toBeNull();
   });
   it("has a mining and trait figure for every rarity, rising with rarity", () => {
@@ -50,12 +56,15 @@ describe("saved Golemites", () => {
   it("reads good rows and drops bad ones", () => {
     expect(readGolemite({ id: G1, name: " Rocky ", ores: [{ id: "vanegos", count: 10 }], level: 14 })).toMatchObject({ name: "Rocky", level: 14 });
     expect(readGolemite({ id: G1, name: "Rocky", ores: [{ id: "vanegos", count: 9 }] })).toBeNull();
+    expect(readGolemite({ id: G1, name: "Rocky", ores: [{ id: "vanegos", count: 51 }] })).toBeNull();
+    expect(readGolemite({ id: G1, name: "Rocky", ores: [{ id: "vanegos", count: 10 }], quality: 87 })!.quality).toBe(87);
+    expect(readGolemite({ id: G1, name: "Rocky", ores: [{ id: "vanegos", count: 10 }] })!.quality).toBe(100);
     expect(readGolemite({ id: "1; drop", name: "Rocky", ores: [{ id: "vanegos", count: 10 }] })).toBeNull();
     expect(readGolemite({ id: G1, name: "<b>", ores: [{ id: "vanegos", count: 10 }] })!.name).toBe("b");
     expect(readGolemite({ id: G1, name: "Rocky", ores: [{ id: "vanegos", count: 10 }], level: 99 })!.level).toBe(0);
   });
-  it("links to the Golemite forge with the same ores and level", () => {
-    expect(golemiteHref({ ores: [{ id: "vanegos", count: 6 }, { id: "kitsunite", count: 4 }], level: 3 })).toBe("/golemite?o=vanegos%3A6%2Ckitsunite%3A4&g=3");
+  it("opens the calculator in Golemite mode with the same ores and quality", () => {
+    expect(golemiteHref({ ores: [{ id: "vanegos", count: 6 }, { id: "kitsunite", count: 4 }], quality: 90 })).toBe("/?k=golemite&world=4&q=90&o=vanegos%3A6%2Ckitsunite%3A4");
   });
 });
 

@@ -1,12 +1,17 @@
 /**
- * Golemites (called Golems in the game's data): companions forged from ores, from the Forge wiki
+ * Golemites (called Golems in the game's data): companions crafted in the forge, from the Forge wiki
  * (https://forgewiki.org/wiki/Golemite, Golemite_Snack and Guide/Golemite, read 3 Nov 2026). Added in 1.09.1 (20 Oct 2026).
+ * Checked in game (4 Nov 2026): crafted in Worlds 3 and 4 from 10 to 50 ores; the card shows "<main ore> Golemite",
+ * class Golem, the main ore's rarity, and that rarity's mining help and ore-trait share (Lucky Cat: Epic, 23%, 15%).
  */
 import type { Rarity } from "@/lib/engine/forge";
 
 export const GOLEMITE = {
-  /** Ores needed to forge one. */
+  /** Ores in a Golemite craft. */
   minOres: 10,
+  maxOres: 50,
+  /** Worlds whose forge can craft them. */
+  worlds: [3, 4] as readonly number[],
   /** Ores a Golemite can carry for you. */
   storage: 50,
   /** Growth: one Golem Snack a day gives one level. */
@@ -20,8 +25,8 @@ export const GOLEMITE = {
 } as const;
 
 /**
- * Mining help and how strongly ore traits carry over, by rarity: share of your mining damage, and the trait
- * scaling (the wiki's "ore-trait scaling"). The wiki's guide reads rarity from the ores, like weapons and armour.
+ * Mining help and how strongly ore traits carry over, by rarity ("23% mining help", "15% ore traits" on an Epic card).
+ * Rarity is the main ore's, like weapons and armour.
  */
 export const GOLEMITE_RARITY: Record<Rarity, { mining: number; traits: number }> = {
   Common: { mining: 0.1, traits: 0.06 },
