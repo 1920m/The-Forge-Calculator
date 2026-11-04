@@ -15,6 +15,7 @@ import { Reveal, useShell, worldName } from "./shell";
 import { GameImage } from "./game-image";
 import { ShareProfile } from "./share-profile";
 import { DragGhost, LoadoutPanel, SlotPicker, useForgeDrag, useLoadout, type Card } from "./loadout";
+import { GolemiteCard, useGolemCards, useGolemites, type GolemCard } from "./golemites";
 
 type KindFilter = "all" | "weapon" | "armour";
 type Sort = "new" | "old" | "stat" | "name";
@@ -31,7 +32,19 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
   // Work each forge out once from the current game data.
   const cards = useMemo<Card[]>(() => forges.map((f) => ({ f, r: work(cat, oreById, f) })), [forges, cat, oreById]);
   const byId = useMemo(() => new Map(cards.map((c) => [c.f.id, c])), [cards]);
-  const { loadout, error: loadoutError, set } = useLoadout(byId, !loading);
+  const golemites = useGolemites();
+  const golemCards = useGolemCards(cat, golemites.list);
+  const golemById = useMemo(() => new Map(golemCards.map((c) => [c.g.id, c])), [golemCards]);
+  const slot2 = profile?.golem_slot2 === true;
+  const golemOpts = useMemo(() => (golemites.loading ? undefined : { ids: new Set(golemites.list.map((g) => g.id)), slot2 }), [golemites.loading, golemites.list, slot2]);
+  const { loadout, error: loadoutError, set } = useLoadout(byId, !loading, golemOpts);
+  const golemIn = (id: string) => (loadout.golem1 === id ? "golem1" : loadout.golem2 === id ? "golem2" : null);
+  // Equip puts it in the first empty open Golem slot (or slot 1); pressing it again takes it off.
+  const toggleGolem = (c: GolemCard) => {
+    const at = golemIn(c.g.id);
+    if (at) { void set(at, null); return; }
+    void set(!loadout.golem1 || !slot2 ? "golem1" : !loadout.golem2 ? "golem2" : "golem1", c.g.id);
+  };
   const [picking, setPicking] = useState<Slot | null>(null);
   const { drag, start } = useForgeDrag(useCallback((c: Card, slot: ForgeSlot) => { void set(slot, c.f.id); }, [set]));
   const equippedIn = useCallback((id: string) => (["helmet", "chestplate", "leggings", "weapon"] as const).find((s) => loadout[s] === id) ?? null, [loadout]);
@@ -86,7 +99,7 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
       </Reveal>
 
       <Reveal col={2}>
-        <LoadoutPanel name={name} loadout={loadout} byId={byId} drag={drag} onOpen={setPicking} onClear={(s) => void set(s, null)} />
+        <LoadoutPanel name={name} loadout={loadout} byId={byId} drag={drag} onOpen={setPicking} onClear={(s) => void set(s, null)} golems={golemById} golemSlot2={slot2} />
       </Reveal>
       {loadoutError && <p className="login-error" role="alert">{loadoutError}</p>}
 
@@ -139,8 +152,31 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
         </div>
       )}
 
+      <Reveal col={4}>
+        <section className="gp" aria-labelledby="golem-h">
+          <div className="tb forger-head">
+            <h2 id="golem-h">Golemites</h2>
+            <span className="small muted">{golemites.loading ? "Loading…" : `${golemites.list.length} saved`}</span>
+          </div>
+          <div className="pad">
+            {golemites.error && <p className="login-error" role="alert">{golemites.error}</p>}
+            {!golemites.loading && golemites.list.length === 0 && !golemites.error && (
+              <p className="muted" style={{ margin: 0 }}>No Golemites yet. In the <Link className="inline-link" href="/?k=golemite">calculator</Link>, press Golemites (Worlds 3 and 4), add 10 to 50 ores and press ☆ to save it here.</p>
+            )}
+            {golemCards.length > 0 && (
+              <div className="forge-grid">
+                {golemCards.map((c) => (
+                  <GolemiteCard key={c.g.id} card={c} equipped={golemIn(c.g.id) === "golem1" ? "slot 1" : golemIn(c.g.id) === "golem2" ? "slot 2" : null}
+                    onEquip={toggleGolem} onLevel={(x, level) => void golemites.update(x.g.id, { level })} onDelete={(x) => golemites.remove(x.g.id)} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </Reveal>
+
       {picking && (
-        <SlotPicker slot={picking} cards={cards} current={loadout[picking]} onClose={() => setPicking(null)}
+        <SlotPicker slot={picking} cards={cards} golems={golemCards} current={loadout[picking]} other={picking === "golem1" ? loadout.golem2 : picking === "golem2" ? loadout.golem1 : null} onClose={() => setPicking(null)}
           onPick={(id) => { void set(picking, id); setPicking(null); }} />
       )}
       <DragGhost drag={drag} />
