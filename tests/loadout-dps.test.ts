@@ -4,7 +4,9 @@ import { forge, type Catalogue, type Mix } from "../lib/engine/forge";
 import { weaponDps } from "../lib/engine/dps";
 import { enhanceFactor } from "../lib/engine/index";
 import { dpsAtLevel, decodeRunes } from "../lib/engine/runes";
-import { armourExtra, combatDps, raceExtra, type CombatInput } from "../lib/engine/loadout-dps";
+import { armourExtra, combatDps, golemExtra, raceExtra, type CombatInput } from "../lib/engine/loadout-dps";
+import { golemite } from "../lib/engine/golemite";
+import { golemInput } from "../lib/forge-stats";
 import { RACES } from "../data/races";
 
 const cat = data as unknown as Catalogue;
@@ -201,5 +203,43 @@ describe("matches the wiki's calculator for race and armour", () => {
     expect(run({ weapon: hellSlayer, raceId: "vampire" }).total - plain).toBeCloseTo(2380.632 - 2265.494, 2);
     const mino = run({ weapon: hellSlayer, raceId: "minotaur", armour: [piece(["Fierce Jade", 10]), null, null] });
     expect(mino.lowHp! - mino.total).toBeCloseTo(3862.427 - 2896.805, 1);
+  });
+});
+
+describe("full-loadout DPS: Golemites", () => {
+  const golem = (...pairs: [string, number][]) => golemInput(golemite(mix(...pairs)));
+
+  it("adds a Golemite's weapon ore traits at its rarity's trait scale", () => {
+    const g = golem(["Galaxite", 10]); // Divine: traits at 30%
+    expect(g?.traitScale).toBe(0.3);
+    const withGolem = run({ weapon: plainMace, golems: [g] });
+    // Galaxite at full strength (100% of the Golemite): 45% crit chance, 20% crit damage, 60% black hole, × 0.3.
+    const manual = weaponDps({ ores: plainMace.ores, damage: plainMace.raw, interval: plainMace.interval, extra: { vals: { crit_chance: [0.135], crit_dmg: [0.06], blackhole_dmg: [0.18] } } }).total;
+    expect(withGolem.total).toBeCloseTo(manual, 9);
+    expect(withGolem.total).toBeGreaterThan(run({ weapon: plainMace }).total);
+    expect(withGolem.golemsCounted).toEqual([true]);
+    const row = withGolem.breakdown.find((b) => b.key === "golems")!;
+    expect(row.label).toBe("Golemite traits");
+    expect(row.dps).toBeCloseTo(withGolem.total - run({ weapon: plainMace }).total, 9);
+    expect(withGolem.breakdown.reduce((n, b) => n + b.dps, 0)).toBeCloseTo(withGolem.total, 9);
+  });
+
+  it("two Golemites both count; an empty slot or a Golemite with no damage traits adds nothing", () => {
+    const one = run({ weapon: plainMace, golems: [golem(["Galaxite", 10])] }).total;
+    const two = run({ weapon: plainMace, golems: [golem(["Galaxite", 10]), golem(["Kyubite", 10])] });
+    expect(two.total).toBeGreaterThan(one);
+    expect(two.golemsCounted).toEqual([true, true]);
+    const none = run({ weapon: plainMace }).total;
+    const lucky = run({ weapon: plainMace, golems: [golem(["Lucky Cat", 10]), null] });
+    expect(lucky.total).toBeCloseTo(none, 9);
+    expect(lucky.golemsCounted).toEqual([false, false]);
+  });
+
+  it("follows the 10% rule inside the Golemite, and keeps durations at the ore's own value", () => {
+    // Galaxite is 1 of 11 ores (9%): below 10%, so none of its traits carry over.
+    expect(golemExtra([golem(["Iron", 10], ["Galaxite", 1])]).used).toEqual([false]);
+    const burn = golemExtra([golem(["Kyubite", 10])]).extra.vals!;
+    expect(burn.fire_duration).toEqual([5]); // not scaled by the rarity
+    expect(burn.fire_dmg![0]).toBeCloseTo(0.45 * golemInput(golemite(mix(["Kyubite", 10])))!.traitScale, 9);
   });
 });

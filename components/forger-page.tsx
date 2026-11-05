@@ -3,8 +3,8 @@
 import { memo, startTransition, useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { qualityLabel, type Catalogue } from "@/lib/engine/forge";
-import { forgeCombat, work } from "@/lib/forge-stats";
-import { ARMOUR_SLOTS, SLOT_LABEL, slotFor, type ForgeSlot, type Slot } from "@/lib/loadout";
+import { forgeCombat, golemInput, work } from "@/lib/forge-stats";
+import { ARMOUR_SLOTS, GOLEM_SLOTS, SLOT_LABEL, slotFor, type ForgeSlot, type Slot } from "@/lib/loadout";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, rarityColour } from "@/lib/ui";
 import { MAX_NAME, MAX_SAVED, calculatorHref } from "@/lib/saved-forges";
@@ -55,9 +55,10 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
   // Each saved weapon's DPS with the armour and race in the loadout (only once there's armour or a race to add).
   const inLoadout = useMemo(() => {
     const armour = ARMOUR_SLOTS.map((s) => (loadout[s] ? byId.get(loadout[s]!) ?? null : null));
-    if (!armour.some(Boolean) && !loadout.race) return new Map<string, number>();
-    return new Map(cards.flatMap((c) => { const t = forgeCombat(c, armour, loadout.race)?.total; return t == null ? [] : [[c.f.id, t] as const]; }));
-  }, [cards, byId, loadout]);
+    const golems = GOLEM_SLOTS.map((s) => (loadout[s] && (s === "golem1" || slot2) ? golemInput(golemById.get(loadout[s]!)?.r) : null));
+    if (!armour.some(Boolean) && !loadout.race && !golems.some(Boolean)) return new Map<string, number>();
+    return new Map(cards.flatMap((c) => { const t = forgeCombat(c, armour, loadout.race, undefined, golems)?.total; return t == null ? [] : [[c.f.id, t] as const]; }));
+  }, [cards, byId, loadout, golemById, slot2]);
   const shown = useMemo(() => {
     const list = cards.filter(({ f, r }) => (kind === "all" || f.kind === kind)
       && (!query || f.name.toLowerCase().includes(query) || (r.variantName ?? "").toLowerCase().includes(query) || r.mix.some((m) => m.ore.name.toLowerCase().includes(query))));
