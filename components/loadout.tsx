@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { imageUrl } from "@/lib/data/supabase";
@@ -10,7 +10,7 @@ import { PICKAXES, pickaxeById, type Pickaxe } from "@/data/pickaxes";
 import { RACES, raceById, type Race } from "@/data/races";
 import { ARMOUR_SLOTS, GOLEM_SLOTS, EMPTY_LOADOUT, LOADOUT_COLUMNS, SLOT_LABEL, cleanLoadout, readLoadout, slotFor, type ForgeSlot, type Loadout, type Slot } from "@/lib/loadout";
 import { calculatorHref, type SavedForge } from "@/lib/saved-forges";
-import { forgeCombat, type Worked } from "@/lib/forge-stats";
+import { forgeCombat, golemInput, type Worked } from "@/lib/forge-stats";
 import type { CombatResult } from "@/lib/engine/loadout-dps";
 import { useAuth } from "./auth";
 import type { GolemCard } from "./golemites";
@@ -159,19 +159,28 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
   const weapon = card("weapon");
   const pick = loadout.pickaxe ? pickaxeById.get(loadout.pickaxe) ?? null : null;
   const race = loadout.race ? raceById.get(loadout.race) ?? null : null;
-  // Weapon DPS with everything worn: the weapon's runes, the armour's damage traits and the race.
+  // Equipped Golemites (slot 2 only once it's open): their ore traits work for the player too.
+  const golemCards = useMemo(() => GOLEM_SLOTS.map((s) => (loadout[s] && (s === "golem1" || golemSlot2) ? golems?.get(loadout[s]!) ?? null : null)), [loadout, golems, golemSlot2]);
+  // Weapon DPS with everything worn: the weapon's runes, the armour's damage traits, the Golemites and the race.
   const combat = useMemo(() => {
     const at = (s: ForgeSlot) => (loadout[s] ? byId.get(loadout[s]!) ?? null : null);
-    return forgeCombat(at("weapon"), ARMOUR_SLOTS.map(at), loadout.race);
-  }, [loadout, byId]);
+    return forgeCombat(at("weapon"), ARMOUR_SLOTS.map(at), loadout.race, undefined, golemCards.map((g) => golemInput(g?.r)));
+  }, [loadout, byId, golemCards]);
   const oreName = new Map(armour.flatMap((c) => c.r.mix.map((m) => [m.ore.id, m.ore.name] as const)));
-  const counted = combat?.counted.map((id) => (oreName.has(id) ? `${oreName.get(id)} (armour)` : `${id} (race)`)) ?? [];
+  const countedGolems = golemCards.filter((g, i) => g && combat?.golemsCounted[i]).map((g) => `${g!.g.name} (Golemite)`);
+  const counted = [
+    ...(combat?.counted.filter((id) => oreName.has(id)).map((id) => `${oreName.get(id)} (armour)`) ?? []),
+    ...countedGolems,
+    ...(combat?.counted.filter((id) => !oreName.has(id)).map((id) => `${id} (race)`) ?? []),
+  ];
+  const sources = [counted.some((c) => c.endsWith("(armour)")) && "armour", countedGolems.length > 0 && "Golemites", counted.some((c) => c.endsWith("(race)")) && "race"].filter(Boolean) as string[];
   const known = armour.filter((c) => c.r.value != null);
   const defence = known.reduce((n, c) => n + c.r.value!, 0);
   const traits = [...new Set([...armour, ...(weapon ? [weapon] : [])].flatMap((c) => c.r.traits))];
   const target = drag ? slotFor(drag.card.f) : null;
   const slotProps = (s: Slot) => ({ slot: s, target, over: drag?.over ?? null, dragging: !!drag, onOpen, onClear, readOnly });
   const [showDps, setShowDps] = useState(false);
+  const [showEffects, setShowEffects] = useEffectsOpen();
 
   return (
     <section className="gp loadout" aria-labelledby="loadout-h">
@@ -186,17 +195,19 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
             <Stat label="Armor defense" value={known.length ? fmt(defence) : "–"} note={`${armour.length} of 3 pieces`} />
             <Stat label="Weapon damage" value={weapon?.r.value != null ? fmt(weapon.r.value) : "–"} note={weapon?.f.class_name ?? "No weapon"} />
             <Stat label="Loadout DPS" value={combat ? fmt(combat.total) : weapon?.r.dps != null ? fmt(weapon.r.dps) : "–"}
-              note={combat ? `At +${weapon?.r.runeLevel ?? 0}${weapon?.r.runeLevel != null ? " with runes" : ""}${counted.length ? ", armour and race" : ""}` : weapon?.r.speed != null ? `${weapon.r.speed}s per swing` : ""}
+              note={combat ? `At +${weapon?.r.runeLevel ?? 0}${weapon?.r.runeLevel != null ? " with runes" : ""}${sources.length ? `${weapon?.r.runeLevel != null ? ", " : " with "}${listAnd(sources)}` : ""}` : weapon?.r.speed != null ? `${weapon.r.speed}s per swing` : ""}
               toggle={combat ? { open: showDps, onToggle: () => setShowDps((o) => !o), controls: "lo-dps" } : undefined} />
             <Stat label="Pickaxe" value={pick ? pick.name.replace(/ Pickaxe$/, "") : "–"} note={pick ? pick.region : "None"} />
           </div>
           {combat && <DpsBreakdown combat={combat} race={race} open={showDps} />}
-          <div className="loadout-traits">
-            <span className="small muted">Defence and effects</span>
+          <Effects open={showEffects} onToggle={() => setShowEffects(!showEffects)}>
             <span>{traits.length ? `Ore traits: ${traits.join(", ")}` : "No ore traits yet"}</span>
             {race && <span className="small">{race.name}: {race.traits.map((t) => `${t.name} (${t.text.replace(/\.$/, "")})`).join(", ")}</span>}
+            {golemCards.map((g, i) => g && g.r.traits.some((t) => t.golem > 0) && (
+              <span key={i} className="small">{g.g.name}: {g.r.traits.filter((t) => t.golem > 0).map((t) => `${t.ore.name} ${Math.round(t.golem * 100)}%`).join(", ")}</span>
+            ))}
             {counted.length > 0 && <span className="small faint">Counted in the DPS: {counted.join(", ")}. Health, defence and other effects are listed but not added up.</span>}
-          </div>
+          </Effects>
         </div>
         <div className="loadout-col right">
           <ForgeSlotBox {...slotProps("weapon")} card={weapon} />
@@ -214,6 +225,55 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
         </div>
       )}
     </section>
+  );
+}
+
+const listAnd = (a: string[]) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
+
+const EFFECTS_KEY = "loadout-effects-open";
+const effectsListeners = new Set<() => void>();
+let effectsFallback = false; // used when the browser blocks storage
+const readEffects = () => { try { const v = localStorage.getItem(EFFECTS_KEY); return v == null ? effectsFallback : v === "1"; } catch { return effectsFallback; } };
+/** Whether "Defence and effects" is open: closed by default, remembered in this browser. */
+function useEffectsOpen(): [boolean, (open: boolean) => void] {
+  const open = useSyncExternalStore((cb) => { effectsListeners.add(cb); return () => { effectsListeners.delete(cb); }; }, readEffects, () => false);
+  const set = useCallback((o: boolean) => {
+    effectsFallback = o;
+    try { localStorage.setItem(EFFECTS_KEY, o ? "1" : "0"); } catch { /* not remembered */ }
+    effectsListeners.forEach((l) => l());
+  }, []);
+  return [open, set];
+}
+
+/**
+ * "Defence and effects": closed, it shows the first line with the next one fading out and a button to open it.
+ * The toggle only appears when there's more than fits.
+ */
+function Effects({ open, onToggle, children }: { open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  const body = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState<number | null>(null);
+  const [overflows, setOverflows] = useState(false);
+  const id = useId();
+  useEffect(() => {
+    const el = body.current;
+    if (!el) return;
+    const measure = () => { setFull(el.scrollHeight); setOverflows(el.scrollHeight > (parseFloat(getComputedStyle(el).getPropertyValue("--lo-fx-closed")) || 36) + 2); };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [children]);
+  const closed = !open && overflows;
+  return (
+    <div className="loadout-traits">
+      <span className="small muted">Defence and effects</span>
+      <div id={id} ref={body} className={`lo-fx${closed ? " closed" : ""}`} style={open && full ? { maxHeight: full } : undefined}>{children}</div>
+      {overflows && (
+        <button className="lo-fx-toggle" aria-expanded={open} aria-controls={id} onClick={onToggle}>
+          <span>{open ? "Show less" : "Show all"}</span><Chevron open={open} />
+        </button>
+      )}
+    </div>
   );
 }
 

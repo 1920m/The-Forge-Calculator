@@ -460,7 +460,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
           <section className="gp">
             <div className="tb"><h2>Traits your Golemite gets</h2></div>
             <div className="pad">
-              <p className="small muted" style={{ margin: "0 0 12px" }}>Each ore&apos;s weapon traits, at its share strength (10% to 30% rule) times your Golemite&apos;s ore-trait share ({golemR.traitScale != null ? pct(golemR.traitScale * 100, 0) : "–"} for {golemR.rarity ?? "this rarity"}). Golemites can fight from growth level {GOLEMITE.combatLevel}; how much damage they do isn&apos;t known, so there&apos;s no DPS.</p>
+              <p className="small muted" style={{ margin: "0 0 12px" }}>Each ore&apos;s weapon traits, at its share strength (10% to 30% rule) times your Golemite&apos;s ore-trait share ({golemR.traitScale != null ? pct(golemR.traitScale * 100, 0) : "–"} for {golemR.rarity ?? "this rarity"}). You get these traits too: equip the Golemite on your Loadout and they&apos;re added to your DPS there. It can also fight from growth level {GOLEMITE.combatLevel}, but how much damage it does itself isn&apos;t known, so that isn&apos;t counted.</p>
               <GolemiteTraits r={golemR} />
             </div>
           </section>

@@ -425,6 +425,13 @@ input[type="range"] { accent-color: var(--acc); width: 100%; }
 .loadout-stat:hover { border-color: var(--bd2); }
 .loadout-stat b { color: #fff; font-size: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loadout-traits { display: flex; flex-direction: column; gap: 2px; font-size: 15px; color: var(--strong); }
+.lo-fx { --lo-fx-closed: 36px; position: relative; display: flex; flex-direction: column; gap: 2px; overflow: hidden; transition: max-height .5s var(--ease); }
+.lo-fx.closed { max-height: var(--lo-fx-closed); -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 20px, transparent 100%); mask-image: linear-gradient(to bottom, #000 0, #000 20px, transparent 100%); }
+.lo-fx.closed::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 15px; -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px); pointer-events: none; }
+.lo-fx-toggle { align-self: flex-end; display: inline-flex; align-items: center; gap: 2px; margin-top: 2px; padding: 2px 0 2px 8px; background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; }
+.lo-fx-toggle:hover, .lo-fx-toggle:focus-visible { color: var(--strong); }
+.lo-fx-toggle svg { width: 18px; height: 18px; }
+@media (prefers-reduced-motion: reduce) { .lo-fx { transition: none; } }
 .lo-slot { position: relative; background: var(--row); border: 1px solid var(--bd); transition: border-color .15s, background .15s, opacity .15s, box-shadow .15s; }
 .lo-slot:hover { border-color: var(--bd2); }
 .lo-slot.valid { border-color: var(--acc); border-style: dashed; }

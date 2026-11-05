@@ -3,7 +3,7 @@
  * It doesn't do any damage maths itself. It turns armour, race and conditions into `weaponDps` inputs (one engine
  * for the Calculator, Forger cards, Loadout and shared profiles) and works out what each layer adds.
  *
- * Layers, each on top of the ones before: base weapon → its ore traits → enhancement → runes → armour → race.
+ * Layers, each on top of the ones before: base weapon → its ore traits → enhancement → runes → armour → Golemites → race.
  * Bonuses add up before the caps and then multiply, so each layer's share is the difference it makes at that point.
  * Conditions (below 35% HP, Orc Lord stacks, Dryad grove, max health, Kitsune after a dodge) are never in the
  * normal DPS; they make a separate scenario.
@@ -11,7 +11,7 @@
 import { ARMOUR_DPS } from "@/data/armour-dps";
 import { raceById } from "@/data/races";
 import { enhanceFactor } from "./index";
-import { statAtShare, weaponDps, type DpsExtra, type DpsResult, type DpsStat, type SpecialProc } from "./dps";
+import { DPS_STATS, statAtShare, weaponDps, type DpsExtra, type DpsResult, type DpsStat, type SpecialProc } from "./dps";
 import { runeTotals, slotsAt, type RuneSlot } from "./runes";
 
 type OreCount = { id: string; count: number };
@@ -40,11 +40,15 @@ export type CombatInput = {
   /** Ore mixes of the equipped helmet, chestplate and leggings (missing pieces as null). */
   armour?: readonly ({ ores: OreCount[] } | null)[];
   raceId?: string | null;
+  /** Equipped Golemites: their ores and their rarity's trait scale (their ore traits work for the player). */
+  golems?: readonly GolemInput[];
   conditions?: CombatConditions;
 };
 
-export type LayerKey = "base" | "ores" | "enhance" | "runes" | "armour" | "race";
-export const LAYER_LABEL: Record<LayerKey, string> = { base: "Base weapon", ores: "Weapon ore traits", enhance: "Enhancement", runes: "Runes", armour: "Armour traits", race: "Race" };
+export type GolemInput = { ores: OreCount[]; traitScale: number } | null;
+
+export type LayerKey = "base" | "ores" | "enhance" | "runes" | "armour" | "golems" | "race";
+export const LAYER_LABEL: Record<LayerKey, string> = { base: "Base weapon", ores: "Weapon ore traits", enhance: "Enhancement", runes: "Runes", armour: "Armour traits", golems: "Golemite traits", race: "Race" };
 
 export type CombatResult = {
   /** Normal DPS: everything always active. */
@@ -58,6 +62,8 @@ export type CombatResult = {
   conditional: number | null;
   /** Armour and race effects that were counted, for the page to list. */
   counted: string[];
+  /** For each Golemite passed in: whether any of its traits changed the DPS. */
+  golemsCounted: boolean[];
 };
 
 const push = (vals: Partial<Record<DpsStat, number[]>>, stat: DpsStat, v: number) => { if (v) (vals[stat] ??= []).push(v); };
@@ -91,6 +97,32 @@ export function armourExtra(pieces: readonly ({ ores: OreCount[] } | null)[]) {
     }
   }
   return { extra: { vals } as DpsExtra, lowHp, vital, counted: [...counted] };
+}
+
+// Durations and cooldowns keep the ore's own value; the Golemite's rarity scales the amounts (the same as its card).
+const UNSCALED = new Set<DpsStat>(["fire_duration", "poison_duration", "lightning_cooldown", "berserk_duration"]);
+
+/**
+ * Equipped Golemites' weapon ore traits, which the player gets: each ore at its share of the Golemite (10% to 30% rule),
+ * times the Golemite's rarity trait scale. Treated like extra weapon ores (same sums, maxes and caps).
+ */
+export function golemExtra(golems: readonly GolemInput[]) {
+  const vals: Partial<Record<DpsStat, number[]>> = {};
+  const used = golems.map((g) => {
+    if (!g || !(g.traitScale > 0)) return false;
+    const total = g.ores.reduce((n, o) => n + o.count, 0);
+    let any = false;
+    for (const o of g.ores) {
+      const ranges = DPS_STATS[o.id];
+      if (!ranges || !total) continue;
+      for (const [stat, r] of Object.entries(ranges) as [DpsStat, NonNullable<(typeof ranges)[DpsStat]>][]) {
+        const v = statAtShare(r, o.count / total) * (UNSCALED.has(stat) ? 1 : g.traitScale);
+        if (v) { push(vals, stat, v); if (!UNSCALED.has(stat)) any = true; }
+      }
+    }
+    return any;
+  });
+  return { extra: { vals } as DpsExtra, used };
 }
 
 /** A race's always-on effects for a weapon class. Unknown or missing races add nothing. */
@@ -139,8 +171,10 @@ export function combatDps(input: CombatInput): CombatResult {
   const t = input.runes ? runeTotals(input.runes, slotsAt(level)) : null;
   const runeExtra: DpsExtra = t ? { stats: t.stats, procs: t.procs } : {};
   const armour = armourExtra(input.armour ?? []);
+  const golems = golemExtra(input.golems ?? []);
   const race = raceExtra(input.raceId, weapon.cls);
-  const full = merge(merge(runeExtra, armour.extra), race.extra);
+  const worn = merge(merge(runeExtra, armour.extra), golems.extra);
+  const full = merge(worn, race.extra);
   const run = (ores: OreCount[], dmg: number, extra?: DpsExtra) => weaponDps({ ores, damage: dmg, interval: weapon.interval, extra });
 
   const steps: [LayerKey, DpsResult][] = [
@@ -149,6 +183,8 @@ export function combatDps(input: CombatInput): CombatResult {
     ["enhance", run(weapon.ores, damage)],
     ["runes", run(weapon.ores, damage, runeExtra)],
     ["armour", run(weapon.ores, damage, merge(runeExtra, armour.extra))],
+    // Only when Golemites are equipped, so results without them (and the public API) keep the same layers.
+    ...((input.golems ?? []).some(Boolean) ? [["golems", run(weapon.ores, damage, worn)] as [LayerKey, DpsResult]] : []),
     ["race", run(weapon.ores, damage, full)],
   ];
   const breakdown = steps.map(([key, r], i) => ({ key, label: LAYER_LABEL[key], dps: r.total - (i ? steps[i - 1][1].total : 0) }));
@@ -161,5 +197,5 @@ export function combatDps(input: CombatInput): CombatResult {
     : null;
 
   const raceName = input.raceId ? raceById.get(input.raceId)?.name : undefined;
-  return { total: result.total, result, breakdown, lowHp, conditional, counted: [...armour.counted, ...(raceName && input.raceId && raceById.get(input.raceId)?.combat ? [raceName] : [])] };
+  return { total: result.total, result, breakdown, lowHp, conditional, golemsCounted: golems.used, counted: [...armour.counted, ...(raceName && input.raceId && raceById.get(input.raceId)?.combat ? [raceName] : [])] };
 }

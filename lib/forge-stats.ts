@@ -1,7 +1,7 @@
 import { forge, type Catalogue, type CatalogueOre } from "./engine/forge";
 import type { SavedForge } from "./saved-forges";
 import { decodeRunes, dpsAtLevel } from "./engine/runes";
-import { combatDps, type CombatConditions, type CombatResult } from "./engine/loadout-dps";
+import { combatDps, type CombatConditions, type CombatResult, type GolemInput } from "./engine/loadout-dps";
 
 export type Worked = ReturnType<typeof work>;
 
@@ -26,19 +26,23 @@ export function work(cat: Catalogue, oreById: Map<string, CatalogueOre>, f: Save
 }
 
 type Worn = { f: SavedForge; r: Worked };
+
+/** A worked Golemite as combat input (null when it has no rarity yet, so no traits carry over). */
+export const golemInput = (r: { mix: readonly { ore: { id: string }; count: number }[]; traitScale: number | null } | null | undefined): GolemInput =>
+  r && r.traitScale ? { ores: r.mix.map((m) => ({ id: m.ore.id, count: m.count })), traitScale: r.traitScale } : null;
 const oreCounts = (r: Worked) => r.mix.map((m) => ({ id: m.ore.id, count: m.count }));
 
 /**
  * A saved weapon's DPS with armour and a race on top (the same engine as the calculator). The weapon is counted at
  * its saved runes' enhancement level, or +0 without runes, the same as its card. Null for armour or missing data.
  */
-export function forgeCombat(weapon: Worn | null, armour: readonly (Worn | null)[], raceId: string | null, conditions?: CombatConditions): CombatResult | null {
+export function forgeCombat(weapon: Worn | null, armour: readonly (Worn | null)[], raceId: string | null, conditions?: CombatConditions, golems?: readonly GolemInput[]): CombatResult | null {
   if (!weapon || weapon.f.kind !== "weapon" || weapon.r.raw == null || !weapon.r.speed || weapon.r.missingOres) return null;
   const runes = weapon.f.runes ? decodeRunes(weapon.f.runes, "weapon") : undefined;
   return combatDps({
     weapon: { ores: oreCounts(weapon.r), raw: weapon.r.raw, interval: weapon.r.speed, cls: weapon.f.class_name },
     level: runes ? weapon.f.enhance ?? 9 : 0, runes,
     armour: armour.map((a) => (a && a.f.kind === "armour" && !a.r.missingOres ? { ores: oreCounts(a.r) } : null)),
-    raceId, conditions,
+    raceId, conditions, golems,
   });
 }
