@@ -235,6 +235,26 @@ describe("full-loadout DPS: Golemites", () => {
     expect(lucky.golemsCounted).toEqual([false, false]);
   });
 
+  it("adds armour traits too, without counting a shared weapon-and-armour trait twice", () => {
+    // Bismuth's armour trait (+15% crit chance, crit damage and Lethality) isn't in its weapon traits: added, × 0.3.
+    const b = golemExtra([golem(["Bismuth", 10])]).extra.vals!;
+    expect(b.crit_chance).toEqual([expect.closeTo(0.045, 9)]);
+    expect(b.lethality).toEqual([expect.closeTo(0.045, 9)]);
+    // Eye Ore's +15% Lethality is one trait for both: counted once.
+    expect(golemExtra([golem(["Eye Ore", 10])]).extra.vals!.lethality).toHaveLength(1);
+    // Vanegos: shared Lethality once, plus its armour-only Berserker (below 35% HP) as a condition, not in the normal DPS.
+    const v = golemExtra([golem(["Vanegos", 10])]);
+    expect(v.extra.vals!.lethality).toHaveLength(1);
+    expect(v.lowHp).toBeGreaterThan(0);
+    const r = run({ weapon: plainMace, golems: [golem(["Vanegos", 10])] });
+    expect(r.lowHp).not.toBeNull();
+    expect(r.lowHp!).toBeGreaterThan(r.total);
+    // Demonite's burn is armour-only: added, with its duration unscaled.
+    const d = golemExtra([golem(["Demonite", 10])]).extra.vals!;
+    expect(d.fire_duration).toEqual([2]);
+    expect(d.fire_chance).toHaveLength(1);
+  });
+
   it("follows the 10% rule inside the Golemite, and keeps durations at the ore's own value", () => {
     // Galaxite is 1 of 11 ores (9%): below 10%, so none of its traits carry over.
     expect(golemExtra([golem(["Iron", 10], ["Galaxite", 1])]).used).toEqual([false]);

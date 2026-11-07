@@ -3,7 +3,8 @@
  * It doesn't do any damage maths itself. It turns armour, race and conditions into `weaponDps` inputs (one engine
  * for the Calculator, Forger cards, Loadout and shared profiles) and works out what each layer adds.
  *
- * Layers, each on top of the ones before: base weapon → its ore traits → enhancement → runes → armour → Golemites → race.
+ * Layers, each on top of the ones before: base weapon → its ore traits → enhancement → runes → armour → Golemites (their
+ * weapon and armour traits) → race.
  * Bonuses add up before the caps and then multiply, so each layer's share is the difference it makes at that point.
  * Conditions (below 35% HP, Orc Lord stacks, Dryad grove, max health, Kitsune after a dodge) are never in the
  * normal DPS; they make a separate scenario.
@@ -79,7 +80,7 @@ const merge = (a: DpsExtra, b: DpsExtra): DpsExtra => {
 export function armourExtra(pieces: readonly ({ ores: OreCount[] } | null)[]) {
   const vals: Partial<Record<DpsStat, number[]>> = {};
   let lowHp = 0;
-  const vital: { share: number; perHp: number; step: number; max: number }[] = [];
+  const vital: VitalPower[] = [];
   const counted = new Set<string>();
   for (const piece of pieces) {
     if (!piece) continue;
@@ -99,30 +100,50 @@ export function armourExtra(pieces: readonly ({ ores: OreCount[] } | null)[]) {
   return { extra: { vals } as DpsExtra, lowHp, vital, counted: [...counted] };
 }
 
+type VitalPower = { share: number; perHp: number; step: number; max: number; /** a Golemite's rarity trait scale */ scale?: number };
+
 // Durations and cooldowns keep the ore's own value; the Golemite's rarity scales the amounts (the same as its card).
 const UNSCALED = new Set<DpsStat>(["fire_duration", "poison_duration", "lightning_cooldown", "berserk_duration"]);
 
 /**
- * Equipped Golemites' weapon ore traits, which the player gets: each ore at its share of the Golemite (10% to 30% rule),
- * times the Golemite's rarity trait scale. Treated like extra weapon ores (same sums, maxes and caps).
+ * Equipped Golemites' ore traits, which the player gets: weapon and armour traits alike. Each ore counts at its share of
+ * the Golemite (10% to 30% rule), times the Golemite's rarity trait scale. Weapon traits are treated like extra weapon
+ * ores, armour traits like another armour piece (same sums, maxes and caps).
  */
 export function golemExtra(golems: readonly GolemInput[]) {
   const vals: Partial<Record<DpsStat, number[]>> = {};
+  let lowHp = 0;
+  const vital: VitalPower[] = [];
   const used = golems.map((g) => {
     if (!g || !(g.traitScale > 0)) return false;
     const total = g.ores.reduce((n, o) => n + o.count, 0);
+    if (!total) return false;
     let any = false;
     for (const o of g.ores) {
+      const share = o.count / total;
+      // Weapon traits
       const ranges = DPS_STATS[o.id];
-      if (!ranges || !total) continue;
-      for (const [stat, r] of Object.entries(ranges) as [DpsStat, NonNullable<(typeof ranges)[DpsStat]>][]) {
-        const v = statAtShare(r, o.count / total) * (UNSCALED.has(stat) ? 1 : g.traitScale);
+      for (const [stat, r] of Object.entries(ranges ?? {}) as [DpsStat, NonNullable<NonNullable<typeof ranges>[DpsStat]>][]) {
+        const v = statAtShare(r, share) * (UNSCALED.has(stat) ? 1 : g.traitScale);
         if (v) { push(vals, stat, v); if (!UNSCALED.has(stat)) any = true; }
       }
+      // Armour traits. Many ores have one trait for weapons and armour alike, which both tables list; it's already
+      // counted above, so only what the weapon table doesn't have is added (Bismuth's crits, Demonite's burn, armour-only
+      // Berserker such as Vanegos's).
+      const a = ARMOUR_DPS[o.id];
+      if (!a || share < 0.1) continue;
+      const at = (full: number) => statAtShare({ base: full / 10, max: full }, share);
+      for (const [stat, full] of Object.entries(a.stats ?? {}) as [DpsStat, number][]) {
+        if (ranges?.[stat]) continue;
+        push(vals, stat, at(full) * (UNSCALED.has(stat) ? 1 : g.traitScale));
+        if (!UNSCALED.has(stat)) any = true;
+      }
+      if (a.lowHp && !ranges?.phys_dmg) { lowHp += at(a.lowHp) * g.traitScale; any = true; }
+      if (a.vitalPower) { vital.push({ share, scale: g.traitScale, ...a.vitalPower }); any = true; }
     }
     return any;
   });
-  return { extra: { vals } as DpsExtra, used };
+  return { extra: { vals } as DpsExtra, lowHp, vital, used };
 }
 
 /** A race's always-on effects for a weapon class. Unknown or missing races add nothing. */
@@ -143,7 +164,7 @@ export function raceExtra(raceId: string | null | undefined, cls: string): { ext
 
 /** Low-health and situational bonuses, as uncapped additions (applied on top of the normal build). */
 function conditionExtra(cond: CombatConditions, raceId: string | null | undefined, armourLowHp: number, raceLowHp: number,
-  vital: { share: number; perHp: number; step: number; max: number }[]): DpsExtra {
+  vital: VitalPower[]): DpsExtra {
   const uncapped: Partial<Record<CoreStat, number>> = {};
   const add = (k: CoreStat, v: number) => { if (v) uncapped[k] = (uncapped[k] ?? 0) + v; };
   if (cond.lowHp) add("lethality", Math.min(armourLowHp, 2) + raceLowHp); // the wiki caps ore Berserker at 200%
@@ -157,7 +178,7 @@ function conditionExtra(cond: CombatConditions, raceId: string | null | undefine
   const hp = Math.max(0, cond.maxHp ?? 0);
   if (hp > 0) {
     if (raceId === "dryad") dotMultiplier += Math.min(10, Math.floor(hp / 1000)) * 0.05;
-    for (const v of vital) dotMultiplier += Math.min(v.max, Math.floor(hp / v.step) * v.perHp) * statAtShare({ base: 0.1, max: 1 }, v.share);
+    for (const v of vital) dotMultiplier += Math.min(v.max, Math.floor(hp / v.step) * v.perHp) * statAtShare({ base: 0.1, max: 1 }, v.share) * (v.scale ?? 1);
   }
   return { uncapped, dotMultiplier };
 }
@@ -190,10 +211,11 @@ export function combatDps(input: CombatInput): CombatResult {
   const breakdown = steps.map(([key, r], i) => ({ key, label: LAYER_LABEL[key], dps: r.total - (i ? steps[i - 1][1].total : 0) }));
   const result = steps[steps.length - 1][1];
 
-  const lowHpSources = armour.lowHp + race.lowHp;
-  const lowHp = lowHpSources > 0 ? run(weapon.ores, damage, merge(full, conditionExtra({ lowHp: true }, input.raceId, armour.lowHp, race.lowHp, []))).total : null;
+  const wornLowHp = armour.lowHp + golems.lowHp;
+  const lowHpSources = wornLowHp + race.lowHp;
+  const lowHp = lowHpSources > 0 ? run(weapon.ores, damage, merge(full, conditionExtra({ lowHp: true }, input.raceId, wornLowHp, race.lowHp, []))).total : null;
   const conditional = anyCondition(input.conditions)
-    ? run(weapon.ores, damage, merge(full, conditionExtra(input.conditions!, input.raceId, armour.lowHp, race.lowHp, armour.vital))).total
+    ? run(weapon.ores, damage, merge(full, conditionExtra(input.conditions!, input.raceId, wornLowHp, race.lowHp, [...armour.vital, ...golems.vital]))).total
     : null;
 
   const raceName = input.raceId ? raceById.get(input.raceId)?.name : undefined;

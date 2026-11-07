@@ -94,4 +94,13 @@ describe("Golem slots in the loadout", () => {
     expect(old.golems).toEqual([]);
     expect(old.golemSlot2).toBe(false);
   });
+
+  it("lists every ore trait, weapon and armour, at the Golemite's strength", () => {
+    const r = golemite(mix(["Bismuth", 10]));
+    const t = r.traits[0];
+    expect(t.effects.map((e) => e.appliesTo)).toEqual([["weapon"], ["armour"]]);
+    expect(t.golem).toBeCloseTo(r.traitScale!, 9);
+    expect(t.lines).toEqual(t.effects.map((e) => e.text));
+    expect(golemite(mix(["Eye Ore", 10])).traits[0].effects[0].appliesTo).toEqual(["armour", "weapon"]);
+  });
 });
