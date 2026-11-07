@@ -60,7 +60,7 @@ export const WARNINGS: Record<string, string> = {
   MOLD_EFFECT_UNKNOWN: "Fewer molds than needed: how that changes the real chances isn't measured, so the chances shown are without them.",
   SITUATIONAL_BONUSES_OFF: "The race has situational bonuses (low HP, stacks...). Send `conditions` to see them separately in `scenarios`.",
   DEFENCE_ONLY: "Every loadout: armour adds its defence at +0 and the damage traits counted in DPS; health, shields and other effects aren't added up.",
-  GOLEMITE_TRAITS_UNVERIFIED: "Which ore traits a Golemite gets (the weapon ones are shown) and whether quality matters aren't confirmed in game.",
+  GOLEMITE_TRAITS_UNVERIFIED: "Every Golemite result: the player gets all of its ore traits (weapon and armour, see `byType`); whether quality changes them isn't confirmed in game.",
 };
 
 export const CHANGELOG = [

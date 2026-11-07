@@ -1,11 +1,11 @@
 /**
  * A Golemite from its ores: rarity from the primary ore (the same rule as weapons and armour, checked in game), mining
- * help and trait share from the rarity, and which ores' weapon traits carry over at what strength. No combat damage:
- * how a Golemite fights isn't known.
+ * help and trait share from the rarity, and every ore trait (weapon and armour) at the strength the player gets it.
+ * No combat damage of its own: how a Golemite fights isn't known.
  */
 import { GOLEMITE, GOLEMITE_RARITY } from "@/data/golemites";
-import { scaleTraitText, transferredTraits, type Mix, type Rarity } from "./forge";
-import { primaryOre } from "./index";
+import { scaleTraitText, type Mix, type Rarity } from "./forge";
+import { primaryOre, traitStrength } from "./index";
 
 export function golemite(mix: Mix) {
   const used = mix.filter((m) => m.count > 0);
@@ -13,12 +13,18 @@ export function golemite(mix: Mix) {
   const primary = used.length ? primaryOre(used.map((m) => ({ ore: { slug: m.ore.id, multiplier: m.ore.multiplier, rarity: m.ore.rarity, ref: m.ore }, count: m.count })))?.ref ?? null : null;
   const rarity = primary && primary.rarity in GOLEMITE_RARITY ? (primary.rarity as Rarity) : null;
   const scale = rarity ? GOLEMITE_RARITY[rarity] : null;
-  // The guide's examples list weapon traits (crits, smite, explosions), so those are the ones shown.
-  // Each trait: the ore's numbers × its share strength (10% to 30% rule) × the rarity's trait scaling.
-  const traits = transferredTraits(used, "weapon").map((t) => {
-    const golem = t.strength * (scale?.traits ?? 0);
-    return { ore: t.ore, share: t.share, strength: t.strength, golem, lines: t.fullLines.map((l) => scaleTraitText(l, golem)) };
-  });
+  // All of each ore's traits, weapon and armour: the player gets them. Each one: the ore's numbers × its share strength
+  // (10% to 30% rule) × the rarity's trait scaling.
+  const traits = used
+    .map((m) => {
+      const share = total ? m.count / total : 0;
+      const strength = traitStrength(share);
+      const golem = strength * (scale?.traits ?? 0);
+      const effects = m.ore.traits.map((t) => ({ text: scaleTraitText(t.text, golem), appliesTo: [...t.kinds].sort() as ("armour" | "weapon")[] }));
+      return { ore: m.ore, share, strength, golem, effects, lines: effects.map((e) => e.text) };
+    })
+    .filter((t) => t.effects.length > 0)
+    .sort((a, b) => b.share - a.share);
   return { mix: used, total, enough: total >= GOLEMITE.minOres, tooMany: total > GOLEMITE.maxOres, name: primary ? `${primary.name} Golemite` : "Golemite", primary, rarity, mining: scale?.mining ?? null, traitScale: scale?.traits ?? null, traits };
 }
 

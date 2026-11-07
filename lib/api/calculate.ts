@@ -281,13 +281,17 @@ export function calculateGolemite(cat: Catalogue, input: GolemiteInput) {
       ores: mix.map((m) => ({ id: m.ore.id, name: m.ore.name, count: m.count, share: r4(m.count / g.total), rarity: m.ore.rarity, image: imageUrl("ores", m.ore.id) })),
       totalOres: g.total, primaryOre: g.primary ? { id: g.primary.id, name: g.primary.name, image: imageUrl("ores", g.primary.id) } : null,
       miningHelp: g.mining, oreTraitShare: g.traitScale,
-      traits: g.traits.map((t) => ({ ore: { id: t.ore.id, name: t.ore.name }, share: r4(t.share), shareStrength: r4(t.strength), strength: r4(t.golem), effects: t.lines, appliesTo: ["weapon"] })),
+      traits: g.traits.map((t) => ({
+        ore: { id: t.ore.id, name: t.ore.name }, share: r4(t.share), shareStrength: r4(t.strength), strength: r4(t.golem),
+        effects: t.lines, appliesTo: [...new Set(t.effects.flatMap((e) => e.appliesTo))].sort(),
+        byType: t.effects.map((e) => ({ text: e.text, appliesTo: e.appliesTo })),
+      })),
       growth: { level: grow.level, maxLevel: GOLEMITE.maxLevel, size: r4(grow.size), canFight: grow.fights, combatLevel: GOLEMITE.combatLevel, snacksToCombat: grow.toCombat, snacksToMax: grow.toMax },
       storage: GOLEMITE.storage,
       combat: { status: "unknown", damage: null, note: "How Golemites fight isn't known, so there's no damage figure." },
       links: { calculator: SITE_URL + golemiteHref({ ores: input.ores, quality: input.quality }) },
     },
-    warnings: [{ code: "GOLEMITE_TRAITS_UNVERIFIED", message: "Which ore traits a Golemite gets (the weapon ones are shown) and whether quality matters aren't confirmed in game." }],
+    warnings: [{ code: "GOLEMITE_TRAITS_UNVERIFIED", message: "The player gets all of a Golemite's ore traits, weapon and armour; whether quality changes them isn't confirmed in game." }],
   };
 }
 

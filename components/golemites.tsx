@@ -93,13 +93,15 @@ export function GolemiteStats({ r, level }: { r: GolemWorked; level: number }) {
 
 /** The ore traits a Golemite gets, at its rarity's scaling. */
 export function GolemiteTraits({ r }: { r: GolemWorked }) {
-  if (!r.traits.length) return <p className="muted small" style={{ margin: 0 }}>No weapon traits carry over. An ore needs at least 10% of the mix.</p>;
+  if (!r.traits.length) return <p className="muted small" style={{ margin: 0 }}>No traits carry over. An ore needs at least 10% of the mix.</p>;
   return (
     <ul className="golem-traits">
       {r.traits.map((t) => (
         <li key={t.ore.id}>
           <b style={{ color: rarityColour(t.ore.rarity) }}>{t.ore.name}</b> <span className="small muted">{pct(t.share * 100, 0)} of the mix · {pct(t.strength * 100, 0)} strength × {pct((r.traitScale ?? 0) * 100, 0)} = {pct(t.golem * 100, 1)}</span>
-          {t.lines.map((l, i) => <span key={i} className="small" style={{ display: "block" }}>{l}</span>)}
+          {t.effects.map((e, i) => (
+            <span key={i} className="small" style={{ display: "block" }}><span className="muted">{e.appliesTo.length > 1 ? "Weapon and armour" : e.appliesTo[0] === "armour" ? "Armour" : "Weapon"}:</span> {e.text}</span>
+          ))}
         </li>
       ))}
     </ul>
