@@ -568,7 +568,7 @@ Greatsword,Dark Knight's Greatsword,15,1.11,1.33,9.9,485,4
 Greatsword,Anchored Greatsword,13.8,0.91,1.09,9.9,485,6
 Greatsword,Zweihander,14.4,1.05,1.26,10.35,485,1
 Spear,Spear,7.5,0.45,0.73,11,120,1
-Spear,Angelic Spear,9.75,0.41,0.66,11,120,8
+Spear,Angelic Spear,13.11,0.41,0.66,11,120,8
 Spear,Trident,8.25,0.45,0.73,11,120,2
 Spear,Knight Spear,10.125,0.38,0.60,11,120,4
 Spear,Compass Spear,10.5,0.47,0.76,11,120,6

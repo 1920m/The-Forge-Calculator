@@ -38,3 +38,22 @@ Builds 1, 2, 5–8, 10, 12–15 and the race and low-health differences in 4 and
 3. **Cooldown procs.** Race procs with a cooldown (Orc Lord, ArchAngel) use the wiki's `1 ÷ (cooldown + 1 ÷ (chance × hits per second))`, so those match.
 
 Apart from the enhancement table, nothing here has been checked against the game yet; the wiki's script is a community model.
+
+## Version 1.10 (7 November 2026)
+
+The wiki's calculator was updated for Version 1.10 the same evening. On 8 November we ran the revision of 7 Nov, 22:52 with these builds (100% quality, +0, the race's weapon class picked where it has one):
+
+| Build | Wiki DPS | Our DPS | Difference | Why |
+|---|---|---|---|---|
+| Spear (24 Iron), Imp | 11.575 | 12.438 | +0.863 | Hellfire Prod's spear burn, which the wiki leaves out; the rest (Trident Toss 0.788) matches |
+| Angelic Spear (24 Iron) | 13.905 | 13.905 | – | 13.11 damage |
+| Angelic Spear (24 Iron), Imp | 22.233 | 23.902 | +1.669 | Hellfire Prod, as above |
+| Demonic Spear (24 Iron) | 13.827 | 13.827 | – | 14.42 damage, 0.73 s |
+| Demonic Spear (24 Iron), Imp | 22.255 | 23.915 | +1.659 | Hellfire Prod, as above |
+| Mace (14 Iron), Imp | 4.188 | 4.188 | – | Imp's bonuses are for spears only |
+| Mace (14 Iron), Fallen Angel | 6.023 | 6.012 | −0.2% | Black Halo: the wiki rolls the 30% chance to 30.7%, we use 30% (as for Angel's smite) |
+| Mace (14 Iron), Fallen Angel, below 35% HP | 7.405 | 7.394 | −0.2% | Same; Last Descent adds +1.382 on both |
+| Jack's Crest (11 Iron) | 9.657 | 9.657 | – | 14.9 damage, 1.08 s |
+| The Carver (11 Iron) | 8.944 | 8.944 | – | 1.08 s |
+
+Coffin's Lid keeps 23 damage (its item page and the Weapons table); the wiki's calculator data has 25. Knight Spear keeps 10.125 (the game file); the calculator data has 7.5. These builds are checked in `tests/loadout-dps.test.ts`.
