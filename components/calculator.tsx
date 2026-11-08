@@ -197,7 +197,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const baseDps = kind === "weapon" ? selected?.v.dps?.total ?? null : null;
   // With weapon runes chosen, DPS at each level counts the runes whose slots that level opens (+3, +6, +9).
   const runeWeapon = kind === "weapon" && hasRunes(runes.weapon) && selected?.v.raw != null && selected.v.interval
-    ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval } : null;
+    ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval, cls: selected.cls.name } : null;
   const dpsAt = (level: number) => (baseDps == null ? null : runeWeapon ? dpsAtLevel(runeWeapon, level, runes.weapon).total : baseDps * enhanceFactor(level));
   const runeDps = runeWeapon ? dpsAtLevel(runeWeapon, runeEnhance, runes.weapon).total : null;
   // The weapon for the race and Full Loadout comparison, at the same level as above (+0 without runes).
@@ -205,7 +205,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
     ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval, cls: selected.cls.name } : null, [kind, selected, mix]);
   const runeItem = useMemo<RuneItem | null>(() => selected ? {
     kind, name: selected.v.name, raw: selected.v.raw,
-    ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), interval: selected.v.interval,
+    ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), interval: selected.v.interval, cls: selected.cls.name,
   } : null, [selected, kind, mix]);
   const scopeOres = cat.ores.filter((o) => allWorlds || o.worlds.includes(world));
   // The runes for this item type go with the save, at the enhancement level they're planned for.

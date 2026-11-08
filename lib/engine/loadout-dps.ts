@@ -198,7 +198,7 @@ export function combatDps(input: CombatInput): CombatResult {
   const race = raceExtra(input.raceId, weapon.cls);
   const worn = merge(merge(runeExtra, armour.extra), golems.extra);
   const full = merge(worn, race.extra);
-  const run = (ores: OreCount[], dmg: number, extra?: DpsExtra) => weaponDps({ ores, damage: dmg, interval: weapon.interval, extra });
+  const run = (ores: OreCount[], dmg: number, extra?: DpsExtra) => weaponDps({ ores, damage: dmg, interval: weapon.interval, cls: weapon.cls, extra });
 
   const steps: [LayerKey, DpsResult][] = [
     ["base", run([], weapon.raw)],

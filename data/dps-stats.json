@@ -1,6 +1,7 @@
 {
  "source": "The Forge Official Roblox Wiki: Data:Ores.json and MediaWiki:ForgeCalculator.js (CC BY-SA 4.0), fetched 25 Oct 2026",
  "note": "base = value at a 10% share, max = value at 30%+ share. Fractions, except durations and cooldowns in seconds.",
+ "version_1_10": "echotite, frost-core, tetrinite and frost-star from Data:Ores.json, 7 Nov 2026. Frost Star's Polar Shift cycles four bonuses; the wiki counts its lethality, crit damage and attack speed at a quarter each.",
  "added": "aetherit atk_speed from the wiki ore page (weapon trait +8% attack speed); not in Data:Ores.json",
  "ores": {
   "frost-fossil": {"lethality":{"base":0.0175,"max":0.175}},
@@ -35,6 +36,10 @@
   "vanegos": {"lethality":{"base":0.04,"max":0.4}},
   "kitsunite": {"explosion_dmg":{"base":0.07,"max":0.7},"explosion_chance":{"base":0.04,"max":0.4},"fire_dmg":{"base":0.04,"max":0.4},"fire_chance":{"base":0.05,"max":0.5},"fire_duration":{"base":0.5,"max":5},"smite_dmg":{"base":0.025,"max":0.5,"ungated":true,"ceiling":0.5,"floor":0.05},"smite_chance":{"base":0.05,"max":0.5},"lightning_dmg":{"base":0.08,"max":0.8},"lightning_cooldown":{"base":0.3,"max":3},"lightning_chance":{"base":0.06,"max":0.6}},
   "bismuth": {"atk_speed":{"base":0.018000000000000002,"max":0.18},"explosion_dmg":{"base":0.0875,"max":0.0875,"ungated":true},"explosion_chance":{"base":0.0525,"max":0.0525,"ungated":true},"fire_dmg":{"base":0.0325,"max":0.0325,"ungated":true},"fire_chance":{"base":0.075,"max":0.075,"ungated":true},"fire_duration":{"base":0.5,"max":0.5,"ungated":true},"poison_dmg":{"base":0.02,"max":0.02,"ungated":true},"poison_chance":{"base":0.09625,"max":0.09625,"ungated":true},"poison_duration":{"base":1.5,"max":1.5,"ungated":true},"lightning_dmg":{"base":0.1,"max":0.1,"ungated":true},"lightning_cooldown":{"base":0.375,"max":0.375,"ungated":true},"lightning_chance":{"base":0.05875,"max":0.05875,"ungated":true}},
-  "aetherit": {"atk_speed":{"base":0.008,"max":0.08}}
+  "aetherit": {"atk_speed":{"base":0.008,"max":0.08}},
+  "echotite": {"explosion_dmg":{"base":0.05,"max":0.5},"explosion_chance":{"base":0.4,"max":0.4}},
+  "frost-core": {"lethality":{"base":0.015,"max":0.15},"crit_dmg":{"base":0.01,"max":0.1}},
+  "tetrinite": {"poison_dmg":{"base":0.04,"max":0.4},"poison_chance":{"base":0.75,"max":0.75},"poison_duration":{"base":6,"max":6},"lightning_dmg":{"base":0.07,"max":0.7},"lightning_cooldown":{"base":4,"max":4},"lightning_chance":{"base":0.5,"max":0.5},"ancient_poison_dmg":{"base":0.05,"max":0.5},"ancient_poison_chance":{"base":0.5,"max":0.5},"ancient_poison_duration":{"base":5,"max":5}},
+  "frost-star": {"lethality":{"base":0.0025,"max":0.025},"crit_dmg":{"base":0.0025,"max":0.025},"atk_speed":{"base":0.0025,"max":0.025},"frost_slash_dmg":{"base":0.025,"max":0.25},"frost_slash_chance":{"base":0.3,"max":0.3},"glacier_dmg":{"base":0.065,"max":0.65},"glacier_chance":{"base":0.5,"max":0.5},"starfall_dmg":{"base":0.125,"max":1.25},"starfall_chance":{"base":0.2,"max":0.2},"starfall_cooldown":{"base":10,"max":10},"stellar_mark_dmg":{"base":0.15,"max":1.5}}
  }
 }

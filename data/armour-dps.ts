@@ -6,8 +6,10 @@
  * - Lethality is "Physical Damage" on the wiki ("Lethality: Increases Physical Damage by 15%"). It boosts direct hits
  *   only, never burns, smites or other procs.
  * - `lowHp` is the Berserker bonus ("below 35% HP, +X% Physical Damage"): conditional, never in the normal DPS.
- * - Left out on purpose: area poison clouds (Poopite, Vooite), thorns, Demonite's Backfire (burns when you're hit) and
- *   Bismuth's Vital Power (needs your max health; offered as a condition instead).
+ * - Left out on purpose: area poison clouds (Poopite, Vooite), thorns, Demonite's Backfire (burns when you're hit),
+ *   Bismuth's Vital Power (needs your max health; offered as a condition instead), and Version 1.10's Frost Core
+ *   blizzard (when you're hit), Bizzarite's Void Mark (on the attacker, when you're hit) and Heaven's Ascent (builds up
+ *   over a fight), which the wiki's calculator leaves out too.
  */
 import type { DpsStat } from "@/lib/engine/dps";
 
@@ -25,6 +27,8 @@ export const ARMOUR_DPS: Record<string, ArmourDps> = {
   // "15% chance to apply Burn for 2 seconds, dealing 20% of Base Weapon Damage per second."
   demonite: { stats: { fire_dmg: 0.2, fire_chance: 0.15, fire_duration: 2 } },
   "heart-of-the-island": { lowHp: 0.25 },
+  // Version 1.10: "Lethality: Increases Physical Damage by 15%. Critical Damage: Increases Critical Damage by 10%." (both)
+  "frost-core": { stats: { lethality: 0.15, crit_dmg: 0.1 } },
   yin: { lowHp: 0.25 },
 };
 

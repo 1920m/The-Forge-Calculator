@@ -16,7 +16,7 @@ const LEVELS = Array.from({ length: MAX_ENHANCE + 1 }, (_, i) => i);
 export type RuneItem = {
   kind: RuneKind; name: string; raw: number | null;
   /** Weapons only: what the DPS maths needs. */
-  ores?: { id: string; count: number }[]; interval?: number;
+  ores?: { id: string; count: number }[]; interval?: number; cls?: string;
 };
 
 type Props = { item: RuneItem; enhance: number; onEnhance: (l: number) => void; slots: (RuneSlot | null)[]; onSlots: (s: (RuneSlot | null)[]) => void };
@@ -24,7 +24,7 @@ type Props = { item: RuneItem; enhance: number; onEnhance: (l: number) => void; 
 /** DPS for the item at this enhancement level with these runes in the open slots. */
 function dpsWith(item: RuneItem, enhance: number, totals: RuneTotals | null): DpsResult | null {
   if (item.kind !== "weapon" || item.raw == null || !item.ores || !item.interval) return null;
-  return weaponDps({ ores: item.ores, damage: item.raw * enhanceFactor(enhance), interval: item.interval, extra: totals ? { stats: totals.stats, procs: totals.procs } : undefined });
+  return weaponDps({ ores: item.ores, damage: item.raw * enhanceFactor(enhance), interval: item.interval, cls: item.cls, extra: totals ? { stats: totals.stats, procs: totals.procs } : undefined });
 }
 
 /** Effective health from a shield: 1 ÷ (1 − chance × cut). Each Ward Patch shields on its own. */

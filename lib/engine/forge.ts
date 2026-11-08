@@ -115,7 +115,7 @@ export function forge(cat: Catalogue, mix: Mix, kind: Kind, world: World, qualit
     const probability = odds.status === "available" ? odds.classes[i].probability : 0;
     const variants = classVariants(cat, kind, world, name).map((v) => {
       const raw = multiplier == null ? null : rawStat(v.base, multiplier, quality);
-      const dps = kind === "weapon" && raw != null && v.interval ? weaponDps({ ores: dpsOres, damage: raw, interval: v.interval }) : null;
+      const dps = kind === "weapon" && raw != null && v.interval ? weaponDps({ ores: dpsOres, damage: raw, interval: v.interval, cls: name }) : null;
       return { ...v, overall: (probability * v.chance) / 100, raw, value: raw == null ? null : roundStat(raw, kind), dps };
     });
     return { name, probability, lockAt: locks[i], lockable: total >= locks[i], incomplete: poolIncomplete(cat, kind, world, name), variants };

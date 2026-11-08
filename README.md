@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/price-free-e8c27a?style=flat-square&labelColor=241321" alt="Free">
   <img src="https://img.shields.io/badge/login-none-e8c27a?style=flat-square&labelColor=241321" alt="No login">
   <img src="https://img.shields.io/badge/worlds-1%E2%80%934-e8c27a?style=flat-square&labelColor=241321" alt="Worlds 1 to 4">
-  <img src="https://img.shields.io/badge/ores-149-e8c27a?style=flat-square&labelColor=241321" alt="149 ores">
+  <img src="https://img.shields.io/badge/ores-155-e8c27a?style=flat-square&labelColor=241321" alt="155 ores">
   <img src="https://img.shields.io/badge/weapons-87-e8c27a?style=flat-square&labelColor=241321" alt="87 weapons">
   <img src="https://img.shields.io/badge/armour_pieces-37-e8c27a?style=flat-square&labelColor=241321" alt="37 armour pieces">
 </p>
@@ -65,7 +65,7 @@ A trait only carries over when its ore is at least **10%** of the craft, and it 
 
 <h3><img src="https://jzvdmthbcmdwwpkoekso.supabase.co/storage/v1/object/public/forge-images/ores/kitsunite.png" width="26" alt=""> A quick ore picker</h3>
 
-- Shows the ores of the world you are in, or all 149.
+- Shows the ores of the world you are in, or all 155.
 - Search by name, sort by **highest or lowest multiplier**, or keep only ores that are **best for armour** or **best for weapons**.
 - A two-handle **multiplier slider** narrows the list to the range you can afford.
 - Small sword and shield marks show at a glance which ores help weapons and which help armour.

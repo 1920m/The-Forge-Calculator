@@ -12,7 +12,7 @@ describe("ore filter", () => {
     const low = applyOreFilter(w4, { sort: "low", range: null });
     expect(high[0].multiplier).toBeGreaterThanOrEqual(high[high.length - 1].multiplier);
     expect(low[0].multiplier).toBeLessThanOrEqual(low[low.length - 1].multiplier);
-    expect(high[0].name).toBe("Kitsunite");
+    expect(high[0].name).toBe("Frost Star"); // 27.75× since Version 1.10 (Kitsunite 27.5×)
   });
   it("best for armour keeps only armour-trait ores, highest first", () => {
     const list = applyOreFilter(w4, { sort: "armour", range: null });
