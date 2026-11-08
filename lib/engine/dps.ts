@@ -45,6 +45,8 @@ export type SpecialProc = { label: string } & (
   | { type: "cooldown"; dmg: number; chance: number; cd: number } // chance on hit, then a cooldown (Orc Lord's slam, Archangel's beams)
   | { type: "spirits"; dmg: number; chance: number; max: number } // summons on hit, at most `max` a second (Kitsune's fox claws)
   | { type: "foxfire"; dmg: number; chance: number; dur: number } // damage over time that Lethality boosts (Kitsune's foxfire)
+  | { type: "onhit"; dmg: number; chance: number } // a chance on every hit, no cooldown (Fallen Angel's Black Halo)
+  | { type: "limited"; dmg: number; cd: number } // fires on a hit, at most once every `cd` seconds (Imp's Trident Toss)
   | { type: "aura"; dmg: number }); // constant damage per second while fighting (Demon's cursed aura)
 
 /** What's added to the weapon's own ore traits. Everything is optional; without it the result is the weapon alone. */
@@ -127,6 +129,8 @@ export function weaponDps({ ores, damage, interval, extra }: DpsInput): DpsResul
       dps: s.type === "cooldown" ? damage * s.dmg * cooldownRate(s.chance, s.cd)
         : s.type === "spirits" ? damage * s.dmg * Math.min(Math.min(s.chance, 1) * rate, s.max)
         : s.type === "foxfire" ? damage * (1 + lethality) * s.dmg * (1 - Math.exp(-Math.min(s.chance, 1) * rate * s.dur))
+        : s.type === "onhit" ? damage * s.dmg * Math.min(s.chance, 1) * rate
+        : s.type === "limited" ? damage * s.dmg * Math.min(rate, 1 / s.cd)
         : damage * s.dmg,
     })),
   ].filter((p) => p.dps > 0);

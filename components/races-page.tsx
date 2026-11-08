@@ -144,7 +144,7 @@ export function RacesPage() {
               </tbody>
             </table>
             <p className="note">
-              Chances are from the <a className="inline-link" href={RACES_SOURCE.url} target="_blank" rel="noopener noreferrer">Forge wiki&apos;s Races page</a> (last edited {RACES_SOURCE.edited}) and add up to 100%.
+              Chances are from the <a className="inline-link" href={RACES_SOURCE.url} target="_blank" rel="noopener noreferrer">Forge wiki&apos;s Races page</a> (last edited {RACES_SOURCE.edited}). The wiki gives all six Mythicals 0.25%, which adds up to 100.5%, so Human is 0.5% lower here (34.55%) and the chances add up to 100%.
               The wiki says luck buffs (event, totem and potion luck) don&apos;t change race spins. It doesn&apos;t mention any pity or guarantee, so every spin is counted as a fresh roll. <Link href="/how-it-works#tries" className="inline-link">How the numbers are worked out</Link>
             </p>
           </div>

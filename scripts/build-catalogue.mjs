@@ -73,14 +73,15 @@ const csv = (header) => { const m = [...prd.matchAll(/```csv\n([\s\S]*?)\n```/g)
 const oddsTable = (header) => Object.fromEntries(csv(header).slice(1).map(([n, ...cells]) => [n, cells.map((c) => (c === "" ? 0 : Number(c)))]));
 
 // ---------- weapons
-// Stats from the PRD weapon table plus wiki rows the PRD lacked (forgewiki.org/wiki/Weapons, 24 Oct 2026).
+// Stats from the PRD weapon table plus wiki rows the PRD lacked (forgewiki.org/wiki/Weapons, 24 Oct 2026; Version 1.10
+// changes and fixes from the same table and the item pages, 7 Nov 2026).
 const EXTRA_WEAPONS = [
-  ["Greatsword", "The Carver", "13.8", "0.91", "1.26", "9", "485", "4"], // wiki spells it "The Craver"
-  ["Greatsword", "Jack's Crest", "13.8", "0.91", "1.26", "9", "485", "6"],
+  ["Greatsword", "The Carver", "13.8", "0.91", "1.08", "9", "485", "4"], // wiki spells it "The Craver"
+  ["Greatsword", "Jack's Crest", "14.9", "0.91", "1.08", "9", "485", "6"],
   ["Axe", "Duskwing's Cleaver", "8.4", "0.48", "0.88", "8", "205", "8"],
-  ["Spear", "Demonic Spear", "12.75", "0.56", "0.60", "11", "120", "4"],
+  ["Spear", "Demonic Spear", "14.42", "0.56", "0.73", "11", "120", "4"], // Version 1.10 buff,
   ["Great Axe", "Halberd", "16.8", "1", "0.91", "10", "850", "1"],
-  ["Colossal Sword", "Coffin's Lid", "23", "1.12", "1.56", "10", "1355", "16"],
+  ["Colossal Sword", "Coffin's Lid", "23", "1.12", "1.40", "10", "1355", "16"],
 ];
 const allWeapons = [...csv("class,name,base_damage").slice(1), ...EXTRA_WEAPONS].map(([cls, name, dmg, idx, tru, range, price, chance]) => ({
   id: slug(name), name, class: cls, baseDamage: num(dmg), indexSpeed: num(idx), trueSpeed: num(tru), range: num(range), price: num(price), weight: num(chance), worlds: [], verified: true, tag: null,

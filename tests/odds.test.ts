@@ -46,6 +46,10 @@ describe("race data", () => {
     expect(RACES.reduce((a, r) => a + r.chance, 0)).toBeCloseTo(100, 9);
     for (const r of RACES) expect(RACE_RARITIES).toContain(r.rarity);
   });
+  it("takes the wiki's 0.5% overlap off Human (Version 1.10 has six Mythicals at 0.25%)", () => {
+    expect(RACES.find((r) => r.id === "human")!.chance).toBe(34.55);
+    expect(RACES.filter((r) => r.rarity === "Mythical").map((r) => r.chance)).toEqual([0.25, 0.25, 0.25, 0.25, 0.25, 0.25]);
+  });
   it("gives the expected numbers for a Mythical race", () => {
     const demon = RACES.find((r) => r.id === "demon")!;
     const p = demon.chance / 100;

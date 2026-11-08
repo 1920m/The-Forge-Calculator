@@ -10,7 +10,7 @@
  * normal DPS; they make a separate scenario.
  */
 import { ARMOUR_DPS } from "@/data/armour-dps";
-import { raceById } from "@/data/races";
+import { raceById, type RaceCombat } from "@/data/races";
 import { enhanceFactor } from "./index";
 import { DPS_STATS, statAtShare, weaponDps, type DpsExtra, type DpsResult, type DpsStat, type SpecialProc } from "./dps";
 import { runeTotals, slotsAt, type RuneSlot } from "./runes";
@@ -19,7 +19,7 @@ type OreCount = { id: string; count: number };
 type CoreStat = "lethality" | "crit_chance" | "crit_dmg" | "atk_speed";
 
 export type CombatConditions = {
-  /** Below 35% HP: armour Berserker and Minotaur's Bull's Fury (which starts below 50%). */
+  /** Below 35% HP: armour Berserker, Minotaur's Bull's Fury (which starts below 50%) and Fallen Angel's Last Descent (below 30%). */
   lowHp?: boolean;
   /** Orc Lord's Warbringer: share of health missing, 0 to 1. */
   orcLordMissingHp?: number;
@@ -57,7 +57,7 @@ export type CombatResult = {
   result: DpsResult;
   /** What each layer adds, in order. They add up to `total`. */
   breakdown: { key: LayerKey; label: string; dps: number }[];
-  /** DPS below 35% HP (Berserker, Bull's Fury), when the build has any. */
+  /** DPS below 35% HP (Berserker, Bull's Fury, Last Descent), when the build has any. */
   lowHp: number | null;
   /** DPS with the chosen conditions on, when any are chosen. */
   conditional: number | null;
@@ -156,10 +156,12 @@ export function raceExtra(raceId: string | null | undefined, cls: string): { ext
   const addUncapped = (s: Partial<Record<CoreStat, number>> | undefined) => { for (const [k, v] of Object.entries(s ?? {}) as [CoreStat, number][]) uncapped[k] = (uncapped[k] ?? 0) + v; };
   addStats(c.stats);
   addUncapped(c.uncapped);
-  for (const b of c.classes ?? []) if (b.classes.includes(cls)) { addStats(b.stats); addUncapped(b.uncapped); }
-  if (c.burn) { push(vals, "fire_dmg", c.burn.dmg); push(vals, "fire_chance", c.burn.chance ?? 0); push(vals, "fire_duration", c.burn.dur); }
+  const addBurn = (burn: RaceCombat["burn"]) => { if (burn) { push(vals, "fire_dmg", burn.dmg); push(vals, "fire_chance", burn.chance ?? 0); push(vals, "fire_duration", burn.dur); } };
+  const specials: SpecialProc[] = [...(c.specials ?? [])];
+  for (const b of c.classes ?? []) if (b.classes.includes(cls)) { addStats(b.stats); addUncapped(b.uncapped); addBurn(b.burn); specials.push(...(b.specials ?? [])); }
+  addBurn(c.burn);
   if (c.smite) { push(vals, "smite_dmg", c.smite.dmg); push(vals, "smite_chance", c.smite.chance); }
-  return { extra: { vals, uncapped, specials: (c.specials ?? []) as SpecialProc[] }, lowHp: c.lowHp ?? 0 };
+  return { extra: { vals, uncapped, specials }, lowHp: c.lowHp ?? 0 };
 }
 
 /** Low-health and situational bonuses, as uncapped additions (applied on top of the normal build). */

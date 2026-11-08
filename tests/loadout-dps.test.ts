@@ -78,9 +78,9 @@ describe("armour traits", () => {
 });
 
 describe("races", () => {
-  it("has combat data on the same 20 races, without a second race list", () => {
-    expect(RACES).toHaveLength(20);
-    expect(RACES.filter((r) => r.combat).map((r) => r.id).sort()).toEqual(["angel", "archangel", "demon", "dragonborn", "dryad", "fairy", "felynx", "goblin", "golem", "kitsune", "minotaur", "orc", "orc-lord", "shadow", "vampire"]);
+  it("has combat data on the same 22 races, without a second race list", () => {
+    expect(RACES).toHaveLength(22);
+    expect(RACES.filter((r) => r.combat).map((r) => r.id).sort()).toEqual(["angel", "archangel", "demon", "dragonborn", "dryad", "fairy", "fallen-angel", "felynx", "goblin", "golem", "imp", "kitsune", "minotaur", "orc", "orc-lord", "shadow", "vampire"]);
   });
   it("adds Physical Damage as Lethality and attack speed (Orc, Shadow, Demon)", () => {
     const base = run({ weapon: plainMace }).result;
@@ -203,6 +203,49 @@ describe("matches the wiki's calculator for race and armour", () => {
     expect(run({ weapon: hellSlayer, raceId: "vampire" }).total - plain).toBeCloseTo(2380.632 - 2265.494, 2);
     const mino = run({ weapon: hellSlayer, raceId: "minotaur", armour: [piece(["Fierce Jade", 10]), null, null] });
     expect(mino.lowHp! - mino.total).toBeCloseTo(3862.427 - 2896.805, 1);
+  });
+});
+
+/*
+ * Version 1.10 (7 Nov 2026): Imp, Fallen Angel and the spear buffs, against the wiki's calculator of 7 Nov 2026 (22:52),
+ * run in the browser with the same builds (100% quality, +0, the race's weapon class picked where it has one).
+ * Two differences on purpose: Hellfire Prod's spear burn is ours only (the wiki leaves it out), and Black Halo uses
+ * the plain 30% chance where the wiki rolls it to 30.7%, as for Angel's smite.
+ */
+describe("Version 1.10 races and spears match the wiki's calculator", () => {
+  const angelic = weaponOf(mix(["Iron", 24]), 3, "Spear", "angelic-spear");
+  const demonic = weaponOf(mix(["Iron", 24]), 4, "Spear", "demonic-spear");
+  const part = (r: ReturnType<typeof run>, label: string) => r.result.parts.find((p) => p.label === label)?.dps ?? 0;
+  const withoutBurn = (r: ReturnType<typeof run>) => r.total - part(r, "Burn");
+
+  it("buffs the Angelic and Demonic Spears", () => {
+    expect(run({ weapon: angelic }).total).toBeCloseTo(13.9045, 3);
+    expect(run({ weapon: demonic }).total).toBeCloseTo(13.8274, 3);
+    expect(demonic.interval).toBe(0.73);
+  });
+  it("gives Imp +25% Physical Damage, +20% attack speed and Trident Toss with Spears only", () => {
+    for (const [w, total, toss] of [[spear, 11.5752, 0.7875], [angelic, 22.2334, 1.3765], [demonic, 22.2552, 1.5141]] as const) {
+      const imp = run({ weapon: w, raceId: "imp" });
+      expect(withoutBurn(imp)).toBeCloseTo(total, 3);
+      expect(part(imp, "Trident Toss")).toBeCloseTo(toss, 3);
+    }
+    expect(run({ weapon: plainMace, raceId: "imp" }).total).toBe(run({ weapon: plainMace }).total);
+  });
+  it("adds Hellfire Prod as a spear burn (25% for 20% a second), like Dragonborn's breath", () => {
+    const imp = run({ weapon: spear, raceId: "imp" });
+    const rate = imp.result.attacksPerSecond;
+    expect(part(imp, "Burn")).toBeCloseTo(spear.raw * 0.2 * Math.min(1, 0.25 * rate * 2), 9); // 3 s burn counts as 2, as for every burn
+    expect(raceExtra("imp", "Mace").extra.vals?.fire_dmg).toBeUndefined();
+  });
+  it("gives Fallen Angel +20% Physical Damage, +10% attack speed, Black Halo and Last Descent below 30% HP", () => {
+    const fa = run({ weapon: plainMace, raceId: "fallen-angel" });
+    expect(fa.result.hit).toBeCloseTo(5.5282, 3);
+    expect(part(fa, "Black Halo")).toBeCloseTo(plainMace.raw * fa.result.attacksPerSecond * 0.35 * 0.3, 9); // wiki: 0.4949 at 30.7%
+    expect(fa.lowHp! - fa.total).toBeCloseTo(7.4051 - 6.0231, 3);
+  });
+  it("fixes Jack's Crest and The Carver", () => {
+    expect(run({ weapon: weaponOf(mix(["Iron", 11]), 2, "Greatsword", "jacks-crest") }).total).toBeCloseTo(9.6574, 3);
+    expect(run({ weapon: weaponOf(mix(["Iron", 11]), 2, "Greatsword", "the-carver") }).total).toBeCloseTo(8.9444, 3);
   });
 });
 

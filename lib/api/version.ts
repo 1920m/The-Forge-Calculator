@@ -15,7 +15,7 @@ import { PICKAXES } from "@/data/pickaxes";
 import dpsStats from "@/data/dps-stats.json";
 
 export const API_VERSION = "v1";
-export const MODEL_VERSION = "2026-11-04";
+export const MODEL_VERSION = "2026-11-08";
 export const DATA_VERSION = createHash("sha256")
   .update(JSON.stringify([RACES, RUNES, SECONDARIES, MOLDS, GOLEMITE, GOLEMITE_RARITY, ARMOUR_DPS, PICKAXES, dpsStats]))
   .digest("hex").slice(0, 12);
