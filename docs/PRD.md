@@ -345,6 +345,12 @@ These are the trait lines from the [ore pages](https://forgewiki.org/wiki/Ores) 
 | Bismuth | Weapon / Armour | Weapon: +18% attack speed, random T3 attack rune on hit, rainbow wave of 125% weapon damage on Galaxite black hole. Armour: +15% crit chance, +15% crit damage, +15% Lethality, fire, poison, black hole and resonance damage +1% per 500 HP (up to +20%), +6 regen/s, heal 2.5% max HP when a Galaxite black hole triggers |
 | Aether Lotus | Armour | +30% Vitality; 60% chance to cut damage by 65%; +18 regen/s |
 | Zephyte | Armour | +30% move speed, +12.5% jump, +12.5% dash distance, +12.5% invincibility |
+| Echotite | Weapon | Reverberation: 8% chance for an attack to hit twice (20% Daggers, 16% Straight Swords, 12% Gauntlets), damage only. Explosion: 40% chance for 50% weapon damage. Fracture: hits stun 20% faster. Echoes of Decay: hitting an Ancient Poison mark spreads it with the next 2 attacks |
+| Frost Core | Weapon / Armour | Both: +15% Lethality, +10% crit damage. Armour: +12.5% Vitality; when hit above 60% HP, 30% chance of a blizzard for 60% weapon damage a second for 6 s (20 s cooldown; with Bismuth 100%, 12 s, no HP limit); +5% thorns; −5.5% move speed |
+| Tetrinite | Weapon / Armour | Weapon: poison 75% for 40% a second (6 s); lightning 50% for 70% to up to 3 enemies (4 s cooldown); Ancient Poison: 50% chance to mark for 5 s, all poison deals +50% to it. Armour: −30% stun buildup, −35% stun time, +6 regen/s, +15% dash distance, +12.5% move speed |
+| Bizzarite | Armour | Second Wind: below 10% HP, restores 25% over 5 s (90 s cooldown). Time Stop: after 75 hits, stuns enemies within 20 studs for 1.5 s (45 s cooldown). Void Mark: when hit, 30% chance to mark the attacker for 5 s, taking +15% from weapon hits (22.5% and 5 enemies with Galaxite). Void Phase: 12% chance to ignore a hit (15% with Galaxite). Heaven's Ascent: +0.5% move and attack speed per second in combat, up to 12.5%. +10% move speed |
+| Frost Star | Weapon | Frost Slash: 30% chance for 25% weapon damage. Glacier Explosion: crits have a 50% chance for 65%. Polar Shift: every 10 s in combat, the next of +10% attack speed, Fracture, Lethality or crit damage. Snow: 70% chance to slow 30% for 8 s. Starfall: 20% chance for 125% (10 s cooldown; 225% with Galaxite). Stellar Mark: every 5 hits on the marked enemy, 150% |
+| Royal Boneite | Weapon / Armour | Weapon: Life Steal 2.5% of weapon damage per hit (up to 8% max HP). Armour: +15% Vitality |
 
 Candy Ore and Pumpkinite list "None".
 

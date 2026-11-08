@@ -64,6 +64,7 @@ export const WARNINGS: Record<string, string> = {
 };
 
 export const CHANGELOG = [
+  { version: "v1 beta", date: "2026-11-08", notes: ["Version 1.10 ores: Echotite, Frost Core, Tetrinite, Bizzarite, Frost Star and Royal Boneite, with their traits.", "New DPS effects: Reverberation, Frost Slash, Glacier Explosion, Starfall, Stellar Mark and Ancient Poison; Frost Core's armour Lethality and crit damage. Model version 2026-11-08.2."] },
   { version: "v1 beta", date: "2026-11-08", notes: ["Version 1.10 races: Imp and Fallen Angel, with their DPS effects; every race's text updated.", "Angelic Spear and Demonic Spear buffs; Jack's Crest, The Carver and Coffin's Lid fixed. Model version 2026-11-08."] },
   { version: "v1 beta", date: "2026-11-04", notes: ["First release: GET /catalogue and POST /calculate (forge, dps, loadout, golemite).", "Keys by invitation; the catalogue also needs a key during the beta."] },
 ];

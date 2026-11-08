@@ -57,3 +57,20 @@ The wiki's calculator was updated for Version 1.10 the same evening. On 8 Novemb
 | The Carver (11 Iron) | 8.944 | 8.944 | – | 1.08 s |
 
 Coffin's Lid keeps 23 damage (its item page and the Weapons table); the wiki's calculator data has 25. Knight Spear keeps 10.125 (the game file); the calculator data has 7.5. These builds are checked in `tests/loadout-dps.test.ts`.
+
+### Version 1.10 ores
+
+Same calculator revision, single-ore builds plus one mix (100% quality, +0):
+
+| Build | Wiki DPS | Our DPS | Difference | Why |
+|---|---|---|---|---|
+| Dagger (3 Echotite) | 567.96 | 563.57 | −0.8% | Reverberation and the explosion use 20% and 40%; the wiki rolls them to 20.8% and 40.6% |
+| Falchion Sword (4 Echotite) | 646.46 | 641.14 | −0.8% | Same, at 16% |
+| Ironhand (6 Echotite) | 809.66 | 802.56 | −0.9% | Same, at 12% |
+| Mace (14 Tetrinite) | 511.79 | 503.98 | −1.5% | Lightning uses our existing rule (the gap in build 3 above); poison and Ancient Poison match |
+| Dark Knight's Gauntlets (14 Frost Core) | 1,025.98 | 1,025.98 | – | +15% Lethality, +10% crit damage |
+| Great Sword (19 Frost Star) | 1,222.90 | 1,220.20 | −0.2% | Frost Slash and Starfall rolled chances; Stellar Mark matches exactly |
+| Great Sword (10 Frost Star, 9 Galaxite) | 1,701.35 | 1,770.62 | +4.1% | Our existing black hole rule; Frost Star's parts match as above |
+| Dark Knight's Gauntlets (5 Echotite, 5 Tetrinite, 4 Frost Star) | 2,063.46 | 2,024.43 | −1.9% | Lightning and rolled chances, as above |
+
+Bizzarite and Royal Boneite have no damage traits. Frost Core's armour Lethality and crit damage count in the Loadout; its blizzard and Bizzarite's Void Mark and Heaven's Ascent are listed but not counted, as in the wiki's calculator.

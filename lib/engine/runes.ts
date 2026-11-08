@@ -73,9 +73,9 @@ export const secondariesFor = (kind: RuneKind) => SECONDARIES.filter((s) => s.ki
  * A weapon's DPS at an enhancement level with the runes in the slots that level opens.
  * Pass no runes (or all empty) to get the plain DPS at that level.
  */
-export function dpsAtLevel(w: { ores: { id: string; count: number }[]; raw: number; interval: number }, level: number, slots: readonly (RuneSlot | null)[] = []): DpsResult {
+export function dpsAtLevel(w: { ores: { id: string; count: number }[]; raw: number; interval: number; cls?: string }, level: number, slots: readonly (RuneSlot | null)[] = []): DpsResult {
   const t = runeTotals(slots, slotsAt(level));
-  return weaponDps({ ores: w.ores, damage: w.raw * enhanceFactor(level), interval: w.interval, extra: { stats: t.stats, procs: t.procs } });
+  return weaponDps({ ores: w.ores, damage: w.raw * enhanceFactor(level), interval: w.interval, cls: w.cls, extra: { stats: t.stats, procs: t.procs } });
 }
 
 export const hasRunes = (slots: readonly (RuneSlot | null)[]) => slots.some(Boolean);

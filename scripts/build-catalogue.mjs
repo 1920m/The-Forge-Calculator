@@ -45,6 +45,10 @@ const wikiOnly = [
   ["Cuprite", "Epic", 2.43, W12, 303, null], ["Orange Crystal Ore", "Epic", 3, W12, 255, "Goblin Cave"], ["Magenta Crystal Ore", "Epic", 3.1, W12, 255, "Goblin Cave"],
   ["Green Crystal Ore", "Epic", 3.2, W12, 255, "Goblin Cave"], ["Crimson Crystal Ore", "Epic", 3.3, W12, 255, "Goblin Cave"], ["Blue Crystal Ore", "Epic", 3.4, W12, 255, "Goblin Cave"],
   ["Zephyte", "Legendary", 18.5, [4], 15, "Tower of Hell"],
+  // Version 1.10 (7 Nov 2026, the ore pages): Tower of Hell tiers 11–15, and a Skeleton King drop.
+  ["Echotite", "Mythic", 22, [4], 40, "Tower of Hell"], ["Frost Core", "Relic", 22.75, [4], 50, "Tower of Hell"],
+  ["Tetrinite", "Relic", 23.5, [4], 60, "Tower of Hell"], ["Bizzarite", "Exotic", 25.5, [4], 80, "Tower of Hell"],
+  ["Frost Star", "Exotic", 27.75, [4], 100, "Tower of Hell"], ["Royal Boneite", "Mythic", 6.7, W12, 12, "Skeleton King"],
 ];
 for (const [name, rarity, multiplier, worlds, drop, source] of wikiOnly) if (!ores.has(name)) ores.set(name, { id: slug(name), name, rarity, multiplier, worlds, drop, source, traits: [], verified: false });
 // Goblin Cave crystals: the drop rates were missing from the PRD table.

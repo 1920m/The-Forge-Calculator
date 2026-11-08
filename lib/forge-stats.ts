@@ -13,7 +13,7 @@ export function work(cat: Catalogue, oreById: Map<string, CatalogueOre>, f: Save
   const v = cls?.variants.find((x) => x.id === f.variant_id);
   // Saved weapon runes: DPS at the saved enhancement level with them (the cards show the level).
   const runed = f.kind === "weapon" && f.runes && v?.raw != null && v.interval
-    ? dpsAtLevel({ ores: mix.map((m) => ({ id: m.ore.id, count: m.count })), raw: v.raw, interval: v.interval }, f.enhance ?? 9, decodeRunes(f.runes, "weapon")).total
+    ? dpsAtLevel({ ores: mix.map((m) => ({ id: m.ore.id, count: m.count })), raw: v.raw, interval: v.interval, cls: f.class_name }, f.enhance ?? 9, decodeRunes(f.runes, "weapon")).total
     : null;
   return {
     mix, missingOres: mix.length < f.ores.length,
