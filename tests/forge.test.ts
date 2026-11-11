@@ -155,3 +155,25 @@ describe("locking a class", async () => {
     expect(lockClass(r.classes, "Colossal Sword")).toBe(r.classes);
   });
 });
+
+describe("Version 1.10: Juggernaut armour (Abyss Forge only)", () => {
+  it("lists both pieces in World 4 with their stats but no chance, leaving the other heavy pieces' odds as they were", () => {
+    for (const [cls, id, hp] of [["Heavy Chestplate", "juggernauts-chestplate", 53], ["Heavy Leggings", "juggernauts-leggings", 41]] as const) {
+      const vs = classVariants(cat, "armour", 4, cls);
+      const j = vs.find((v) => v.id === id)!;
+      expect(j).toMatchObject({ tag: "abyss", chance: 0, base: hp, weight: 8 });
+      const others = vs.filter((v) => v.id !== id);
+      const without = { ...cat, armour: cat.armour.filter((a) => a.id !== id) } as Catalogue;
+      expect(others.map((v) => v.chance)).toEqual(classVariants(without, "armour", 4, cls).map((v) => v.chance));
+      expect(vs.reduce((n, v) => n + v.chance, 0)).toBeCloseTo(100, 9);
+    }
+    expect(classVariants(cat, "armour", 3, "Heavy Chestplate").some((v) => v.id === "juggernauts-chestplate")).toBe(false);
+  });
+  it("gives Juggernaut's Chestplate the highest defence of any chestplate", () => {
+    const mix: Mix = [{ ore: cat.ores.find((o) => o.id === "iron")!, count: 40 }];
+    const heavy = forge(cat, mix, "armour", 4, 1).classes.find((c) => c.name === "Heavy Chestplate")!.variants;
+    const top = [...heavy].sort((a, b) => (b.value ?? 0) - (a.value ?? 0))[0];
+    expect(top.id).toBe("juggernauts-chestplate");
+    expect(top.overall).toBe(0);
+  });
+});

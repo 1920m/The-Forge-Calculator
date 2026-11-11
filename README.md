@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/worlds-1%E2%80%934-e8c27a?style=flat-square&labelColor=241321" alt="Worlds 1 to 4">
   <img src="https://img.shields.io/badge/ores-155-e8c27a?style=flat-square&labelColor=241321" alt="155 ores">
   <img src="https://img.shields.io/badge/weapons-87-e8c27a?style=flat-square&labelColor=241321" alt="87 weapons">
-  <img src="https://img.shields.io/badge/armour_pieces-37-e8c27a?style=flat-square&labelColor=241321" alt="37 armour pieces">
+  <img src="https://img.shields.io/badge/armour_pieces-39-e8c27a?style=flat-square&labelColor=241321" alt="39 armour pieces">
 </p>
 
 <p align="center"><img src="docs/readme/divider.svg" width="100%" alt=""></p>

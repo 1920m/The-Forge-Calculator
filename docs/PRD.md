@@ -649,6 +649,8 @@ Heavy,Vanguard Leggings,leggings,32,1200,4
 Heavy,Shogun Helmet,helmet,34,1020,8
 Heavy,Shogun Chestplate,chestplate,46,1355,8
 Heavy,Shogun Leggings,leggings,36,1200,8
+Heavy,Juggernaut's Chestplate,chestplate,53,1355,8
+Heavy,Juggernaut's Leggings,leggings,41,1200,8
 ```
 
 Two conflicts remain: the wiki gives Wolf a 1/3 chance but the calculator uses 1/4, and the wiki lists Shogun, Vanguard Helmet and Leggings and Raven's pieces that the calculator lacks. The defence conflict I noted earlier is resolved: base defence is 2 × the wiki Health %, so no tuning constant is needed.

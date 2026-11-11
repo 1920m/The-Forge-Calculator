@@ -292,7 +292,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                                 else lastTap.current = { id: v.id, t: now };
                               }}
                               aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall${showMolds ? `. Double-click to ${aimed ? "stop aiming molds at it" : `aim molds at it (${need})`}` : ""}`}
-                              title={`${v.name}: ${pct(v.chance)} in class, ${pct(v.overall, 2)} overall${showMolds ? (aimed ? ". Molds aimed here; double-click to stop" : `. Double-click to aim molds here (${need})`) : ""}`}>
+                              title={`${v.name}: ${v.tag === "abyss" ? "Abyss Forge only, odds not published" : `${pct(v.chance)} in class, ${pct(v.overall, 2)} overall`}${showMolds ? (aimed ? ". Molds aimed here; double-click to stop" : `. Double-click to aim molds here (${need})`) : ""}`}>
                               <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={20} />
                               <span className="t-br" style={{ left: 0, right: 0, textAlign: "center" }}>{aimed ? `${molds}/${needLabel(mold.need)}` : `1/${v.weight}`}</span>
                             </button>
@@ -391,10 +391,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} withRunes={runeDps} runeLevel={runeEnhance} />}
                     {combatWeapon && <RaceCompare cat={cat} weapon={combatWeapon} level={runeWeapon ? runeEnhance : 0} runes={runeWeapon ? runes.weapon : undefined}
                       choice={raceChoice} onChoice={(v) => startTransition(() => setRaceChoice(v))} />}
-                    <div className="kv"><span>Chance:</span><span className="muted">{moldChanceNote && <>Normal chance: </>}{changedBy.length > 0
+                    <div className="kv"><span>Chance:</span><span className="muted">{selected.v.tag === "abyss" ? <>Forged only at the Abyss Forge, whose odds aren&apos;t published yet. The stats below are real.</> : <>{moldChanceNote && <>Normal chance: </>}{changedBy.length > 0
                       ? <>{pct(selected.v.overall, 2)} with {changedBy.join(" and ")} <span className="small faint">({pct(normalChance(selected.cls.name, selected.v.id), 2)} without {withoutWhat})</span></>
                       : <>{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</>}
-                      {moldChanceNote && <span className="small mold-note" style={{ display: "block" }}>{moldChanceNote}</span>}</span></div>
+                      {moldChanceNote && <span className="small mold-note" style={{ display: "block" }}>{moldChanceNote}</span>}</>}</span></div>
                     <TriesRow chance={selected.v.overall / 100} ores={total} moldNote={moldTriesNote}
                       compare={changedBy.length > 0 ? { label: `Without ${withoutWhat}`, chance: normalChance(selected.cls.name, selected.v.id) / 100 }
                         : selected.cls.lockable && selected.cls.probability < 100 ? { label: `If you lock ${selected.cls.name}`, chance: selected.v.chance / 100 } : null} />
@@ -480,8 +480,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       <tbody>
                         {selected.cls.variants.map((v) => (
                           <tr key={v.id} className={v.id === selected.v.id ? "sel" : ""} onClick={() => startTransition(() => setPick({ cls: selected.cls.name, id: v.id }))} style={{ cursor: "pointer" }}>
-                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}{v.tag === "world1" && <span className="badge der" title="Only rolls in World 1, not World 2">World 1 only</span>}</td>
-                            <td>{pct(v.chance)}</td><td>{pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
+                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}{v.tag === "world1" && <span className="badge der" title="Only rolls in World 1, not World 2">World 1 only</span>}{v.tag === "abyss" && <span className="badge der" title="Forged only at the Abyss Forge (Version 1.10); its odds aren't published">Abyss Forge</span>}</td>
+                            <td>{v.tag === "abyss" ? "–" : pct(v.chance)}</td><td>{v.tag === "abyss" ? "–" : pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
                           </tr>
                         ))}
                       </tbody>
