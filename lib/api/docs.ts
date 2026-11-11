@@ -59,6 +59,7 @@ export const WARNINGS: Record<string, string> = {
   SHOP_ITEMS_MISSING: "The class also has shop-blueprint weapons that aren't in the data, so chances inside it may be a little high.",
   MOLD_EFFECT_UNKNOWN: "Fewer molds than needed: how that changes the real chances isn't measured, so the chances shown are without them.",
   SITUATIONAL_BONUSES_OFF: "The race has situational bonuses (low HP, stacks...). Send `conditions` to see them separately in `scenarios`.",
+  ABYSS_FORGE_ONLY: "The item is forged only at the Abyss Forge (Version 1.10), whose odds aren't published: its chance is 0% here, its stats are real.",
   DEFENCE_ONLY: "Every loadout: armour adds its defence at +0 and the damage traits counted in DPS; health, shields and other effects aren't added up.",
   GOLEMITE_TRAITS_UNVERIFIED: "Every Golemite result: the player gets all of its ore traits (weapon and armour, see `byType`); whether quality changes them isn't confirmed in game.",
 };

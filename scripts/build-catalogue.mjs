@@ -178,7 +178,11 @@ const ARMOUR_WORLDS = {
   "Raven's": [3],
   "Vanguard": [4],
   "Shogun": [4],
+  "Juggernaut's": [4], // Version 1.10: Abyss Forge only (see ABYSS_SETS)
 };
+// Sets forged only at the Abyss Forge (Version 1.10, 7 Nov 2026). Its odds aren't published, so they're listed in
+// World 4 for their stats (and so they can be saved and worn) with no forge chance.
+const ABYSS_SETS = new Set(["Juggernaut's"]);
 const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, slot, hp, price, chance]) => {
   const set = name.replace(/ (Helmet|Chestplate|Leggings|Armor|Crown)$/, "").replace(/^(Light|Medium)$/, "Basic");
   const where = ARMOUR_WORLDS[set];
@@ -190,6 +194,7 @@ const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, 
     id: slug(name), name, weightClass: cls, set, slot, healthPct: num(hp), price: num(price), weight, worlds,
     ...(worldWeights && Object.keys(worldWeights).length ? { worldWeights } : {}),
     verified: !(name === "Vanguard Helmet" || name === "Vanguard Leggings"),
+    ...(ABYSS_SETS.has(set) ? { tag: "abyss" } : {}),
   };
 });
 

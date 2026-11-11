@@ -143,6 +143,7 @@ export function calculateForge(cat: Catalogue, input: ForgeInput) {
   if (cls.probability === 0) warnings.push({ code: "CLASS_NOT_AVAILABLE", message: `${cls.name} can't come out with ${result.total} ores (its odds start higher), so this item's chance is 0%.` });
   if (input.lockClass && lock !== cls.name) warnings.push({ code: "LOCK_NOT_AVAILABLE", message: `${cls.name} can be locked from ${cls.lockAt} ores; the lock wasn't applied.` });
   if (result.capped) warnings.push({ code: "ODDS_CAPPED", message: "Odds are only known up to 55 ores, so the 55-ore odds are used." });
+  if (v.tag === "abyss") warnings.push({ code: "ABYSS_FORGE_ONLY", message: `${v.name} is forged only at the Abyss Forge, whose odds aren't published, so its chance is 0% here; its stats are real.` });
   if (cls.incomplete) warnings.push({ code: "SHOP_ITEMS_MISSING", message: `${cls.name} also has shop-blueprint weapons not in the data, so chances inside it may be a little high.` });
   if (input.molds != null && !mold.chancesKnown) warnings.push({ code: "MOLD_EFFECT_UNKNOWN", message: "These molds change the real chances by an amount nobody has measured; the chances shown are without them." });
 

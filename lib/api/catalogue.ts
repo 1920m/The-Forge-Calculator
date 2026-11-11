@@ -75,7 +75,7 @@ function armour(cat: Catalogue, a: Catalogue["armour"][number]) {
   return {
     id: a.id, name: a.name, class: armourClassName([a.weightClass, a.slot]), weightClass: a.weightClass, slot: a.slot, set: a.set,
     image: imageUrl("armour", a.id), healthPct: a.healthPct, price: a.price,
-    forgeWorlds: armourWorlds(cat, a.id), verified: a.verified,
+    forgeWorlds: armourWorlds(cat, a.id), tag: a.tag ?? null, verified: a.verified,
   };
 }
 

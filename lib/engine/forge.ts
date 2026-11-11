@@ -14,6 +14,8 @@ export type CatalogueArmour = {
   id: string; name: string; weightClass: "Light" | "Medium" | "Heavy"; set: string; slot: "helmet" | "chestplate" | "leggings"; healthPct: number; price: number;
   /** The usual 1 in N; worldWeights overrides it in worlds where the game uses a different one. */
   weight: number; worldWeights?: Record<string, number>; worlds: number[]; verified: boolean;
+  /** "abyss": forged only at the Abyss Forge (Version 1.10), whose odds aren't published. Shown with its stats, 0% chance. */
+  tag?: "abyss" | null;
 };
 export type Catalogue = {
   ores: CatalogueOre[]; weapons: CatalogueWeapon[]; armour: CatalogueArmour[];
@@ -46,7 +48,7 @@ export function categoryRows(cat: Catalogue, kind: Kind): CategoryRow[] {
   return Object.entries(cat.odds[kind]).flatMap(([n, cells]) => cells.map((probability, i) => ({ kind, oreCount: Number(n), slot: i + 1, probability })));
 }
 
-export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; interval?: number; range?: number; tag?: "shop" | "halloween" | "world1" | null };
+export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; interval?: number; range?: number; tag?: "shop" | "halloween" | "world1" | "abyss" | null };
 
 /** Every variant of a class in a world, with its chance inside the class (normalised inverse weights). */
 export function classVariants(cat: Catalogue, kind: Kind, world: World, className: string): Variant[] {
@@ -56,9 +58,11 @@ export function classVariants(cat: Catalogue, kind: Kind, world: World, classNam
         const w = byId.get(id);
         return w ? [{ id: w.id, name: w.name, weight: weight ?? w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, interval: w.trueSpeed, range: w.range, tag: w.tag ?? null }] : [];
       })
-    : cat.armour.filter((a) => armourClassName([a.weightClass, a.slot]) === className && a.worlds.includes(world)).map((a) => ({ id: a.id, name: a.name, weight: a.worldWeights?.[String(world)] ?? a.weight, base: a.healthPct, verified: a.verified }));
-  const odds = variantOdds(list.map((v) => v.weight));
-  return list.map((v, i) => ({ ...v, chance: odds[i] }));
+    : cat.armour.filter((a) => armourClassName([a.weightClass, a.slot]) === className && a.worlds.includes(world)).map((a) => ({ id: a.id, name: a.name, weight: a.worldWeights?.[String(world)] ?? a.weight, base: a.healthPct, verified: a.verified, tag: a.tag ?? null }));
+  // Abyss Forge items are listed for their stats but don't take part in the normal forge's odds.
+  const rolls = list.filter((v) => v.tag !== "abyss");
+  const odds = variantOdds(rolls.map((v) => v.weight));
+  return list.map((v) => ({ ...v, chance: v.tag === "abyss" ? 0 : odds[rolls.indexOf(v)] }));
 }
 
 export function qualityLabel(cat: Catalogue, qualityPct: number): string {
