@@ -2,13 +2,14 @@
  * POST /api/v1/calculate, without the HTTP: validated input in, plain data out. Every number comes from the same
  * engine functions the website uses (forge-eval, loadout-dps, golemite); nothing here has its own formula.
  */
-import { qualityLabel, roundStat, scaleTraitText, type Catalogue, type Mix } from "@/lib/engine/forge";
+import { qualityLabel, roundStat, scaleTraitText, siteFor, type Catalogue, type Mix } from "@/lib/engine/forge";
 import { MAX_ENHANCE, enhanceFactor, type Kind, type World } from "@/lib/engine";
 import { evaluateForge } from "@/lib/engine/forge-eval";
 import { combatDps, type CombatConditions, type CombatResult } from "@/lib/engine/loadout-dps";
 import { encodeRunes, slotsAt, type RuneSlot } from "@/lib/engine/runes";
 import { moldScreenChance } from "@/lib/engine/molds";
 import { golemGrowth, golemite } from "@/lib/engine/golemite";
+import { golemiteHitShare } from "@/lib/engine/loadout-dps";
 import { calculatorHref } from "@/lib/saved-forges";
 import { golemiteHref } from "@/lib/golemites";
 import { imageUrl } from "@/lib/data/supabase";
@@ -29,7 +30,6 @@ const r4 = (n: number) => Math.round(n * 10000) / 10000;
 const WORLD_LABEL: Record<number, string> = { 2: "1–2", 3: "3", 4: "4" };
 
 const DPS_NOTE: Warning = { code: "ESTIMATED_DPS", message: "DPS is an estimate from the community damage model (crits, procs and damage over time averaged), not a measurement from the game." };
-const PROC_NOTE: Warning = { code: "PROC_ENHANCEMENT_UNVERIFIED", message: "Whether burn, explosions and other procs grow with enhancement isn't confirmed; here they do." };
 
 function mixOf(cat: Catalogue, ores: OreIn[]): Mix {
   const byId = new Map(cat.ores.map((o) => [o.id, o]));
@@ -130,20 +130,23 @@ export function calculateForge(cat: Catalogue, input: ForgeInput) {
   const { world, inferred } = resolveWorld(cat, input.kind, input.item, mix, input.world, warnings);
 
   const q = input.quality / 100;
-  const first = evaluateForge(cat, { mix, kind: input.kind, world, quality: q, pick: input.item ? { id: input.item } : null });
+  const site = siteFor(world, input.forge);
+  if (input.forge === "abyss" && site !== "abyss") warnings.push({ code: "ABYSS_FORGE_NOT_HERE", message: "The Abyss Forge is next to World 4, so the normal forge was used." });
+  const first = evaluateForge(cat, { mix, kind: input.kind, world, quality: q, site, pick: input.item ? { id: input.item } : null });
   const itemClass = input.item ? first.result.classes.find((c) => c.variants.some((v) => v.id === input.item))?.name ?? null : null;
   if (input.item && !itemClass) throw new ApiError("ITEM_NOT_IN_WORLD");
   const ev = input.lockClass || input.molds != null
-    ? evaluateForge(cat, { mix, kind: input.kind, world, quality: q, lock: input.lockClass ? itemClass : null, molds: input.molds != null ? { count: input.molds, itemId: input.item! } : null, pick: input.item ? { id: input.item } : null })
+    ? evaluateForge(cat, { mix, kind: input.kind, world, quality: q, site, lock: input.lockClass ? itemClass : null, molds: input.molds != null ? { count: input.molds, itemId: input.item! } : null, pick: input.item ? { id: input.item } : null })
     : first;
   const { result, normal, selected, mold, lock } = ev;
   if (!selected) throw new ApiError("NOT_ENOUGH_ORES", "Nothing can be forged with these ores.");
   const { cls, v } = selected;
 
-  if (cls.probability === 0) warnings.push({ code: "CLASS_NOT_AVAILABLE", message: `${cls.name} can't come out with ${result.total} ores (its odds start higher), so this item's chance is 0%.` });
+  if (!cls.oddsKnown) warnings.push({ code: "CLASS_ODDS_UNKNOWN", message: `${cls.name} is a new weapon type and its chance at each ore count isn't known yet, so this item's overall chance is 0% here; its chance inside the class and its stats are real.` });
+  else if (cls.probability === 0) warnings.push({ code: "CLASS_NOT_AVAILABLE", message: `${cls.name} can't come out with ${result.total} ores (its odds start higher), so this item's chance is 0%.` });
   if (input.lockClass && lock !== cls.name) warnings.push({ code: "LOCK_NOT_AVAILABLE", message: `${cls.name} can be locked from ${cls.lockAt} ores; the lock wasn't applied.` });
   if (result.capped) warnings.push({ code: "ODDS_CAPPED", message: "Odds are only known up to 55 ores, so the 55-ore odds are used." });
-  if (v.tag === "abyss") warnings.push({ code: "ABYSS_FORGE_ONLY", message: `${v.name} is forged only at the Abyss Forge, whose odds aren't published, so its chance is 0% here; its stats are real.` });
+  if (v.tag === "abyss" && result.site !== "abyss") warnings.push({ code: "ABYSS_FORGE_ONLY", message: `${v.name} is forged only at the Abyss Forge, so its chance at the normal forge is 0%; send "forge": "abyss" (World 4) for its Abyss Forge chance. Its stats are real.` });
   if (cls.incomplete) warnings.push({ code: "SHOP_ITEMS_MISSING", message: `${cls.name} also has shop-blueprint weapons not in the data, so chances inside it may be a little high.` });
   if (input.molds != null && !mold.chancesKnown) warnings.push({ code: "MOLD_EFFECT_UNKNOWN", message: "These molds change the real chances by an amount nobody has measured; the chances shown are without them." });
 
@@ -157,17 +160,16 @@ export function calculateForge(cat: Catalogue, input: ForgeInput) {
     dps = dpsOut(c);
     dpsBase = v.dps ? r2(v.dps.total) : null;
     warnings.push(DPS_NOTE);
-    if (level > 0) warnings.push(PROC_NOTE);
   }
 
   const runesOn = runes.some(Boolean);
   const link = SITE_URL + calculatorHref({ kind: input.kind, world, class_name: cls.name, variant_id: v.id, quality: input.quality, ores: input.ores,
-    ...(runesOn ? { enhance: level, runes: encodeRunes([...runes, null, null, null].slice(0, 3)) } : {}) });
+    ...(runesOn ? { enhance: level, runes: encodeRunes([...runes, null, null, null].slice(0, 3)) } : {}), ...(site === "abyss" ? { site } : {}) });
 
   return {
     data: {
       type: "forge" as const,
-      world, worldLabel: WORLD_LABEL[forgeWorld(world)], worldInferred: inferred,
+      world, worldLabel: WORLD_LABEL[forgeWorld(world)], worldInferred: inferred, forge: site,
       kind: input.kind,
       quality: { percent: input.quality, label: qualityLabel(cat, input.quality) },
       ores: mix.map((m) => ({ id: m.ore.id, name: m.ore.name, count: m.count, share: r4(m.count / result.total), rarity: m.ore.rarity, image: imageUrl("ores", m.ore.id) })),
@@ -189,7 +191,7 @@ export function calculateForge(cat: Catalogue, input: ForgeInput) {
       },
       traits: traitsOf(result.traits, input.kind),
       classes: input.detail === "full" ? result.classes.map((c) => ({
-        name: c.name, chance: r4(c.probability), lockAt: c.lockAt, lockable: c.lockable,
+        name: c.name, chance: r4(c.probability), oddsKnown: c.oddsKnown, lockAt: c.lockAt, lockable: c.lockable,
         items: c.variants.map((x) => ({ id: x.id, name: x.name, weight: x.weight, inClass: r4(x.chance), overall: r4(x.overall), value: x.value })),
       })) : undefined,
       links: { calculator: link },
@@ -227,7 +229,6 @@ export function calculateDps(cat: Catalogue, input: DpsInputBody) {
     runes: runes.length ? runes : undefined, armour, raceId, conditions: conditionsOf(input.conditions),
   });
   const warnings: Warning[] = [DPS_NOTE];
-  if (input.enhancement > 0) warnings.push(PROC_NOTE);
   if (raceId && raceById.get(raceId)?.combat?.conditions?.length && !input.conditions) warnings.push({ code: "SITUATIONAL_BONUSES_OFF", message: "This race has situational bonuses; send `conditions` to see them separately." });
   return {
     data: {
@@ -253,7 +254,7 @@ export function calculateLoadout(cat: Catalogue, input: LoadoutInput) {
   }) : null;
   const pieces = armour.filter((a): a is NonNullable<typeof a> => !!a);
   const warnings: Warning[] = [];
-  if (c) { warnings.push(DPS_NOTE); if (input.enhancement > 0) warnings.push(PROC_NOTE); }
+  if (c) warnings.push(DPS_NOTE);
   warnings.push({ code: "DEFENCE_ONLY", message: "Armour shows defence at +0 and the damage traits counted in DPS; health, shields and other effects aren't added up." });
   return {
     data: {
@@ -289,7 +290,11 @@ export function calculateGolemite(cat: Catalogue, input: GolemiteInput) {
       })),
       growth: { level: grow.level, maxLevel: GOLEMITE.maxLevel, size: r4(grow.size), canFight: grow.fights, combatLevel: GOLEMITE.combatLevel, snacksToCombat: grow.toCombat, snacksToMax: grow.toMax },
       storage: GOLEMITE.storage,
-      combat: { status: "unknown", damage: null, note: "How Golemites fight isn't known, so there's no damage figure." },
+      combat: {
+        status: grow.fights ? "fights" : "too_young",
+        hitShare: r4(golemiteHitShare(grow.level)), hitsPerSecond: r4(GOLEMITE.combatDamage.hitsPerSecond),
+        note: "From level 13 it hits for 2% of your weapon's damage (before enhancement), rising to 6% at level 25, about 0.67 hits a second (the wiki's model). The loadout counts it.",
+      },
       links: { calculator: SITE_URL + golemiteHref({ ores: input.ores, quality: input.quality }) },
     },
     warnings: [{ code: "GOLEMITE_TRAITS_UNVERIFIED", message: "The player gets all of a Golemite's ore traits, weapon and armour; whether quality changes them isn't confirmed in game." }],

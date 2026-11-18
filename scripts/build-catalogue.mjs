@@ -84,13 +84,130 @@ const EXTRA_WEAPONS = [
   ["Greatsword", "Jack's Crest", "14.9", "0.91", "1.08", "9", "485", "6"],
   ["Axe", "Duskwing's Cleaver", "8.4", "0.48", "0.88", "8", "205", "8"],
   ["Spear", "Demonic Spear", "14.42", "0.56", "0.73", "11", "120", "4"], // Version 1.10 buff,
-  ["Great Axe", "Halberd", "16.8", "1", "0.91", "10", "850", "1"],
+  // Version 1.10 made Halberd its own class (theforge.gg: range 11, sells for 1,190).
+  ["Halberd", "Halberd", "16.8", "1", "1.0667", "11", "1190", "1"],
+  // Added after Version 1.10 (theforge.gg weapon pages, 16 Nov 2026; game version 1.10). The swing time is the
+  // average of the light combo, as for every weapon here: halberds 1, 1, 1.2 s; Sword & Shield 0.6, 0.55, 0.55, 1.1 s;
+  // Moon Crescent Spear 0.8, 0.65, 0.7, 0.75 s. Devil's Deed is listed at 1.4 s like Excalibur, whose exact 1.4033 it uses.
+  ["Halberd", "Spiked Halberd", "17.04", "1", "1.0667", "11", "1207", "1"],
+  ["Halberd", "Fangtian", "18", "1", "1.0667", "11.5", "1275", "8"], // recipe from the game; Crimson Sakura
+  ["Sword & Shield", "Knight's Bulwark", "9.1", "0.62", "0.7", "8", "150", "1"],
+  // Abyss Forge only (see ABYSS_WEAPONS): recipes from Abyss boss floors 20+, 40+ and 80+, and the Abyss Shop.
+  ["Halberd", "Royal Guardian's Glaive", "21.4", "1", "1.0667", "11.5", "1402.5", "16"],
+  ["Spear", "Moon Crescent Spear", "14.7", "0.45", "0.725", "13.2", "210", "32"],
+  ["Colossal Sword", "Devil's Deed", "30.8", "1.12", "1.4033", "15", "2506.75", "64"],
+  ["Sword & Shield", "Rosethorn", "11.1", "0.62", "0.7", "8", "210", "32"],
   ["Colossal Sword", "Coffin's Lid", "23", "1.12", "1.40", "10", "1355", "16"],
 ];
 const allWeapons = [...csv("class,name,base_damage").slice(1), ...EXTRA_WEAPONS].map(([cls, name, dmg, idx, tru, range, price, chance]) => ({
   id: slug(name), name, class: cls, baseDamage: num(dmg), indexSpeed: num(idx), trueSpeed: num(tru), range: num(range), price: num(price), weight: num(chance), worlds: [], verified: true, tag: null,
 }));
+// Damage and true swing time from the wiki calculator's Data:Weapons.json (12 Nov 2026), which has the game's own
+// precision (Tanto 4.945, not 4.95; Excalibur 1.4033 s, not 1.40). A Tanto crafted in game matched it exactly. This
+// also moves three weapons: Colossal Gemblade 23 → 25, Executioner's Greataxe 19.5 → 20, Batwing Reaver 19.05 → 19.5.
+const WIKI_WEAPON_STATS = [
+  ["Dagger", 4.3, 0.4667],
+  ["Falchion Knife", 4.45, 0.4667],
+  ["Gladius Daggers", 4.6, 0.4667],
+  ["Hook", 4.73, 0.5185],
+  ["Cultist Dagger", 5.246, 0.4667],
+  ["Shark's Fangs", 3.87, 0.359],
+  ["Curved Dagger", 4.945, 0.4058],
+  ["Kunai", 3.87, 0.3889],
+  ["Jitte", 4.945, 0.4912],
+  ["Damascus Dagger", 4.73, 0.4667],
+  ["Tanto", 4.945, 0.3889],
+  ["Falchion Sword", 7.5, 0.7],
+  ["Gladius Sword", 8, 0.7368],
+  ["Cutlass", 9.375, 0.7778],
+  ["Rapier", 7.5, 0.5833],
+  ["Chaos", 9.375, 0.7],
+  ["Hell Slayer", 11.125, 0.7],
+  ["Candy Cane", 7.5, 0.5185],
+  ["Crystallized Broadsword", 9.975, 0.7368],
+  ["Hook Blade", 8.25, 0.5185],
+  ["Hachiwari", 8.25, 0.7],
+  ["Chokuto", 7.5, 0.6364],
+  ["Dragon Blade", 10.5, 0.7],
+  ["Thornspire", 10.875, 0.7],
+  ["Mace", 7, 1.1667],
+  ["Spiked Mace", 7.3, 1.1667],
+  ["Winged Mace", 7.6, 1.1667],
+  ["Hammerhead Mace", 7.9, 1.1667],
+  ["Grave Maker", 8.8, 1.1667],
+  ["Kanabo", 8.2, 1.2963],
+  ["Tetsubo", 7.72, 1.1111],
+  ["Ironhand", 7.6, 0.55],
+  ["Boxing Gloves", 8, 0.6325],
+  ["Relevator", 9.6, 0.7441],
+  ["Savage Claws", 8, 0.506],
+  ["Dark Knight's Gauntlets", 10, 0.506],
+  ["Axe", 7, 0.875],
+  ["Battleaxe", 7.35, 0.875],
+  ["Curved Handle Axe", 7.7, 0.875],
+  ["Spade Armed Axe", 8.05, 0.875],
+  ["Ornate Short Axe", 8.4, 0.875],
+  ["Duskwing's Cleaver", 8.4, 0.875],
+  ["Uchigatana", 8.5, 0.69],
+  ["Tachi", 8.925, 0.7263],
+  ["Straight Edge Katana", 9.35, 0.69],
+  ["Washi-maru", 10.2, 0.575],
+  ["Kurokiba-gatana", 9.35, 0.6273],
+  ["Juto Katana", 8.5, 0.69],
+  ["Crusader Sword", 12, 1.1875],
+  ["Long Sword", 12, 1.3194],
+  ["Dark Knight's Greatsword", 15, 1.3194],
+  ["Anchored Greatsword", 13.8, 1.0795],
+  ["Zweihander", 14.4, 1.25],
+  ["The Carver", 13.8, 1.0795],
+  ["Jack's Crest", 14.9, 1.0795],
+  ["Spear", 7.5, 0.725],
+  ["Trident", 8.25, 0.725],
+  ["Angelic Spear", 13.11225, 0.6591],
+  ["Demonic Spear", 14.42325, 0.725],
+  ["Knight Spear", 10.125, 0.6042],
+  ["Compass Spear", 10.5, 0.7632],
+  ["Shakujo", 8.25, 0.725],
+  ["Sodegarami", 10.125, 0.6591],
+  ["Bo Staff", 10.5, 0.6591],
+  ["Naginata", 10.875, 0.725],
+  ["Double Battle Axe", 15.75, 1.7018],
+  ["Scythe", 14.25, 1.5397],
+  ["Greater Battle Axe", 17.25, 1.6167],
+  ["Wyvern Axe", 18.75, 1.4697],
+  ["Reaper Scythe", 17, 1.5397],
+  ["Executioner's Greataxe", 20, 1.7018],
+  ["Anchored Straight Blade", 18, 1.6167],
+  ["Sun Great Axe", 19.5, 1.3472],
+  ["Batwing Reaver", 19.5, 1.7018],
+  ["Halberd", 16.8, 1.0667],
+  ["Great Sword", 20, 1.4033],
+  ["Hammer", 22, 1.5593],
+  ["Skull Crusher", 24, 1.7542],
+  ["Dragon Slayer", 22, 1.4033],
+  ["Comically Large Spoon", 18, 1.4033],
+  ["Excalibur", 30, 1.4033],
+  ["Colossal TerrorBlade", 22, 1.2758],
+  ["Colossal Gemblade", 25, 1.4033],
+  ["Otsuchi", 25, 1.5593],
+  ["Kinmon Kamagatana", 23.4, 1.4033],
+  ["Sharktooth Odachi", 27, 1.4033],
+  ["Coffin's Lid", 23, 1.4033]
+];
+for (const [name, dmg, swing] of WIKI_WEAPON_STATS) {
+  const w = allWeapons.find((x) => x.name === name);
+  if (!w) throw new Error(`Data:Weapons.json row for an unknown weapon: ${name}`);
+  w.baseDamage = dmg; w.trueSpeed = swing;
+}
 const byName = new Map(allWeapons.map((w) => [w.name, w]));
+
+// Weapons forged only at the Abyss Forge. Its pools are World 4's plus these, at their own 1/N: every published
+// Abyss share fits that exactly (Devil's Deed 1/64 is 0.7% of Colossal Swords, Royal Guardian's Glaive 1/16 is 5.3% of
+// Halberds, Moon Crescent Spear 1/32 is 1.6% of Spears; theforge.gg, 16 Nov 2026).
+const ABYSS_WEAPONS = new Set(["Devil's Deed", "Moon Crescent Spear", "Royal Guardian's Glaive", "Rosethorn"]);
+// Classes whose chance at each ore count isn't known yet (added after the odds table was taken from the game).
+// They're listed with their weapons and stats; the forge gives them no chance until the numbers are in.
+const NO_ODDS_CLASSES = ["Halberd", "Sword & Shield"];
 
 // Which classes and variants each world rolls, as listed by Cris from the game (24 Oct 2026).
 const COLOSSAL_1_2 = [["Great Sword"], ["Hammer"], ["Skull Crusher"], ["Dragon Slayer"]];
@@ -105,6 +222,8 @@ const W2 = {
   "Great Axe": { items: [["Double Battle Axe"], ["Scythe"]] },
   // Comically Large Spoon only rolls in World 1 (players' feedback, 27 Oct 2026). It isn't a shop blueprint.
   "Colossal Sword": { items: [...COLOSSAL_1_2, ["Comically Large Spoon"]] },
+  // Knight's Bulwark: Forgotten Kingdom, Frostspire Expanse and Crimson Sakura at 1/1 (theforge.gg, 16 Nov 2026).
+  "Sword & Shield": { items: [["Knight's Bulwark"]] },
 };
 const W3 = {
   "Dagger": { items: W2["Dagger"].items, shop: true },
@@ -114,6 +233,7 @@ const W3 = {
   "Spear": { items: [["Spear"], ["Trident"], ["Angelic Spear"], ["Knight Spear"], ["Compass Spear"]] },
   "Great Axe": { items: [...W2["Great Axe"].items, ["Greater Battle Axe"], ["Wyvern Axe"]], shop: true },
   "Colossal Sword": { items: COLOSSAL_1_2 },
+  "Sword & Shield": W2["Sword & Shield"],
 };
 const W4 = {
   "Dagger": { items: [["Kunai"], ["Jitte"], ["Damascus Dagger"], ["Tanto"]], shop: true },
@@ -123,8 +243,13 @@ const W4 = {
   "Spear": { items: [["Spear"], ["Shakujo"], ["Sodegarami"], ["Bo Staff"], ["Naginata"]] },
   "Great Axe": W3["Great Axe"],
   // World 4 rolls Dragon Slayer at 1/1 (the game also lists a 1/16 copy, which Cris says to ignore).
-  "Colossal Sword": { items: [["Dragon Slayer", 1], ["Kinmon Kamagatana"], ["Otsuchi"], ["Sharktooth Odachi"], ["Excalibur"]], shop: true },
+  "Colossal Sword": { items: [["Dragon Slayer", 1], ["Kinmon Kamagatana"], ["Otsuchi"], ["Sharktooth Odachi"], ["Excalibur"], ["Devil's Deed"]], shop: true },
+  // Halberd (its own class since Version 1.10): Crimson Sakura rolls Spiked Halberd 1/1 and Fangtian 1/8; Guild Island,
+  // which the site counts as World 4, adds Halberd 1/1 (theforge.gg, 16 Nov 2026).
+  "Halberd": { items: [["Halberd"], ["Spiked Halberd"], ["Fangtian"], ["Royal Guardian's Glaive"]] },
+  "Sword & Shield": { items: [["Knight's Bulwark"], ["Rosethorn"]] },
 };
+W4["Spear"] = { items: [...W4["Spear"].items, ["Moon Crescent Spear"]] };
 const inWorld = (w, world) => { w.worlds = [...new Set([...w.worlds, ...(world === 2 ? [1, 2] : [world])])]; };
 const pool = (world, classes, def) => ({
   classes,
@@ -140,10 +265,13 @@ const pool = (world, classes, def) => ({
   }])),
 });
 const weaponPools = {
-  2: pool(2, ["Dagger", "Straight Sword", "Gauntlets", "Katana", "Greatsword", "Great Axe", "Colossal Sword"], W2),
-  3: pool(3, ["Dagger", "Straight Sword", "Mace", "Axe", "Spear", "Great Axe", "Colossal Sword"], W3),
-  4: pool(4, ["Dagger", "Straight Sword", "Mace", "Katana", "Spear", "Great Axe", "Colossal Sword"], W4),
+  2: pool(2, ["Dagger", "Straight Sword", "Gauntlets", "Katana", "Greatsword", "Great Axe", "Colossal Sword", "Sword & Shield"], W2),
+  3: pool(3, ["Dagger", "Straight Sword", "Mace", "Axe", "Spear", "Great Axe", "Colossal Sword", "Sword & Shield"], W3),
+  4: pool(4, ["Dagger", "Straight Sword", "Mace", "Katana", "Spear", "Great Axe", "Colossal Sword", "Halberd", "Sword & Shield"], W4),
 };
+for (const w of allWeapons) if (ABYSS_WEAPONS.has(w.name)) w.tag = "abyss";
+// Halberd rolls at Guild Island's forge (counted as World 4 here), not at Crimson Sakura's or the Abyss Forge.
+byName.get("Halberd").tag = "guild";
 // Cris: where a class says "funguy shop", every other variant of that class (the shop blueprints) also rolls there.
 // Anything left after that is a Halloween weapon, which only rolls in World 4.
 const listed = new Set(allWeapons.filter((w) => w.worlds.length).map((w) => w.id));
@@ -179,10 +307,16 @@ const ARMOUR_WORLDS = {
   "Vanguard": [4],
   "Shogun": [4],
   "Juggernaut's": [4], // Version 1.10: Abyss Forge only (see ABYSS_SETS)
+  // Added after Version 1.10 (theforge.gg armour pages, 16 Nov 2026). Gloomwarden's is a normal Crimson Sakura forge
+  // (recipe from the Raid Shop); Voidstrider's and Dreadhorn's are Abyss Forge only (recipes from the Abyss Shop).
+  "Gloomwarden's": [4],
+  "Voidstrider's": [4],
+  "Dreadhorn's": [4],
 };
-// Sets forged only at the Abyss Forge (Version 1.10, 7 Nov 2026). Its odds aren't published, so they're listed in
-// World 4 for their stats (and so they can be saved and worn) with no forge chance.
-const ABYSS_SETS = new Set(["Juggernaut's"]);
+// Sets forged only at the Abyss Forge. Its pools are World 4's plus these at their own 1/N (every published Abyss
+// share fits that: Dreadhorn's Chestplate 1/8 is 7.7% of Heavy Chestplates there). The calculator's World 4 page
+// shows them with no chance at the normal forge and with these odds when the Abyss Forge is picked.
+const ABYSS_SETS = new Set(["Juggernaut's", "Voidstrider's", "Dreadhorn's"]);
 const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, slot, hp, price, chance]) => {
   const set = name.replace(/ (Helmet|Chestplate|Leggings|Armor|Crown)$/, "").replace(/^(Light|Medium)$/, "Basic");
   const where = ARMOUR_WORLDS[set];
@@ -206,7 +340,7 @@ const armour = csv("class,name,slot,base_health_pct").slice(1).map(([cls, name, 
 // the class's lock number. Not listed (blank, never 0): Funguy shop blueprints Cris doesn't own, Halloween
 // weapons, Comically Large Spoon, Boxing Gloves, Crusader Sword, Dark Knight's Greatsword, Anchored Greatsword,
 // The Carver, Greater Battle Axe, Kinmon Kamagatana, Otsuchi and Sharktooth Odachi.
-// Name differences from the game's mold screen: "Wytherin Axe" is our Wyvern Axe, "Spiked Halberd" our Halberd,
+// Name differences from the game's mold screen: "Wytherin Axe" is our Wyvern Axe,
 // "Ninja's Headgear" our Ninja's Helmet, "Shogun's ..." our Shogun ....
 // Statuses the site understands: verified (exact, can show 100%), reported (player reports: "guaranteed if the
 // report is right"), unverified (an estimate: never a guarantee).
@@ -218,7 +352,7 @@ const WEAPON_MOLDS = [
   ["ironhand", 3, 14, [2]], ["relevator", 25, 14, [2]], ["savage-claws", 40, 14, [2]], ["dark-knights-gauntlets", 70, 14, [2]],
   ["uchigatana", 2, 18, [2, 4]], ["tachi", 25, 18, [2, 4]],
   ["long-sword", 5, 24, [2]], ["zweihander", 20, 24, [2]], ["jacks-crest", 25, 24, [2]],
-  ["double-battle-axe", 2, 31, [2, 3, 4]], ["scythe", 10, 31, [2, 3, 4]], ["batwing-reaver", 20, 31, [2, 3, 4]], ["wyvern-axe", 20, 31, [3, 4]], ["halberd", 40, 31, [4]],
+  ["double-battle-axe", 2, 31, [2, 3, 4]], ["scythe", 10, 31, [2, 3, 4]], ["batwing-reaver", 20, 31, [2, 3, 4]], ["wyvern-axe", 20, 31, [3, 4]], ["spiked-halberd", 40, 31, [4]],
   ["great-sword", 15, 50, [2, 3]], ["hammer", 15, 50, [2, 3]], ["skull-crusher", 30, 50, [2, 3]], ["dragon-slayer", 40, 50, [2, 3, 4]], ["excalibur", 150, 50, [3, 4]],
   ["mace", 2, 14, [3, 4]], ["spiked-mace", 5, 14, [3]], ["winged-mace", 12, 14, [3]], ["hammerhead-mace", 12, 14, [3]], ["grave-maker", 18, 14, [3]],
   ["tetsubo", 10, 14, [4]], ["kanabo", 12, 14, [4]],
@@ -254,11 +388,29 @@ const EARLIER_REPORTS = {
   ],
   "excalibur": [{ url: `${REDDIT}1wd1jeu/do_i_change_anything_i_dont_have_any_more_vooite/`, date: null, note: "Player report: lists 150" }],
 };
-const moldRequirements = [...WEAPON_MOLDS.map((r) => ["weapon", ...r]), ...ARMOUR_MOLDS.map((r) => ["armour", ...r])].map(([kind, itemId, molds, minOres, seen]) => ({
-  itemId, kind, worlds: seen, exact: molds, reported: molds, approximate: false, status: "verified", minOres, checked: MOLDS_CHECKED,
-  reports: 1 + (EARLIER_REPORTS[itemId]?.length ?? 0),
-  sources: [{ url: null, date: MOLDS_CHECKED, note: "Checked in game by Cris" }, ...(EARLIER_REPORTS[itemId] ?? [])],
-}));
+// Items added after the in-game check, from theforge.gg's item pages (16 Nov 2026): reported, not checked in game.
+// The Abyss items' numbers are for the Abyss Forge. Spiked Halberd was on the World 4 mold screen on 28 Oct (40, as
+// "Spiked Halberd"; we had it as Halberd then), so it keeps that check.
+const THEFORGE_GG = "https://www.theforge.gg/database/";
+const REPORTED_MOLDS = [
+  ["weapon", "halberd", 40, 31, [4]], ["weapon", "fangtian", 45, 31, [4]], ["weapon", "royal-guardians-glaive", 80, 31, [4]],
+  ["weapon", "knights-bulwark", 12, 14, [2, 3, 4]], ["weapon", "rosethorn", 80, 14, [4]],
+  ["weapon", "moon-crescent-spear", 80, 24, [4]], ["weapon", "devils-deed", 165, 50, [4]],
+  ["armour", "gloomwardens-helmet", 65, 20, [4]], ["armour", "gloomwardens-leggings", 65, 24, [4]], ["armour", "gloomwardens-chestplate", 65, 30, [4]],
+  ["armour", "voidstriders-helmet", 50, 3, [4]], ["armour", "voidstriders-leggings", 50, 11, [4]], ["armour", "voidstriders-chestplate", 50, 15, [4]],
+  ["armour", "dreadhorns-helmet", 80, 35, [4]], ["armour", "dreadhorns-leggings", 80, 42, [4]], ["armour", "dreadhorns-chestplate", 80, 52, [4]],
+];
+const moldRequirements = [
+  ...[...WEAPON_MOLDS.map((r) => ["weapon", ...r]), ...ARMOUR_MOLDS.map((r) => ["armour", ...r])].map(([kind, itemId, molds, minOres, seen]) => ({
+    itemId, kind, worlds: seen, exact: molds, reported: molds, approximate: false, status: "verified", minOres, checked: MOLDS_CHECKED,
+    reports: 1 + (EARLIER_REPORTS[itemId]?.length ?? 0),
+    sources: [{ url: null, date: MOLDS_CHECKED, note: "Checked in game by Cris" }, ...(EARLIER_REPORTS[itemId] ?? [])],
+  })),
+  ...REPORTED_MOLDS.map(([kind, itemId, molds, minOres, seen]) => ({
+    itemId, kind, worlds: seen, exact: null, reported: molds, approximate: false, status: "reported", minOres, checked: "2026-11-16", reports: 1,
+    sources: [{ url: `${THEFORGE_GG}${kind === "weapon" ? "weapons" : "armor"}/${itemId}`, date: "2026-11-16", note: "theforge.gg item page" }],
+  })),
+];
 const poolHas = (world, id) => Object.values(weaponPools[world].pools).some((p) => p.items.some(([x]) => x === id));
 const seenNotInPool = [];
 for (const r of moldRequirements) {
@@ -281,6 +433,7 @@ const catalogue = {
   weapons,
   armour,
   weaponPools,
+  weaponClassesWithoutOdds: NO_ODDS_CLASSES,
   // Kept so sites running the previous version keep working with this data until they update.
   weaponClasses: { early: weaponPools[2].classes, late: weaponPools[3].classes },
   armourClasses: [["Light", "helmet"], ["Light", "leggings"], ["Light", "chestplate"], ["Medium", "helmet"], ["Medium", "leggings"], ["Medium", "chestplate"], ["Heavy", "helmet"], ["Heavy", "leggings"], ["Heavy", "chestplate"]],

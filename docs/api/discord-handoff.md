@@ -76,7 +76,7 @@ The parts of the answer a bot needs (the full answer has more):
     "item": {
       "id": "dark-knights-gauntlets", "name": "Dark Knight's Gauntlets", "class": "Gauntlets", "slot": null, "image": "…",
       "stat": { "name": "damage", "unit": "DMG", "value": 393.33 },
-      "weapon": { "attackInterval": 0.51, "dps": { "estimated": true, "total": 2851.87, "hitsPerSecond": 2.2549, "…": "…" } },
+      "weapon": { "attackInterval": 0.506, "dps": { "estimated": true, "total": 2451.43, "hitsPerSecond": 2.2727, "…": "…" } },
       "chance": { "overall": 0.2609, "inClass": 8.6957, "classChance": 3 },
       "lock": { "lockable": true, "lockAt": 14, "locked": false }
     },

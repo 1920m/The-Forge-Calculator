@@ -55,7 +55,7 @@ export function ForgerPage({ cat }: { cat: Catalogue }) {
   // Each saved weapon's DPS with the armour and race in the loadout (only once there's armour or a race to add).
   const inLoadout = useMemo(() => {
     const armour = ARMOUR_SLOTS.map((s) => (loadout[s] ? byId.get(loadout[s]!) ?? null : null));
-    const golems = GOLEM_SLOTS.map((s) => (loadout[s] && (s === "golem1" || slot2) ? golemInput(golemById.get(loadout[s]!)?.r) : null));
+    const golems = GOLEM_SLOTS.map((s) => (loadout[s] && (s === "golem1" || slot2) ? golemInput(golemById.get(loadout[s]!)?.r, golemById.get(loadout[s]!)?.g.level) : null));
     if (!armour.some(Boolean) && !loadout.race && !golems.some(Boolean)) return new Map<string, number>();
     return new Map(cards.flatMap((c) => { const t = forgeCombat(c, armour, loadout.race, undefined, golems)?.total; return t == null ? [] : [[c.f.id, t] as const]; }));
   }, [cards, byId, loadout, golemById, slot2]);
@@ -190,8 +190,10 @@ type CardProps = { card: Card; cat: Catalogue; equipped: ForgeSlot | null; loado
 const ForgeCard = memo(function ForgeCard({ card, cat, equipped, loadoutDps, onEquip, onDragStart }: CardProps) {
   const { f, r } = card;
   const fits = slotFor(f);
-  const { setWorld } = useShell();
+  const { setWorld, setAbyss } = useShell();
   const { rename, remove } = useSavedForges();
+  // An Abyss item opens at the Abyss Forge, the only forge that lists it.
+  const abyssItem = f.world === 4 && [...cat.weapons, ...cat.armour].some((x) => x.id === f.variant_id && x.tag === "abyss");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(f.name);
   const [confirm, setConfirm] = useState(false);
@@ -284,7 +286,7 @@ const ForgeCard = memo(function ForgeCard({ card, cat, equipped, loadoutDps, onE
       {err && <p className="login-error small" role="alert" style={{ margin: "0 12px 8px" }}>{err}</p>}
 
       <div className="forge-card-actions">
-        <Link className="btn sm gb" href={calculatorHref(f)} onClick={() => setWorld(f.world)}>Open in calculator</Link>
+        <Link className="btn sm gb" href={calculatorHref({ ...f, ...(abyssItem ? { site: "abyss" as const } : {}) })} onClick={() => (abyssItem ? setAbyss() : setWorld(f.world))}>Open in calculator</Link>
         {fits && <button className="btn sm" aria-pressed={!!equipped} onClick={() => onEquip(card)} disabled={busy} title={equipped ? "Take it off your loadout" : `Put it in your ${SLOT_LABEL[fits]} slot`}>{equipped ? "Equipped" : "Equip"}</button>}
         {!editing && <button className="btn sm" onClick={() => { setDraft(f.name); setEditing(true); }} disabled={busy}>Rename</button>}
         <button className={`btn sm danger-btn${confirm ? " confirm" : ""}`} onClick={del} disabled={busy} aria-label={confirm ? `Confirm delete ${f.name}` : `Delete ${f.name}`}>

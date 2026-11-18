@@ -317,7 +317,7 @@ These are the trait lines from the [ore pages](https://forgewiki.org/wiki/Ores) 
 | Earthite | Armour | +10% health, -5% move speed |
 | Blue Gem Quill | Armour | +5% jump, +10% dash distance, +8% dash invincibility, -12% dash cooldown |
 | Sealed Curse | Weapon and Armour | Armour: Berserker (below 35% HP, +20% damage and speed for 6s). Both: +30% Lethality, -20% health, -10% stamina, -15% move speed |
-| Azuryxite | Armour | +15 health; 40% chance to cut damage by 30%; -10% stamina; -15% move speed |
+| Azuryxite | Armour | +15% health; 40% chance to cut damage by 30%; -10% stamina; -15% move speed |
 | Sun Stone | Weapon | 35% chance to Burn 5s at 35% weapon damage/s |
 | Meteorite | Weapon | 25% chance of AoE explosion for 60% weapon damage |
 | Heavenly Orb | Armour | +5% health, +15 regen/s, 45% chance to cut damage by 30% |
@@ -338,16 +338,16 @@ These are the trait lines from the [ore pages](https://forgewiki.org/wiki/Ores) 
 | Supermassive Black Hole | Weapon | 45% chance of AoE explosion for 65% weapon damage; 45% chance of fire for 50% weapon damage/s over 5s |
 | Fierce Jade | Weapon / Both | Weapon: +15% attack speed. Both: below 35% HP +35% physical damage and move speed for 10s, +35% crit chance, +20% crit damage, +20% physical damage |
 | Vanegos | Armour / Both | Armour: below 35% HP +35% physical damage and move speed for 15s, +5% thorns. Both: +40% Lethality, -20% Vitality, -10% stamina, -10% move speed |
-| Vooite | Armour / Both | Armour: +8% thorns, venom cloud below 35% HP (30% weapon damage/s, 12s, 25s cooldown). Both: poison cloud (40%/s, 10s) and 4% max HP AoE per second in combat |
+| Vooite | Armour / Both | Armour: +8% thorns, venom cloud below 35% HP (30% weapon damage/s, 12s, 25s cooldown). Both: Bad Smell: below 35% HP, enemies flee and a poison cloud deals 40% weapon damage/s for 5s (10s cooldown); Radioactive: in combat, AoE damage of 4% max HP per second |
 | Fichilliumorite | Both | Takes the average multiplier of the other ores when forging |
 | Bismuth (multiplier) | Both | Also takes the average multiplier of the other ores when forging; its listed 8× is not used (wiki ore page, and an in-game craft on 27 Oct 2026: 1 each of Bismuth, Fichilliumorite, Kitsunite and Galaxite shows 26.25×) |
 | Kitsunite | Weapon / Armour | Weapon: lightning 60% for 80% damage, Smite 50% for 50%, Burn 50% (5s, 40%/s), explosion 40% for 70%. Armour: +25% Vitality, +15 regen, +6% thorns, +9% yield, +7% luck |
-| Bismuth | Weapon / Armour | Weapon: +18% attack speed, random T3 attack rune on hit, rainbow wave of 125% weapon damage on Galaxite black hole. Armour: +15% crit chance, +15% crit damage, +15% Lethality, fire, poison, black hole and resonance damage +1% per 500 HP (up to +20%), +6 regen/s, heal 2.5% max HP when a Galaxite black hole triggers |
+| Bismuth | Weapon / Armour | Weapon: +18% attack speed, Prismatic Shift: on hit, a random attack rune effect for 10s, rainbow wave of 125% weapon damage on Galaxite black hole. Armour: +15% crit chance, +15% crit damage, +15% Lethality, fire, poison, black hole and resonance damage +1% per 500 HP (up to +20%), +6 regen/s, heal 2.5% max HP when a Galaxite black hole triggers, −30% stun buildup and −35% stun time (45% and 50% with Galaxite) |
 | Aether Lotus | Armour | +30% Vitality; 60% chance to cut damage by 65%; +18 regen/s |
 | Zephyte | Armour | +30% move speed, +12.5% jump, +12.5% dash distance, +12.5% invincibility |
 | Echotite | Weapon | Reverberation: 8% chance for an attack to hit twice (20% Daggers, 16% Straight Swords, 12% Gauntlets), damage only. Explosion: 40% chance for 50% weapon damage. Fracture: hits stun 20% faster. Echoes of Decay: hitting an Ancient Poison mark spreads it with the next 2 attacks |
 | Frost Core | Weapon / Armour | Both: +15% Lethality, +10% crit damage. Armour: +12.5% Vitality; when hit above 60% HP, 30% chance of a blizzard for 60% weapon damage a second for 6 s (20 s cooldown; with Bismuth 100%, 12 s, no HP limit); +5% thorns; −5.5% move speed |
-| Tetrinite | Weapon / Armour | Weapon: poison 75% for 40% a second (6 s); lightning 50% for 70% to up to 3 enemies (4 s cooldown); Ancient Poison: 50% chance to mark for 5 s, all poison deals +50% to it. Armour: −30% stun buildup, −35% stun time, +6 regen/s, +15% dash distance, +12.5% move speed |
+| Tetrinite | Weapon / Armour | Weapon: poison 75% for 40% a second (6 s); lightning 50% for 70% to up to 3 enemies (4 s cooldown); Ancient Poison: 50% chance to mark for 5 s, all poison deals +50% to it. Armour: −30% stun buildup, −15% stun time, +6 regen/s, +15% dash distance, +12.5% move speed |
 | Bizzarite | Armour | Second Wind: below 10% HP, restores 25% over 5 s (90 s cooldown). Time Stop: after 75 hits, stuns enemies within 20 studs for 1.5 s (45 s cooldown). Void Mark: when hit, 30% chance to mark the attacker for 5 s, taking +15% from weapon hits (22.5% and 5 enemies with Galaxite). Void Phase: 12% chance to ignore a hit (15% with Galaxite). Heaven's Ascent: +0.5% move and attack speed per second in combat, up to 12.5%. +10% move speed |
 | Frost Star | Weapon | Frost Slash: 30% chance for 25% weapon damage. Glacier Explosion: crits have a 50% chance for 65%. Polar Shift: every 10 s in combat, the next of +10% attack speed, Fracture, Lethality or crit damage. Snow: 70% chance to slow 30% for 8 s. Starfall: 20% chance for 125% (10 s cooldown; 225% with Galaxite). Stellar Mark: every 5 hits on the marked enemy, 150% |
 | Royal Boneite | Weapon / Armour | Weapon: Life Steal 2.5% of weapon damage per hit (up to 8% max HP). Armour: +15% Vitality |
@@ -651,6 +651,15 @@ Heavy,Shogun Chestplate,chestplate,46,1355,8
 Heavy,Shogun Leggings,leggings,36,1200,8
 Heavy,Juggernaut's Chestplate,chestplate,53,1355,8
 Heavy,Juggernaut's Leggings,leggings,41,1200,8
+Medium,Gloomwarden's Helmet,helmet,24,502.5,8
+Medium,Gloomwarden's Chestplate,chestplate,33,1275,8
+Medium,Gloomwarden's Leggings,leggings,27,727.5,8
+Light,Voidstrider's Helmet,helmet,16,91,8
+Light,Voidstrider's Chestplate,chestplate,22,315,8
+Light,Voidstrider's Leggings,leggings,18,157.5,8
+Heavy,Dreadhorn's Helmet,helmet,38,1632,8
+Heavy,Dreadhorn's Chestplate,chestplate,55,2168,8
+Heavy,Dreadhorn's Leggings,leggings,43,1920,8
 ```
 
 Two conflicts remain: the wiki gives Wolf a 1/3 chance but the calculator uses 1/4, and the wiki lists Shogun, Vanguard Helmet and Leggings and Raven's pieces that the calculator lacks. The defence conflict I noted earlier is resolved: base defence is 2 × the wiki Health %, so no tuning constant is needed.

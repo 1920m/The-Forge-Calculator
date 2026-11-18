@@ -164,7 +164,7 @@ export function LoadoutPanel({ name, loadout, byId, drag, onOpen, onClear, readO
   // Weapon DPS with everything worn: the weapon's runes, the armour's damage traits, the Golemites and the race.
   const combat = useMemo(() => {
     const at = (s: ForgeSlot) => (loadout[s] ? byId.get(loadout[s]!) ?? null : null);
-    return forgeCombat(at("weapon"), ARMOUR_SLOTS.map(at), loadout.race, undefined, golemCards.map((g) => golemInput(g?.r)));
+    return forgeCombat(at("weapon"), ARMOUR_SLOTS.map(at), loadout.race, undefined, golemCards.map((g) => golemInput(g?.r, g?.g.level)));
   }, [loadout, byId, golemCards]);
   const oreName = new Map(armour.flatMap((c) => c.r.mix.map((m) => [m.ore.id, m.ore.name] as const)));
   const countedGolems = golemCards.filter((g, i) => g && combat?.golemsCounted[i]).map((g) => `${g!.g.name} (Golemite)`);

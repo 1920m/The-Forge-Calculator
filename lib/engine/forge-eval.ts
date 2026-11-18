@@ -2,7 +2,7 @@
  * One forge, start to finish: odds for the ores, the class lock, molds aimed at an item, and which item the result
  * card shows. Pure functions shared by the calculator page and the public API, so both give the same numbers.
  */
-import { forge, lockClass, type Catalogue, type Mix } from "./forge";
+import { forge, lockClass, type Catalogue, type ForgeSite, type Mix } from "./forge";
 import { NO_MOLDS, applyMolds } from "./molds";
 import type { Kind, World } from "./index";
 
@@ -41,8 +41,8 @@ export function pickItem(result: ForgeResult, pick: { cls?: string | null; id: s
 }
 
 /** Everything at once, for callers that don't memoise each step (the API). */
-export function evaluateForge(cat: Catalogue, input: { mix: Mix; kind: Kind; world: World; quality: number; lock?: string | null; molds?: { count: number; itemId: string | null } | null; pick?: { cls?: string | null; id: string } | null }) {
-  const normal = forge(cat, input.mix, input.kind, input.world, input.quality);
+export function evaluateForge(cat: Catalogue, input: { mix: Mix; kind: Kind; world: World; quality: number; site?: ForgeSite; lock?: string | null; molds?: { count: number; itemId: string | null } | null; pick?: { cls?: string | null; id: string } | null }) {
+  const normal = forge(cat, input.mix, input.kind, input.world, input.quality, input.site);
   const lock = activeLockFor(normal.classes, input.lock ?? null);
   const target = input.molds ? moldTargetFor(normal.classes, input.molds.itemId) : null;
   const { result, mold } = withLockAndMolds(cat, normal, lock, { on: !!input.molds, count: input.molds?.count ?? 0, target });

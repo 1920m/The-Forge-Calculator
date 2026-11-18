@@ -822,3 +822,7 @@ body.modal-open { overflow: hidden; }
 .tile.mold-cond { outline: 2px dashed var(--gold); outline-offset: -6px; }
 .mold-badge { display: inline-block; margin: 0 8px 4px 0; vertical-align: 1px; }
 .mold-slot .input.count { width: 54px; }
+/* The Abyss Forge: purple where World 4 is green, so picked buttons and toggles match its dark purple theme. */
+.app[data-site="abyss"] { --green: #1c1230; --green-bd: #4e3480; --green-br: #7a5cb0; --gold: #b8a6d6; }
+.abyss-btn { border-color: #261b36; }
+.abyss-btn[aria-pressed="true"] { background: #1c1230; border-color: #4e3480; color: #e6dcf5; font-weight: 700; box-shadow: 0 0 10px rgba(80,40,150,.25); }

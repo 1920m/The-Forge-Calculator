@@ -77,7 +77,7 @@ A trait starts working when its ore is at least 10% of the craft (at 10% strengt
 strength = 0.10 + 4.5 × (share − 0.10), between 0 and 1
 ```
 
-Galaxite, Kyubite and Fierce Jade are at 31.25%, so all three are at full strength. Bismuth is at 6.25%, below 10%, so its normal traits are off (it's in `traits.inactive`). Bismuth's random tier-3 attack rune on hit is the exception: the damage model counts it at any share.
+Galaxite, Kyubite and Fierce Jade are at 31.25%, so all three are at full strength. Bismuth is at 6.25%, below 10%, so its own traits are off (it's in `traits.inactive`). Two Bismuth effects don't need a share: with any Galaxite in the weapon, its Resonance adds a rainbow wave to every black hole.
 
 ## 7. DPS at +0
 
@@ -90,29 +90,27 @@ The weapon traits that matter for damage, added up and then capped:
 | Lethality | – | – | 20% | 20% | 300% | **20%** |
 | Attack speed | – | – | 15% | 15% | 150% | **15%** |
 
-The real swing time of the Gauntlets is 0.51 s (the item card says 0.47, which is an index, not the real time):
+The real swing time of the Gauntlets is 0.506 s (the wiki's `Data:Weapons.json`, which has the game's own precision):
 
 ```
-hits per second = (1 + 0.15) ÷ 0.51           = 2.2549
+hits per second = (1 + 0.15) ÷ 0.506           = 2.2727
 crit blend      = 1.00 × (1.45 + 0.58) + 0     = 2.03
-hit DPS         = 393.33 × (1 + 0.20) × 2.03 × 2.2549 = 2160.56
+hit DPS         = 393.33 × (1 + 0.20) × 2.03 × 2.2727 = 2177.64
 ```
 
-Procs, which don't crit:
+Procs don't crit, and use the weapon's damage before enhancement. Their chances are rolled the way the game rolls them, one of 101 outcomes: `(⌊chance × 100⌋ + 1) ÷ 101`, so 30% counts as 31/101 = 30.69%.
 
 | Proc | From | Sum | DPS |
 | --- | --- | --- | ---: |
-| Black hole | Galaxite: 30% chance, 60% weapon damage, plus Bismuth's 125% rainbow wave | 393.33 × 1.85 × 0.30 × 2.2549 | 492.25 |
-| Burn | Kyubite 45%/s plus Bismuth's rune 3.25%/s; fire is up all the time (0.40 × 2.2549 × 4 s ≥ 1) | 393.33 × 0.4825 × 1 | 189.78 |
-| Explosion | Bismuth's rune: 5.25% chance, 8.75% damage | 393.33 × 0.0875 × 0.0525 × 2.2549 | 4.07 |
-| Lightning | Bismuth's rune: 5.875% chance, 10% damage, 0.375 s cooldown | 393.33 × 0.10 × 0.05875 × 2.2549 | 5.21 |
-| **Total procs** | | | **691.31** |
+| Black hole | Galaxite's 60%; 30% chance (30.69% rolled) with a 1 s cooldown: `1 ÷ (1 + 1 ÷ (0.3069 × 2.2727))` = 0.4109 a second. Bismuth's 125% wave needs a 10%+ share, and 1 in 16 is 6.25% | 393.33 × 0.60 × 0.4109 | 96.98 |
+| Burn | Kyubite: 45% a second, 45% chance (45.54% rolled), 5 s. Up when any hit in the last 5 s applied it: 2.2727 × 5 = 11.36 hits, so `1 − 0.5446^11.36` = 0.999 | 393.33 × 0.45 × 0.999 | 176.82 |
+| **Total procs** | | | **273.79** |
 
 ```
-estimated DPS = 2160.56 + 691.31 = 2851.87
+estimated DPS = 2177.64 + 273.79 = 2451.43
 ```
 
-The API reports it as `dps.total: 2851.87` with `estimated: true` and the `ESTIMATED_DPS` warning: it's the community damage model averaged over time, not something measured in game.
+The API reports it as `dps.total: 2451.43` with `estimated: true` and the `ESTIMATED_DPS` warning: it's a damage model averaged over time, checked against in-game tests (docs/wiki-dps-comparison.md).
 
 ## 8. At +9 with a rune (the `dps` example)
 
@@ -121,13 +119,13 @@ The API reports it as `dps.total: 2851.87` with `estimated: true` and the `ESTIM
   "enhancement": 9, "runes": [{ "id": "blast-chip", "level": 3, "secondaries": ["crit_chance", "lethality", "atk_speed"] }] }
 ```
 
-- +9 multiplies damage by 1.50: `393.33 × 1.5 = 590`.
-- Blast Chip III's side effects add before the caps: crit chance (already capped at 100%), lethality +15% (now 35%) and attack speed +18% (now 33%), so `hits per second = 1.33 ÷ 0.51 = 2.6078`.
-- Its explosion adds 615.45 DPS.
+- +9 multiplies the **hits** by 1.50. Procs stay at the +0 weapon damage (tested in game, 12 Nov 2026).
+- Blast Chip III's side effects add before the caps: crit chance (already capped at 100%), lethality +15% (now 35%) and attack speed +18% (now 33%), so `hits per second = 1.33 ÷ 0.506 = 2.6285`.
+- Its explosion joins the ores' explosions: 80% damage, 50% chance (50.50% rolled): `393.33 × 0.8 × 0.5050 × 2.6285 = 417.64`.
 
-Result: **5986.78** estimated DPS (hit 4216.61, procs 1770.17). The `breakdown` shows how much each layer adds: base weapon 771.24, ore traits 2080.63, enhancement 1425.94, runes 1708.97.
+Result: **4949.9** estimated DPS (hit 4249.94, procs 699.96). The `breakdown` shows how much each layer adds: base weapon 777.34, ore traits 1674.09, enhancement 1088.82, runes 1409.65.
 
 ## 9. Armour and Golemites, briefly
 
 - **Dark Knight Chestplate**, World 4, 10 Galaxite + 10 Kyubite: M = 21, health 25%, so `25 × 21 × 2 = 1050 DEF`. At 20 ores its class (lock at 52) has a 0% chance, so the API adds `CLASS_NOT_AVAILABLE`.
-- **Lucky Cat Golemite**, 10 Lucky Cat: Lucky Cat is Epic, so it's named "Lucky Cat Golemite", Epic, with 23% mining help and 15% ore-trait share. `combat.damage` is `null`: how Golemites fight isn't known, so the API doesn't make a number up.
+- **Lucky Cat Golemite**, 10 Lucky Cat: Lucky Cat is Epic, so it's named "Lucky Cat Golemite", Epic, with 23% mining help and 15% ore-trait share. At level 13 and above it also fights: `combat.hitShare` is 2% of the weapon's damage at level 13, rising to 6% at 25, at `combat.hitsPerSecond` 0.6667 (the wiki's model).

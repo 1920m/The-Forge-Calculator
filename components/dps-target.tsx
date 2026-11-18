@@ -20,10 +20,10 @@ export function DpsTarget({ classes, pickedDps, pickedId, ores, quality, onPick 
 }) {
   const [typed, setTyped] = useState<number | null>(null);
   const [level, setLevel] = useState(0);
-  const k = enhanceFactor(level);
-  const { best } = useMemo(() => dpsTarget(classes, 0, level), [classes, level]);
+  const all = useMemo(() => dpsTarget(classes, 0, level), [classes, level]);
+  const best = all.best;
   // Until the player types a number, the target is the weapon picked above, at this level.
-  const target = typed ?? Math.floor((pickedDps ?? 0) * k);
+  const target = typed ?? Math.floor(all.rows.find((r) => r.id === pickedId)?.dps ?? pickedDps ?? 0);
   const { rows, chance } = useMemo(() => dpsTarget(classes, target, level), [classes, target, level]);
   if (!best) return null;
   const top = Math.ceil(best.dps);
@@ -53,7 +53,7 @@ export function DpsTarget({ classes, pickedDps, pickedId, ores, quality, onPick 
             <div className="level-row" role="group" aria-label="Enhancement level">
               {LEVELS.map((l) => <button key={l} className="btn sm" aria-pressed={level === l} onClick={() => startTransition(() => setLevel(l))}>+{l}</button>)}
             </div>
-            <p className="note" style={{ marginTop: 6 }}>5% DPS a level up to +8, ×1.50 at +9. At +{level}: ×{k.toFixed(2)}.</p>
+            <p className="note" style={{ marginTop: 6 }}>Hits grow 5% a level up to +8, ×1.50 at +9 (×{enhanceFactor(level).toFixed(2)} at +{level}); trait procs stay as they are at +0.</p>
           </div>
 
           <TargetResult chance={chance} target={target} level={level} hitCount={hitCount} best={best} ores={ores} />

@@ -18,6 +18,11 @@ export const GOLEMITE = {
   maxLevel: 25,
   /** Golemites can fight from this growth level. */
   combatLevel: 13,
+  /**
+   * Their own hits, as the wiki's calculator models them (7 Nov 2026): 2% of the weapon's damage (before enhancement) at
+   * level 13, rising evenly to 6% at level 25, about 0.67 hits a second.
+   */
+  combatDamage: { atCombatLevel: 0.02, atMaxLevel: 0.06, hitsPerSecond: 2 / 3 },
   /** Size grows 1% a level. */
   sizePerLevel: 0.01,
   /** Players start with one slot; the second opens at this player level. */

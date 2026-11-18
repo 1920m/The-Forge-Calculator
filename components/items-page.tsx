@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useState } from "react";
-import { classNames, classVariants, poolIncomplete, type Catalogue } from "@/lib/engine/forge";
+import { classNames, classVariants, poolIncomplete, shownAt, type Catalogue } from "@/lib/engine/forge";
 import { stat, type Kind } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
 import { SHOW_STATUS_LABELS, fmt, pct } from "@/lib/ui";
@@ -17,7 +17,9 @@ function readKind(): Kind | null {
 }
 
 export function ItemsPage({ cat }: { cat: Catalogue }) {
-  const { world } = useShell();
+  const { world, site } = useShell();
+  // The forge picked in the top bar: World 4 is Crimson Sakura's or the Abyss Forge, each listing only what it makes.
+  const listed = (name: string) => classVariants(cat, kind, world, name, site).filter((v) => shownAt(v, site));
   const [kind, setKindState] = useState<Kind>("weapon");
   useEffect(() => {
     const k = readKind();
@@ -37,8 +39,10 @@ export function ItemsPage({ cat }: { cat: Catalogue }) {
   const [clsPick, setCls] = useState<string | null>(null);
   const cls = clsPick && names.includes(clsPick) ? clsPick : names[names.length - 1];
   const [mult, setMult] = useState(10);
-  const variants = classVariants(cat, kind, world, cls);
-  const swaps = kind === "weapon" ? "Each world has its own classes: World 1–2 has Gauntlets, Katana and Greatsword; World 3 has Mace, Axe and Spear; World 4 has Mace, Katana and Spear." : "World 4 adds the Ninja's, Rootguard, Vanguard and Shogun sets.";
+  const variants = listed(cls);
+  const swaps = kind === "weapon"
+    ? "Each world has its own classes: World 1–2 has Gauntlets, Katana and Greatsword; World 3 has Mace, Axe and Spear; World 4 has Mace, Katana and Spear, plus Halberd. Sword & Shield is in Worlds 2–4. Halberd and Sword & Shield came after the forge odds were taken from the game, so their chance isn't known yet."
+    : "World 4 adds the Ninja's, Rootguard, Vanguard, Shogun and Gloomwarden's sets; the Juggernaut's, Voidstrider's and Dreadhorn's sets come from the Abyss Forge.";
   const unit = kind === "weapon" ? "DMG" : "DEF";
 
   return (
@@ -52,7 +56,7 @@ export function ItemsPage({ cat }: { cat: Catalogue }) {
       <div className="row">
         <Reveal col={1} style={{ flex: "1 1 520px", minWidth: 0 }}>
           <section className="gp">
-            <div className="tb"><h1 className="title">{kind === "weapon" ? "Weapon" : "Armour"} classes</h1><span className="small muted">World {worldName(world)}</span></div>
+            <div className="tb"><h1 className="title">{kind === "weapon" ? "Weapon" : "Armour"} classes</h1><span className="small muted">{site === "abyss" ? "The Abyss Forge" : `World ${worldName(world)}`}</span></div>
             <div className="pad scroll-x">
               <table className="table" style={{ minWidth: 420 }}>
                 <thead><tr><th>Class</th><th>Unlocks at</th><th>Variants</th><th /></tr></thead>
@@ -60,15 +64,15 @@ export function ItemsPage({ cat }: { cat: Catalogue }) {
                   {names.map((n, i) => (
                     <tr key={n} className={n === cls ? "sel" : ""}>
                       <td><button className="link-btn" style={{ fontWeight: 700 }} onClick={() => setCls(n)}>{n}</button></td>
-                      <td className="gold" style={{ fontWeight: 700 }}>{locks[i]} ores</td>
-                      <td className="muted">{classVariants(cat, kind, world, n).length}{poolIncomplete(cat, kind, world, n) && <span title="Plus shop-blueprint weapons not listed yet"> + shop</span>}</td>
+                      <td className="gold" style={{ fontWeight: 700 }}>{locks[i] != null ? `${locks[i]} ores` : <span className="muted" title="Added after the forge odds were taken from the game">not known yet</span>}</td>
+                      <td className="muted">{listed(n).length}{poolIncomplete(cat, kind, world, n) && <span title="Plus shop-blueprint weapons not listed yet"> + shop</span>}</td>
                       <td><button className="btn sm" aria-pressed={n === cls} onClick={() => setCls(n)}>View</button></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <p className="note">{swaps} The number is the ore count at which the game lets you lock the class; a class can already appear with fewer ores (see the odds on the calculator).</p>
-              <Timeline items={names.map((n, i) => [n, locks[i]] as [string, number])} />
+              <Timeline items={names.flatMap((n, i) => (locks[i] != null ? [[n, locks[i]] as [string, number]] : []))} />
             </div>
           </section>
         </Reveal>
@@ -82,22 +86,22 @@ export function ItemsPage({ cat }: { cat: Catalogue }) {
             </div>
             <div className="pad scroll-x">
               <table className="table" style={{ minWidth: 580 }}>
-                <thead><tr><th>Variant</th>{kind === "weapon" ? <><th>Base dmg</th><th title="Real time between swings">Swing</th><th title="The number the game's item card shows">Card speed</th><th>Range</th></> : <th>Health %</th>}<th>Weight</th><th>In class</th><th style={{ textAlign: "right" }}>{unit} at {mult}x</th></tr></thead>
+                <thead><tr><th>Variant</th>{kind === "weapon" ? <><th>Base dmg</th><th title="Time between swings, as the item card shows it">Swing</th><th>Range</th></> : <th>Health %</th>}<th>Weight</th><th>In class</th><th style={{ textAlign: "right" }}>{unit} at {mult}x</th></tr></thead>
                 <tbody>
                   {variants.map((v) => (
                     <tr key={v.id}>
                       <td><span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                         <span className="tile" style={{ width: 34, height: 34, borderWidth: 1 }}><GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={16} /></span>
-                        {v.name}</span> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}{v.tag === "world1" && <span className="badge der" title="Only rolls in World 1, not World 2">World 1 only</span>}{v.tag === "abyss" && <span className="badge der" title="Forged only at the Abyss Forge (Version 1.10); its odds aren't published">Abyss Forge</span>}</td>
-                      {kind === "weapon" ? <><td>{v.base}</td><td>{v.interval}s</td><td className="muted">{v.speed}s</td><td>{v.range}</td></> : <td>{v.base}</td>}
+                        {v.name}</span> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}{v.tag === "world1" && <span className="badge der" title="Only rolls in World 1, not World 2">World 1 only</span>}{v.tag === "abyss" && <span className="badge der" title="Forged only at the Abyss Forge: pick it on the World 4 calculator to see its chance">Abyss Forge</span>}{v.tag === "guild" && <span className="badge der" title="Rolls at Guild Island's forge, not Crimson Sakura's or the Abyss Forge">Guild Island</span>}</td>
+                      {kind === "weapon" ? <><td>{v.base}</td><td>{v.interval}s</td><td>{v.range}</td></> : <td>{v.base}</td>}
                       <td className="muted">1/{v.weight}</td>
-                      <td>{v.tag === "abyss" ? "–" : pct(v.chance)}</td>
+                      <td>{pct(v.chance)}</td>
                       <td className="num">{fmt(stat(v.base, mult, 1, kind))}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <p className="note">{kind === "weapon" ? "Damage = base damage × multiplier × (1 + quality), shown here at 100% quality. Swing is the real time between attacks, used for DPS. Card speed is the game's index value, which the item card shows but which isn't the real speed." : "Defense = health % × multiplier × (1 + quality), rounded to a whole number, shown here at 100% quality."} Chance inside the class is 1/weight, normalised.{poolIncomplete(cat, kind, world, cls) && " This class also has shop-blueprint weapons that are not listed yet, so these chances may be a little high."}</p>
+              <p className="note">{kind === "weapon" ? "Damage = base damage × multiplier × (1 + quality), shown here at 100% quality. Swing is the time between attacks, used for DPS; the item card's ATK SPD shows the same number, rounded." : "Defense = health % × multiplier × (1 + quality), rounded to a whole number, shown here at 100% quality."} Chance inside the class is 1/weight, normalised.{poolIncomplete(cat, kind, world, cls) && " This class also has shop-blueprint weapons that are not listed yet, so these chances may be a little high."}</p>
             </div>
           </section>
         </Reveal>

@@ -9,12 +9,12 @@ export type CatalogueOre = {
   worlds: number[]; drop: number | null; source: string | null; verified: boolean;
   traits: { kinds: Kind[]; text: string }[];
 };
-export type CatalogueWeapon = { id: string; name: string; class: string; baseDamage: number; indexSpeed: number; trueSpeed: number; range: number; price: number; weight: number; worlds: number[]; verified: boolean; tag?: "shop" | "halloween" | "world1" | null };
+export type CatalogueWeapon = { id: string; name: string; class: string; baseDamage: number; indexSpeed: number; trueSpeed: number; range: number; price: number; weight: number; worlds: number[]; verified: boolean; tag?: "shop" | "halloween" | "world1" | "abyss" | "guild" | null };
 export type CatalogueArmour = {
   id: string; name: string; weightClass: "Light" | "Medium" | "Heavy"; set: string; slot: "helmet" | "chestplate" | "leggings"; healthPct: number; price: number;
   /** The usual 1 in N; worldWeights overrides it in worlds where the game uses a different one. */
   weight: number; worldWeights?: Record<string, number>; worlds: number[]; verified: boolean;
-  /** "abyss": forged only at the Abyss Forge (Version 1.10), whose odds aren't published. Shown with its stats, 0% chance. */
+  /** "abyss": forged only at the Abyss Forge. 0% at World 4's normal forge; rolls at its 1/N when the Abyss Forge is picked. */
   tag?: "abyss" | null;
 };
 export type Catalogue = {
@@ -27,6 +27,8 @@ export type Catalogue = {
   qualityTiers: [string, number][];
   /** How many molds guarantee an item, from player reports. Missing from older data releases. */
   moldRequirements?: MoldRequirement[];
+  /** Weapon classes after the 7 odds slots, whose chance at each ore count isn't known yet: listed, 0% chance. */
+  weaponClassesWithoutOdds?: string[];
 };
 export type Mix = { ore: CatalogueOre; count: number }[];
 
@@ -48,10 +50,21 @@ export function categoryRows(cat: Catalogue, kind: Kind): CategoryRow[] {
   return Object.entries(cat.odds[kind]).flatMap(([n, cells]) => cells.map((probability, i) => ({ kind, oreCount: Number(n), slot: i + 1, probability })));
 }
 
-export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; interval?: number; range?: number; tag?: "shop" | "halloween" | "world1" | "abyss" | null };
+export type Variant = { id: string; name: string; weight: number; chance: number; base: number; verified: boolean; speed?: number; interval?: number; range?: number; tag?: "shop" | "halloween" | "world1" | "abyss" | "guild" | null };
+
+/** Where to forge: the island's normal forge, or the Abyss Forge (World 4's pools plus the Abyss items). */
+export type ForgeSite = "normal" | "abyss";
+/** The Abyss Forge only exists next to World 4; anywhere else it's the normal forge. */
+export const siteFor = (world: World, site: ForgeSite | null | undefined): ForgeSite => (world === 4 && site === "abyss" ? "abyss" : "normal");
+
+/**
+ * Whether a forge makes this item, for what the site lists: the Abyss Forge makes the Abyss items and not Guild Island's
+ * Halberd; every other forge the reverse. (The engine still knows every item of a world, so saved forges keep working.)
+ */
+export const shownAt = (v: { tag?: string | null }, site: ForgeSite) => (site === "abyss" ? v.tag !== "guild" : v.tag !== "abyss");
 
 /** Every variant of a class in a world, with its chance inside the class (normalised inverse weights). */
-export function classVariants(cat: Catalogue, kind: Kind, world: World, className: string): Variant[] {
+export function classVariants(cat: Catalogue, kind: Kind, world: World, className: string, site: ForgeSite = "normal"): Variant[] {
   const byId = new Map(cat.weapons.map((w) => [w.id, w]));
   const list = kind === "weapon"
     ? (cat.weaponPools[poolKey(world)].pools[className]?.items ?? []).flatMap(([id, weight]) => {
@@ -59,10 +72,12 @@ export function classVariants(cat: Catalogue, kind: Kind, world: World, classNam
         return w ? [{ id: w.id, name: w.name, weight: weight ?? w.weight, base: w.baseDamage, verified: w.verified, speed: w.indexSpeed, interval: w.trueSpeed, range: w.range, tag: w.tag ?? null }] : [];
       })
     : cat.armour.filter((a) => armourClassName([a.weightClass, a.slot]) === className && a.worlds.includes(world)).map((a) => ({ id: a.id, name: a.name, weight: a.worldWeights?.[String(world)] ?? a.weight, base: a.healthPct, verified: a.verified, tag: a.tag ?? null }));
-  // Abyss Forge items are listed for their stats but don't take part in the normal forge's odds.
-  const rolls = list.filter((v) => v.tag !== "abyss");
-  const odds = variantOdds(rolls.map((v) => v.weight));
-  return list.map((v) => ({ ...v, chance: v.tag === "abyss" ? 0 : odds[rolls.indexOf(v)] }));
+  // Abyss Forge items are listed for their stats but only roll at the Abyss Forge.
+  const abyss = siteFor(world, site) === "abyss";
+  // The Abyss Forge's pools are Crimson Sakura's, so Guild Island's Halberd isn't in them.
+  const rolls = list.filter((v) => shownAt(v, abyss ? "abyss" : "normal"));
+  const odds = rolls.length ? variantOdds(rolls.map((v) => v.weight)) : [];
+  return list.map((v) => ({ ...v, chance: rolls.includes(v) ? odds[rolls.indexOf(v)] : 0 }));
 }
 
 export function qualityLabel(cat: Catalogue, qualityPct: number): string {
@@ -106,7 +121,7 @@ export function transferredTraits(mix: Mix, kind: Kind): TraitResult[] {
 
 const toEngineMix = (mix: Mix) => mix.filter((m) => m.count > 0).map((m) => ({ ore: { slug: m.ore.id, multiplier: m.ore.multiplier, rarity: m.ore.rarity, multiplierRule: m.ore.rule === "average" ? ("average-other-ores" as const) : undefined, ref: m.ore }, count: m.count }));
 
-export function forge(cat: Catalogue, mix: Mix, kind: Kind, world: World, quality: number) {
+export function forge(cat: Catalogue, mix: Mix, kind: Kind, world: World, quality: number, site: ForgeSite = "normal") {
   const engineMix = toEngineMix(mix);
   const total = engineMix.reduce((n, m) => n + m.count, 0);
   const multiplier = averageMultiplier(engineMix);
@@ -116,15 +131,18 @@ export function forge(cat: Catalogue, mix: Mix, kind: Kind, world: World, qualit
   const locks = cat.locks[kind];
   const dpsOres = mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count }));
   const classes = names.map((name, i) => {
-    const probability = odds.status === "available" ? odds.classes[i].probability : 0;
-    const variants = classVariants(cat, kind, world, name).map((v) => {
+    // Classes past the odds table's slots (Halberd, Sword & Shield) have no known chance yet.
+    const oddsKnown = i < (odds.status === "available" ? odds.classes.length : kind === "weapon" ? 7 : 9);
+    const probability = odds.status === "available" && oddsKnown ? odds.classes[i].probability : 0;
+    const variants = classVariants(cat, kind, world, name, site).map((v) => {
       const raw = multiplier == null ? null : rawStat(v.base, multiplier, quality);
       const dps = kind === "weapon" && raw != null && v.interval ? weaponDps({ ores: dpsOres, damage: raw, interval: v.interval, cls: name }) : null;
       return { ...v, overall: (probability * v.chance) / 100, raw, value: raw == null ? null : roundStat(raw, kind), dps };
     });
-    return { name, probability, lockAt: locks[i], lockable: total >= locks[i], incomplete: poolIncomplete(cat, kind, world, name), variants };
+    const lockAt = oddsKnown ? locks[i] : null;
+    return { name, probability, oddsKnown, lockAt, lockable: lockAt != null && total >= lockAt, incomplete: poolIncomplete(cat, kind, world, name), variants };
   });
-  return { total, multiplier, primary, rarity: primary?.rarity ?? null, oddsStatus: odds.status, capped: odds.capped, classes, traits: transferredTraits(mix, kind) };
+  return { total, multiplier, primary, rarity: primary?.rarity ?? null, oddsStatus: odds.status, capped: odds.capped, site: siteFor(world, site), classes, traits: transferredTraits(mix, kind) };
 }
 
 /**

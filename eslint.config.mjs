@@ -5,7 +5,7 @@ import nextTypescript from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
-  globalIgnores([".next/**", ".local-auth/**", "out/**", "coverage/**", "next-env.d.ts", "docs/**"]),
+  globalIgnores([".next/**", ".local-auth/**", "out/**", "coverage/**", "next-env.d.ts", "docs/**", "supabase/functions/**"]),
   {
     files: ["lib/engine/**/*.ts"],
     rules: {

@@ -1,4 +1,59 @@
-# DPS compared with the wiki's calculator
+# DPS compared with the game and the wiki's calculator
+
+**Reference order:** in-game tests first, then the wiki's data (ore pages, `Data:*.json`), then the wiki's calculator. The calculator (`MediaWiki:ForgeCalculator.js`) was reviewed with one of the game's developers and found off in how it applies DPS and stats in many cases, so where a rule isn't tested in game we work it out from the trait text. `docs/dps-rules.md` lists every rule and its source.
+
+## 12 November 2026
+
+An in-game test on the test server (Excalibur with 12 Kitsunite, 12 Galaxite, 12 Tetrinite and 4 Bismuth, +9, no runes) averaged about **5,600 DPS as Human** and **7,400 as Kitsune**. Our old model gave 8,320 and 10,897, too high mainly because procs grew with enhancement.
+
+What changed since, all checked against the in-game results below:
+
+- **Enhancement grows hits only.** Procs use the damage before enhancement.
+- **Burn and poison uptime** is `1 − (1 − chance)^(hits in the duration)` (hits land one swing at a time), not the wiki calculator's `load ÷ (1 + load ÷ 2)`.
+- **Black holes** need Galaxite's trait (a 10%+ share), and **Bismuth's wave** needs 10%+ Bismuth (an 8% Bismuth card lists no Bismuth traits). A Golemite's black hole comes with its own, scaled chance.
+- **Bismuth**: crits are armour-only, **Prismatic Shift** is counted (fitted to in-game tests).
+- Weapon damage and swing times from `Data:Weapons.json` (Gemblade 25, Executioner's 20, Batwing 19.5); Fireite and Gargantuan burn 10%/s.
+
+`tests/wiki-dps.test.ts` still runs 34 builds from the wiki's calculator part by part: every part where we use the same rule must match, and the parts above are listed as known differences.
+
+### In-game tests, 12 November
+
+Test server, Human unless named, no armour, no runes, no Golemites, 100% quality, +0 unless named. "In game" is the average on a dummy over a long run; proc-heavy builds vary by several percent from run to run.
+
+| Build | In game | Calculator | Difference |
+|---|---|---|---|
+| Excalibur, 50 Vooite (hits only) | 898 | 898 | – |
+| Same, +9 | 1,360 | 1,347 | −1% |
+| Excalibur, 12 Kitsunite / 12 Galaxite / 12 Tetrinite / 4 Bismuth | 4,500 | 4,968 | +10% |
+| Same, +9 | ~5,600 | 5,681 | +1% |
+| Same, Kitsune | 6,686 | 6,722 | +1% |
+| Same, Kitsune, +9 | ~7,400 | 7,799 | +5% |
+| Excalibur, 46 Vooite + 4 Bismuth (8%) | 953 | 898 | −6% |
+| Excalibur, 45 Vooite + 5 Bismuth (10%) | 1,328 | 1,314 | −1% |
+| Excalibur, 35 Vooite + 15 Bismuth (30%) | 1,585 | 1,535 | −3% |
+
+What they settle:
+
+- **Hits, swing time and enhancement are right.** The card shows 1,260 damage and 1,890 at +9 (×1.5), and the hits-only weapon matches. The card's ATK SPD (1.4 for Excalibur) is the swing time, rounded.
+- **Procs don't grow with enhancement.** If they did, +9 would add about 2,400 DPS to the Excalibur; the game added about 1,100 (Human) and 700 (Kitsune).
+- **Bismuth's Lethality, crit chance and crit damage are armour-only.** The Excalibur's card lists +1.8% attack speed (Bismuth at 10%), +45% crit chance and +20% crit damage (exactly Galaxite's) and no Lethality. Below a 10% share Bismuth shows no traits.
+- **Prismatic Shift is big.** The wiki's data splits each rune stat by 8 (so 0.0875 explosion damage, a 0.375 s lightning cooldown), which gave the Vooite + Bismuth weapons almost nothing. The cards show Attack Speed, Prismatic Shift and Resonance (no black hole of Bismuth's own). We now count the four damage runes at their middle tier III rolls, each up `1 − (1 − 0.5 ÷ 7)^(hits in 10 s)` of the time. The 50% trigger is fitted to these two tests, so it's an estimate until the exact rule is known.
+- **Golemites (open).** With two Kitsunite Golemites (30% traits, growth 0) the Excalibur did 5,420 (Human) and 9,300 (Kitsune); we give 5,852 and 7,691, so Golemite traits need their own check.
+
+### Ore pages, 12 November
+
+Every ore page on forgewiki.org (156 pages with `Infobox Ore`) was compared with `data/dps-stats.json`, `data/armour-dps.ts` and the trait texts:
+
+- Fireite and Gargantuan burn for **10%** a second ("dealing 10% of Base Weapon Damage per second"); `Data:Ores.json` has 20%.
+- Voidstar's crit chance is 33.3% (was 33%).
+- Kokorite's, Sealed Curse's and Yin's Berserker is an armour trait only, so it's no longer listed as a weapon trait (it still counts on armour).
+- Texts: Azuryxite +15% health (not +15), Tetrinite −15% stun time (not −35%), Vooite's Bad Smell (40% a second for 5 s, 10 s cooldown) and Radioactive (4% max HP a second), Bismuth's Prismatic Shift and Unshaken.
+- Everything else with a damage trait matches: Aetherit, Crimsonite, Echotite, Eye Ore, Fierce Jade, Frost Core, Frost Fossil, Frost Star, Galaxite, Golem Heart, Heavenite, Kitsunite, Kyubite, Magmaite, Malachite, Marblite, Meteorite, Moon Stone, Onyx, Prismatic Heart, Rivalite, Sun Stone, Supermassive Black Hole, Tetrinite, Tiger's Eye, Vanegos, Wolfarite, Yang, Yeti Heart and Yin-Yang, and the armour traits in `data/armour-dps.ts`.
+- Not counted in DPS (as before): Vooite's and Uranium's Radioactive (needs your max health), the below-35%-HP poison clouds (Bad Smell, Toxic Veins), thorns, freezes and slows, and life steal.
+
+The sections below are the older comparisons, kept for history; the gaps they list are closed.
+
+## 3 November 2026
 
 The Forge wiki has a DPS calculator (`MediaWiki:ForgeCalculator.js`). On 3 November 2026 we ran its `calculate()` in a browser on forgewiki.org with the builds below, and ran the same builds through `combatDps` (`lib/engine/loadout-dps.ts`). All builds are 100% quality. Armour on our side is one piece made only of that ore; on the wiki side it's the same numbers typed into its armour boxes.
 
@@ -31,7 +86,7 @@ Builds 1, 2, 5–8, 10, 12–15 and the race and low-health differences in 4 and
 - Armour Lethality, crit chance and crit damage, added before the caps.
 - The below-35%-HP scenario (armour Berserker capped at 200%, plus Minotaur).
 
-## Known differences, kept on purpose
+### Known differences at the time
 
 1. **Procs and enhancement.** The enhancement table now matches the wiki and the game: +5% a level up to +8, ×1.50 at +9, and +9 is the top. The wiki's procs (burn, explosions and so on) use the damage before enhancement; ours grow with enhancement like hits do. We keep that until it's checked in the game. An `it.todo` in the tests marks the switch.
 2. **Ore procs.** The wiki now rolls proc chances the way it thinks the game does (`(floor(chance × 100) + 1) ÷ 100`, so 30% counts as 31%) and uses a burn and poison uptime that levels off (`load ÷ (1 + load ÷ 2)`). Our ore and rune maths are the ones the site already used, so saved forges and links show the same numbers as before. That is most of the gap on trait-heavy weapons (build 3). The small Demon and Angel gaps come from the same two rules.
@@ -39,7 +94,7 @@ Builds 1, 2, 5–8, 10, 12–15 and the race and low-health differences in 4 and
 
 Apart from the enhancement table, nothing here has been checked against the game yet; the wiki's script is a community model.
 
-## Version 1.10 (7 November 2026)
+## Version 1.10 (8 November 2026)
 
 The wiki's calculator was updated for Version 1.10 the same evening. On 8 November we ran the revision of 7 Nov, 22:52 with these builds (100% quality, +0, the race's weapon class picked where it has one):
 

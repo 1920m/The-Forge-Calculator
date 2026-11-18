@@ -56,8 +56,8 @@ describe("developer page examples", () => {
     const forge = exampleResponse(cat, "forge").data as { multiplier: number; item: { stat: { value: number }; weapon: { dps: { total: number } } } };
     expect(forge.multiplier).toBeCloseTo(19.6667, 4);
     expect(forge.item.stat.value).toBe(393.33);
-    expect(forge.item.weapon.dps.total).toBe(2851.87);
-    expect((exampleResponse(cat, "dps").data as { dps: { total: number } }).dps.total).toBe(5986.78);
+    expect(forge.item.weapon.dps.total).toBe(2451.43);
+    expect((exampleResponse(cat, "dps").data as { dps: { total: number } }).dps.total).toBe(4949.9);
     const golem = exampleResponse(cat, "golemite").data as { name: string; rarity: string; miningHelp: number; oreTraitShare: number };
     expect([golem.name, golem.rarity, golem.miningHelp, golem.oreTraitShare]).toEqual(["Lucky Cat Golemite", "Epic", 0.23, 0.15]);
     for (const t of Object.keys(EXAMPLES) as ExampleType[]) expect(exampleResponse(cat, t).success).toBe(true);

@@ -10,9 +10,10 @@
  * normal DPS; they make a separate scenario.
  */
 import { ARMOUR_DPS } from "@/data/armour-dps";
+import { GOLEMITE } from "@/data/golemites";
 import { raceById, type RaceCombat } from "@/data/races";
 import { enhanceFactor } from "./index";
-import { DPS_STATS, statAtShare, weaponDps, type DpsExtra, type DpsResult, type DpsStat, type SpecialProc } from "./dps";
+import { BISMUTH_WAVE, BLACK_HOLE_CHANCE, DPS_STATS, TRAIT_GATE, statAtShare, weaponDps, type DpsExtra, type DpsResult, type DpsStat, type SpecialProc } from "./dps";
 import { runeTotals, slotsAt, type RuneSlot } from "./runes";
 
 type OreCount = { id: string; count: number };
@@ -46,7 +47,8 @@ export type CombatInput = {
   conditions?: CombatConditions;
 };
 
-export type GolemInput = { ores: OreCount[]; traitScale: number } | null;
+/** `level`: the Golemite's growth level; from level 13 it also hits for a share of the weapon's damage. */
+export type GolemInput = { ores: OreCount[]; traitScale: number; level?: number } | null;
 
 export type LayerKey = "base" | "ores" | "enhance" | "runes" | "armour" | "golems" | "race";
 export const LAYER_LABEL: Record<LayerKey, string> = { base: "Base weapon", ores: "Weapon ore traits", enhance: "Enhancement", runes: "Runes", armour: "Armour traits", golems: "Golemite traits", race: "Race" };
@@ -112,6 +114,7 @@ const UNSCALED = new Set<DpsStat>(["fire_duration", "poison_duration", "lightnin
  */
 export function golemExtra(golems: readonly GolemInput[]) {
   const vals: Partial<Record<DpsStat, number[]>> = {};
+  const specials: SpecialProc[] = [];
   let lowHp = 0;
   const vital: VitalPower[] = [];
   const used = golems.map((g) => {
@@ -119,6 +122,14 @@ export function golemExtra(golems: readonly GolemInput[]) {
     const total = g.ores.reduce((n, o) => n + o.count, 0);
     if (!total) return false;
     let any = false;
+    const d = golemiteHitShare(g.level ?? 0);
+    if (d > 0) { specials.push({ label: "Golemite", type: "golemite", dmg: d, rate: GOLEMITE.combatDamage.hitsPerSecond }); any = true; }
+    // A Golemite's Galaxite black hole comes with the Golemite's scaled chance (and Bismuth's wave, scaled the same).
+    const gShare = (id: string) => g.ores.filter((o) => o.id === id).reduce((n, o) => n + o.count, 0) / total;
+    if (gShare("galaxite") >= TRAIT_GATE) {
+      push(vals, "blackhole_chance", BLACK_HOLE_CHANCE * g.traitScale);
+      if (gShare("bismuth") >= TRAIT_GATE) push(vals, "resonance_dmg", BISMUTH_WAVE * g.traitScale);
+    }
     for (const o of g.ores) {
       const share = o.count / total;
       // Weapon traits
@@ -143,7 +154,14 @@ export function golemExtra(golems: readonly GolemInput[]) {
     }
     return any;
   });
-  return { extra: { vals } as DpsExtra, lowHp, vital, used };
+  return { extra: { vals, specials } as DpsExtra, lowHp, vital, used };
+}
+
+/** A fighting Golemite's hit, as a share of the weapon's damage: 0 below level 13, 2% at 13 rising to 6% at 25. */
+export function golemiteHitShare(level: number) {
+  const { combatLevel, maxLevel, combatDamage: c } = GOLEMITE;
+  if (!(level >= combatLevel)) return 0;
+  return c.atCombatLevel + (Math.min(level, maxLevel) - combatLevel) * (c.atMaxLevel - c.atCombatLevel) / (maxLevel - combatLevel);
 }
 
 /** A race's always-on effects for a weapon class. Unknown or missing races add nothing. */
@@ -190,7 +208,7 @@ const anyCondition = (c: CombatConditions | undefined) =>
 
 export function combatDps(input: CombatInput): CombatResult {
   const { weapon, level } = input;
-  const damage = weapon.raw * enhanceFactor(level);
+  const enhance = enhanceFactor(level);
   const t = input.runes ? runeTotals(input.runes, slotsAt(level)) : null;
   const runeExtra: DpsExtra = t ? { stats: t.stats, procs: t.procs } : {};
   const armour = armourExtra(input.armour ?? []);
@@ -198,26 +216,27 @@ export function combatDps(input: CombatInput): CombatResult {
   const race = raceExtra(input.raceId, weapon.cls);
   const worn = merge(merge(runeExtra, armour.extra), golems.extra);
   const full = merge(worn, race.extra);
-  const run = (ores: OreCount[], dmg: number, extra?: DpsExtra) => weaponDps({ ores, damage: dmg, interval: weapon.interval, cls: weapon.cls, extra });
+  // Enhancement only grows the weapon's hits; procs are shares of its damage before enhancement.
+  const run = (ores: OreCount[], k: number, extra?: DpsExtra) => weaponDps({ ores, damage: weapon.raw, enhance: k, interval: weapon.interval, cls: weapon.cls, extra });
 
   const steps: [LayerKey, DpsResult][] = [
-    ["base", run([], weapon.raw)],
-    ["ores", run(weapon.ores, weapon.raw)],
-    ["enhance", run(weapon.ores, damage)],
-    ["runes", run(weapon.ores, damage, runeExtra)],
-    ["armour", run(weapon.ores, damage, merge(runeExtra, armour.extra))],
+    ["base", run([], 1)],
+    ["ores", run(weapon.ores, 1)],
+    ["enhance", run(weapon.ores, enhance)],
+    ["runes", run(weapon.ores, enhance, runeExtra)],
+    ["armour", run(weapon.ores, enhance, merge(runeExtra, armour.extra))],
     // Only when Golemites are equipped, so results without them (and the public API) keep the same layers.
-    ...((input.golems ?? []).some(Boolean) ? [["golems", run(weapon.ores, damage, worn)] as [LayerKey, DpsResult]] : []),
-    ["race", run(weapon.ores, damage, full)],
+    ...((input.golems ?? []).some(Boolean) ? [["golems", run(weapon.ores, enhance, worn)] as [LayerKey, DpsResult]] : []),
+    ["race", run(weapon.ores, enhance, full)],
   ];
   const breakdown = steps.map(([key, r], i) => ({ key, label: LAYER_LABEL[key], dps: r.total - (i ? steps[i - 1][1].total : 0) }));
   const result = steps[steps.length - 1][1];
 
   const wornLowHp = armour.lowHp + golems.lowHp;
   const lowHpSources = wornLowHp + race.lowHp;
-  const lowHp = lowHpSources > 0 ? run(weapon.ores, damage, merge(full, conditionExtra({ lowHp: true }, input.raceId, wornLowHp, race.lowHp, []))).total : null;
+  const lowHp = lowHpSources > 0 ? run(weapon.ores, enhance, merge(full, conditionExtra({ lowHp: true }, input.raceId, wornLowHp, race.lowHp, []))).total : null;
   const conditional = anyCondition(input.conditions)
-    ? run(weapon.ores, damage, merge(full, conditionExtra(input.conditions!, input.raceId, wornLowHp, race.lowHp, [...armour.vital, ...golems.vital]))).total
+    ? run(weapon.ores, enhance, merge(full, conditionExtra(input.conditions!, input.raceId, wornLowHp, race.lowHp, [...armour.vital, ...golems.vital]))).total
     : null;
 
   const raceName = input.raceId ? raceById.get(input.raceId)?.name : undefined;
