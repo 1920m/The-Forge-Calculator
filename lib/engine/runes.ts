@@ -75,7 +75,7 @@ export const secondariesFor = (kind: RuneKind) => SECONDARIES.filter((s) => s.ki
  */
 export function dpsAtLevel(w: { ores: { id: string; count: number }[]; raw: number; interval: number; cls?: string }, level: number, slots: readonly (RuneSlot | null)[] = []): DpsResult {
   const t = runeTotals(slots, slotsAt(level));
-  return weaponDps({ ores: w.ores, damage: w.raw * enhanceFactor(level), interval: w.interval, cls: w.cls, extra: { stats: t.stats, procs: t.procs } });
+  return weaponDps({ ores: w.ores, damage: w.raw, enhance: enhanceFactor(level), interval: w.interval, cls: w.cls, extra: { stats: t.stats, procs: t.procs } });
 }
 
 export const hasRunes = (slots: readonly (RuneSlot | null)[]) => slots.some(Boolean);

@@ -2,9 +2,9 @@
 
 import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { activeLockFor, moldTargetFor, pickItem, withLockAndMolds } from "@/lib/engine/forge-eval";
-import { enhancementTable, forge, qualityLabel, roundStat, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
+import { enhancementTable, forge, qualityLabel, roundStat, shownAt, type Catalogue, type CatalogueOre, type Mix } from "@/lib/engine/forge";
 import { MAX_ENHANCE, enhanceFactor, type Kind } from "@/lib/engine";
-import type { DpsResult } from "@/lib/engine/dps";
+import { atEnhancement, type DpsResult } from "@/lib/engine/dps";
 import { imageUrl } from "@/lib/data/supabase";
 import { SHOW_STATUS_LABELS, fmt, multLabel, pct, rarityColour } from "@/lib/ui";
 import { Reveal, useShell, worldName } from "./shell";
@@ -63,7 +63,8 @@ function readRecipe(): { kind?: Kind; quality?: number; entries?: Entry[]; pick?
 }
 
 export function Calculator({ cat }: { cat: Catalogue }) {
-  const { world } = useShell();
+  // World 4's forge is Crimson Sakura's or the Abyss Forge (picked in the top bar, with its own theme).
+  const { world, site, setAbyss } = useShell();
   const { user, profile, loading: authLoading } = useAuth();
   const showTarget = profile?.show_dps_target === true; // a setting players turn on themselves
   const [golemMode, setGolemMode] = useState(false); // the Golemites button (Worlds 3 and 4)
@@ -88,6 +89,8 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const [raceChoice, setRaceChoice] = useState<string | null>(null); // race for the DPS; never written to the Profile
   const lastTap = useRef<{ id: string; t: number } | null>(null);
 
+  // Items only the Abyss Forge makes: a link to one (a saved forge, the Loadout) opens at the Abyss Forge.
+  const abyssIds = useMemo(() => new Set([...cat.weapons, ...cat.armour].filter((x) => x.tag === "abyss").map((x) => x.id)), [cat]);
   // Restore the recipe from the URL or the last visit, once.
   useEffect(() => {
     const r = readRecipe();
@@ -95,7 +98,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       if (r.kind) setKind(r.kind);
       if (r.quality) setQuality(r.quality);
       if (r.entries) setEntries(r.entries.filter((e) => oreById.has(e.id)));
-      if (r.pick) setPick(r.pick);
+      if (r.pick) { setPick(r.pick); if (abyssIds.has(r.pick.id)) setAbyss(); }
       if (r.enhance != null) setRuneEnhance(r.enhance);
       if (r.runes) setRunes(r.runes);
       if (r.lock) setLocked(r.lock);
@@ -105,7 +108,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       loaded.current = true;
     }, 0);
     return () => clearTimeout(t);
-  }, [oreById]);
+  }, [oreById, abyssIds, setAbyss]);
 
 
   const mix: Mix = useMemo(() => entries.flatMap((e) => { const ore = oreById.get(e.id); return ore ? [{ ore, count: e.count }] : []; }), [entries, oreById]);
@@ -113,7 +116,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   const golemR = useMemo(() => (golem ? golemite(mix) : null), [golem, mix]);
   const golemSave = useMemo<NewGolemite | null>(() => (golemR && golemR.enough && !golemR.tooMany
     ? { name: golemR.name, ores: entries, level: 0, quality, catalogue_revision: Number((cat as { revision?: number }).revision) || null } : null), [golemR, entries, quality, cat]);
-  const normal = useMemo(() => forge(cat, mix, kind, world, quality / 100), [cat, mix, kind, world, quality]);
+  const normal = useMemo(() => forge(cat, mix, kind, world, quality / 100, site), [cat, mix, kind, world, quality, site]);
   // A locked class only counts while the ores still allow locking it.
   const activeLock = activeLockFor(normal.classes, locked);
   // Molds (when turned on in Settings) aim the forge at one item inside its class.
@@ -161,10 +164,17 @@ export function Calculator({ cat }: { cat: Catalogue }) {
       window.localStorage.setItem("forge.kind", golem ? "golemite" : kind);
       window.localStorage.setItem("forge.quality", String(quality));
     } catch { /* storage unavailable */ }
-  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock, molds, moldId, showMolds, settingsKnown, raceChoice, golem]);
+  }, [entries, kind, quality, runes, runeEnhance, pick, activeLock, molds, moldId, showMolds, settingsKnown, raceChoice, golem, site]);
 
   // Selected result: the user's pick if still valid, else the most likely variant.
-  const selected = useMemo(() => pickItem(result, pick), [result, pick]);
+  // Each forge lists only what it can make: the Abyss Forge adds the Abyss items, Crimson Sakura's leaves them out.
+  const shown = useCallback((v: { tag?: string | null }) => shownAt(v, site), [site]);
+  const shownPick = useMemo(() => {
+    if (!pick) return null;
+    const v = result.classes.flatMap((c) => c.variants).find((x) => x.id === pick.id);
+    return v && shown(v) ? pick : null;
+  }, [pick, result, shown]);
+  const selected = useMemo(() => pickItem(result, shownPick), [result, shownPick]);
 
   // Stable so the ore tiles (memoised) only re-render when their own count changes.
   // Recalculating re-renders most of the page, so clicks run it as a transition: the browser paints the press first.
@@ -198,7 +208,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
   // With weapon runes chosen, DPS at each level counts the runes whose slots that level opens (+3, +6, +9).
   const runeWeapon = kind === "weapon" && hasRunes(runes.weapon) && selected?.v.raw != null && selected.v.interval
     ? { ores: mix.filter((m) => m.count > 0).map((m) => ({ id: m.ore.id, count: m.count })), raw: selected.v.raw, interval: selected.v.interval, cls: selected.cls.name } : null;
-  const dpsAt = (level: number) => (baseDps == null ? null : runeWeapon ? dpsAtLevel(runeWeapon, level, runes.weapon).total : baseDps * enhanceFactor(level));
+  const dpsAt = (level: number) => (baseDps == null ? null : runeWeapon ? dpsAtLevel(runeWeapon, level, runes.weapon).total : (selected?.v.dps ? atEnhancement(selected.v.dps, enhanceFactor(level)) : baseDps));
   const runeDps = runeWeapon ? dpsAtLevel(runeWeapon, runeEnhance, runes.weapon).total : null;
   // The weapon for the race and Full Loadout comparison, at the same level as above (+0 without runes).
   const combatWeapon = useMemo(() => kind === "weapon" && selected?.v.raw != null && selected.v.interval
@@ -261,23 +271,23 @@ export function Calculator({ cat }: { cat: Catalogue }) {
               {result.capped && <p className="small muted" style={{ margin: 0 }}>Odds are only known up to 55 ores, so the 55-ore odds are shown.</p>}
               {withoutMolds && <p className="small mold-note" style={{ margin: 0 }}>Chances without molds. Your {molds} mold{molds === 1 ? "" : "s"} on {aimedName} change them by an amount nobody has measured yet.</p>}
               {result.classes.map((c) => {
-                const off = c.probability === 0;
+                const off = c.probability === 0 && c.oddsKnown; // a type with unknown odds still shows its items
                 return (
                   <div key={c.name} style={{ opacity: off ? 0.45 : 1, transition: "opacity .3s" }}>
                     <div className={`class-head${activeLock === c.name ? " locked" : ""}`}>
-                      <span>{c.name} ({c.probability}%)</span>
+                      <span>{c.name} {c.oddsKnown ? `(${c.probability}%)` : <span className="small muted" title="This weapon type was added after the forge odds were taken from the game; its chance at each ore count isn't known yet">(chance not known yet)</span>}</span>
                       {c.lockable ? (
                         <button className="lock lock-btn" aria-pressed={activeLock === c.name} onClick={() => startTransition(() => setLocked(activeLock === c.name ? null : c.name))}
                           title={activeLock === c.name ? `Unlock ${c.name}` : `Lock ${c.name}: guarantees this class`} aria-label={activeLock === c.name ? `Unlock ${c.name}` : `Lock ${c.name}`}>
                           <Lock /> <small>{c.lockAt}</small>
                         </button>
-                      ) : (
+                      ) : c.lockAt != null ? (
                         <span className="lock" title={`Lockable at ${c.lockAt} ores`} style={{ color: "var(--muted)" }}><Lock /> <small>{c.lockAt}</small></span>
-                      )}
+                      ) : null}
                     </div>
                     {!off && (
                       <div className="variant-tiles">
-                        {c.variants.map((v) => {
+                        {c.variants.filter(shown).map((v) => {
                           const aimed = showMolds && moldTarget?.id === v.id;
                           const need = needText(moldNeed(cat.moldRequirements, v.id));
                           return (
@@ -292,7 +302,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                                 else lastTap.current = { id: v.id, t: now };
                               }}
                               aria-label={`${v.name}, 1 in ${v.weight}, ${pct(v.overall)} overall${showMolds ? `. Double-click to ${aimed ? "stop aiming molds at it" : `aim molds at it (${need})`}` : ""}`}
-                              title={`${v.name}: ${v.tag === "abyss" ? "Abyss Forge only, odds not published" : `${pct(v.chance)} in class, ${pct(v.overall, 2)} overall`}${showMolds ? (aimed ? ". Molds aimed here; double-click to stop" : `. Double-click to aim molds here (${need})`) : ""}`}>
+                              title={`${v.name}: ${v.tag === "abyss" && site !== "abyss" ? "Abyss Forge only: pick the Abyss Forge to see its chance" : !c.oddsKnown ? `${pct(v.chance)} in class; the class's chance isn't known yet` : `${pct(v.chance)} in class, ${pct(v.overall, 2)} overall`}${showMolds ? (aimed ? ". Molds aimed here; double-click to stop" : `. Double-click to aim molds here (${need})`) : ""}`}>
                               <GameImage src={imageUrl(kind === "weapon" ? "weapons" : "armour", v.id)} alt="" size={20} />
                               <span className="t-br" style={{ left: 0, right: 0, textAlign: "center" }}>{aimed ? `${molds}/${needLabel(mold.need)}` : `1/${v.weight}`}</span>
                             </button>
@@ -387,11 +397,11 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <div className="kv"><span>Rarity:</span><span style={{ fontWeight: 700, color: rarityColour(result.rarity) }}>{result.rarity}</span></div>
                     <div className="kv"><span>{statName}:</span><span className="strong" style={{ fontWeight: 700 }}>{fmt(selected.v.value)} {unit}</span></div>
                     <div className="kv"><span>At 100%:</span><span className="muted">{fullValue == null ? "–" : `${fmt(roundStat(fullValue, kind))} ${unit}`}</span></div>
-                    {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="The real time between swings. The game's item card shows a different 'index' number, which isn't the real speed.">{selected.v.interval}s per swing · range {selected.v.range}<span className="small faint" style={{ display: "block" }}>Card shows {selected.v.speed}s (the game&apos;s index value)</span></span></div>}
+                    {kind === "weapon" && <div className="kv"><span>ATK Speed:</span><span className="muted" title="Time between swings. The game's item card shows the same number, rounded (an Excalibur's card says 1.4).">{selected.v.interval}s per swing · range {selected.v.range}</span></div>}
                     {kind === "weapon" && selected.v.dps && <DpsRow dps={selected.v.dps} withRunes={runeDps} runeLevel={runeEnhance} />}
                     {combatWeapon && <RaceCompare cat={cat} weapon={combatWeapon} level={runeWeapon ? runeEnhance : 0} runes={runeWeapon ? runes.weapon : undefined}
                       choice={raceChoice} onChoice={(v) => startTransition(() => setRaceChoice(v))} />}
-                    <div className="kv"><span>Chance:</span><span className="muted">{selected.v.tag === "abyss" ? <>Forged only at the Abyss Forge, whose odds aren&apos;t published yet. The stats below are real.</> : <>{moldChanceNote && <>Normal chance: </>}{changedBy.length > 0
+                    <div className="kv"><span>Chance:</span><span className="muted">{selected.v.tag === "abyss" && site !== "abyss" ? <>Forged only at the Abyss Forge. Press Abyss at the top to see its chance; the stats below are the same either way.</> : !selected.cls.oddsKnown ? <>{pct(selected.v.chance)} of {selected.cls.name}s. {selected.cls.name} is a new weapon type and its chance at each ore count isn&apos;t known yet, so there&apos;s no overall chance. The stats below are real.</> : <>{moldChanceNote && <>Normal chance: </>}{changedBy.length > 0
                       ? <>{pct(selected.v.overall, 2)} with {changedBy.join(" and ")} <span className="small faint">({pct(normalChance(selected.cls.name, selected.v.id), 2)} without {withoutWhat})</span></>
                       : <>{pct(selected.v.overall, 2)} overall ({pct(selected.v.chance)} of {selected.cls.name})</>}
                       {moldChanceNote && <span className="small mold-note" style={{ display: "block" }}>{moldChanceNote}</span>}</>}</span></div>
@@ -399,7 +409,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                       compare={changedBy.length > 0 ? { label: `Without ${withoutWhat}`, chance: normalChance(selected.cls.name, selected.v.id) / 100 }
                         : selected.cls.lockable && selected.cls.probability < 100 ? { label: `If you lock ${selected.cls.name}`, chance: selected.v.chance / 100 } : null} />
                     <div className="kv"><span>Lock:</span><span className="muted">{activeLock === selected.cls.name ? <>Locked: {selected.cls.name} is guaranteed</>
-                      : selected.cls.lockable ? <>Lockable with this many ores. Press the <Lock size={13} /> by {selected.cls.name} in Forge Chances to lock it.</> : `Lockable from ${selected.cls.lockAt} ores`}</span></div>
+                      : selected.cls.lockable ? <>Lockable with this many ores. Press the <Lock size={13} /> by {selected.cls.name} in Forge Chances to lock it.</> : selected.cls.lockAt != null ? `Lockable from ${selected.cls.lockAt} ores` : "Not known yet for this weapon type"}</span></div>
                     {showMolds && <MoldRow item={selected.v} need={isTarget ? mold.need : moldNeed(cat.moldRequirements, selected.v.id)} cls={selected.cls} aimed={isTarget} aimedName={aimedName}
                       mold={mold} moldName={moldInfo.name} onAim={aimMolds} />}
                   </div>
@@ -460,7 +470,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
           <section className="gp">
             <div className="tb"><h2>Traits your Golemite gets</h2></div>
             <div className="pad">
-              <p className="small muted" style={{ margin: "0 0 12px" }}>Each ore&apos;s traits, weapon and armour, at its share strength (10% to 30% rule) times your Golemite&apos;s ore-trait share ({golemR.traitScale != null ? pct(golemR.traitScale * 100, 0) : "–"} for {golemR.rarity ?? "this rarity"}). You get all of these traits: equip the Golemite on your Loadout and the ones that change damage are added to your DPS there. It can also fight from growth level {GOLEMITE.combatLevel}, but how much damage it does itself isn&apos;t known, so that isn&apos;t counted.</p>
+              <p className="small muted" style={{ margin: "0 0 12px" }}>Each ore&apos;s traits, weapon and armour, at its share strength (10% to 30% rule) times your Golemite&apos;s ore-trait share ({golemR.traitScale != null ? pct(golemR.traitScale * 100, 0) : "–"} for {golemR.rarity ?? "this rarity"}). You get all of these traits: equip the Golemite on your Loadout and the ones that change damage are added to your DPS there. From growth level {GOLEMITE.combatLevel} it also fights, hitting for 2% of your weapon&apos;s damage (6% at level {GOLEMITE.maxLevel}) about 0.67 times a second; the Loadout counts that too.</p>
               <GolemiteTraits r={golemR} />
             </div>
           </section>
@@ -478,10 +488,10 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                     <table className="table" style={{ minWidth: 420 }}>
                       <thead><tr><th>Variant</th><th>In class</th><th>Overall</th><th style={{ textAlign: "right" }}>{statName} at {quality}%</th></tr></thead>
                       <tbody>
-                        {selected.cls.variants.map((v) => (
+                        {selected.cls.variants.filter(shown).map((v) => (
                           <tr key={v.id} className={v.id === selected.v.id ? "sel" : ""} onClick={() => startTransition(() => setPick({ cls: selected.cls.name, id: v.id }))} style={{ cursor: "pointer" }}>
-                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}{v.tag === "world1" && <span className="badge der" title="Only rolls in World 1, not World 2">World 1 only</span>}{v.tag === "abyss" && <span className="badge der" title="Forged only at the Abyss Forge (Version 1.10); its odds aren't published">Abyss Forge</span>}</td>
-                            <td>{v.tag === "abyss" ? "–" : pct(v.chance)}</td><td>{v.tag === "abyss" ? "–" : pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
+                            <td><button className="link-btn" onClick={() => setPick({ cls: selected.cls.name, id: v.id })}>{v.name}</button> {SHOW_STATUS_LABELS && !v.verified && <span className="badge unv">Unverified</span>}{v.tag === "shop" && <span className="badge shop" title="Funguy shop blueprint">Shop</span>}{v.tag === "halloween" && <span className="badge der" title="Halloween weapon, World 4 only">Halloween</span>}{v.tag === "world1" && <span className="badge der" title="Only rolls in World 1, not World 2">World 1 only</span>}{v.tag === "abyss" && <span className="badge der" title="Forged only at the Abyss Forge">Abyss Forge</span>}{v.tag === "guild" && <span className="badge der" title="Rolls at Guild Island's forge, not Crimson Sakura's or the Abyss Forge">Guild Island</span>}</td>
+                            <td>{v.chance === 0 && v.tag === "abyss" ? "–" : pct(v.chance)}</td><td>{(v.overall === 0 && v.tag === "abyss") || !selected.cls.oddsKnown ? "–" : pct(v.overall, 2)}</td><td className="num">{fmt(v.value)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -502,7 +512,7 @@ export function Calculator({ cat }: { cat: Catalogue }) {
                   <div id="enh-rest" className={`collapse ${enhanceOpen ? "open" : ""}`}><div>
                     {enhance.slice(1).map((l, i) => <EnhRow key={l.level} l={l} max={maxEnh} unit={unit} dps={dpsAt(l.level)} delay={enhanceOpen ? i * 35 : 0} hidden={!enhanceOpen} />)}
                   </div></div>
-                  <p className="note">Every stat rises 5% per level up to +8, and +9 (the top level) is ×1.50. Values use your quality setting.{baseDps != null && (runeWeapon ? " DPS includes your runes from the level their slot opens (+3, +6, +9)." : " DPS rises by the same multiplier, because hits and trait procs all scale with weapon damage.")}</p>
+                  <p className="note">Every stat rises 5% per level up to +8, and +9 (the top level) is ×1.50. Values use your quality setting.{baseDps != null && (runeWeapon ? " DPS includes your runes from the level their slot opens (+3, +6, +9)." : " DPS: hits rise by the same multiplier; trait procs (burn, lightning, black hole…) stay as they are at +0, which matches tests in game.")}</p>
                 </div>
               </section>
             </Reveal>
@@ -608,12 +618,12 @@ const shortDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("
 
 /** What molds do for the picked item: how many it needs (and how sure that number is), and what's still missing. */
 function MoldRow({ item, need, cls, aimed, aimedName, mold, moldName, onAim }: {
-  item: { id: string; name: string }; need: Need; cls: { name: string; lockable: boolean; lockAt: number };
+  item: { id: string; name: string }; need: Need; cls: { name: string; lockable: boolean; lockAt: number | null };
   aimed: boolean; aimedName: string | null; mold: MoldState; moldName: string; onAim: (id: string | null) => void;
 }) {
   const plural = (n: number) => `${n} ${moldName}${n === 1 ? "" : "s"}`;
   const label = needLabel(need);
-  const lockStep = mold.classLocked ? null : cls.lockable ? <> Then press the <Lock size={13} /> by {cls.name} in Forge Chances.</> : <> {cls.name} can be locked from {cls.lockAt} ores.</>;
+  const lockStep = mold.classLocked ? null : cls.lockable ? <> Then press the <Lock size={13} /> by {cls.name} in Forge Chances.</> : cls.lockAt != null ? <> {cls.name} can be locked from {cls.lockAt} ores.</> : null;
   const needSentence = need.value == null ? <>How many molds it needs isn&apos;t known yet.</>
     : need.kind === "approximate" ? <>Players estimate about {plural(need.value)}; the exact number isn&apos;t known.</>
     : need.kind === "reported" ? <>Players report {plural(need.value)} with {cls.name} locked. Not verified.</>

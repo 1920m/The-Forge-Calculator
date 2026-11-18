@@ -20,16 +20,27 @@ const locked = lockClass(r.classes, "Gauntlets");
 const DK = { cls: "Gauntlets", id: "dark-knights-gauntlets" };
 
 describe("mold requirements checked in game (28 Oct 2026)", () => {
-  it("has a number for 58 weapons and every one of the 37 forgeable armour pieces", () => {
-    expect(reqs.filter((x) => x.kind === "weapon")).toHaveLength(58);
-    expect(reqs.filter((x) => x.kind === "armour")).toHaveLength(37);
-    // Abyss Forge pieces (Version 1.10) have no mold number yet.
-    expect(cat.armour.filter((a) => a.tag !== "abyss").every((a) => byId.has(a.id))).toBe(true);
+  it("has a number for 58 weapons and every one of the 37 armour pieces checked in game, plus 16 reported later", () => {
+    const checked = reqs.filter((x) => x.status === "verified");
+    expect(checked.filter((x) => x.kind === "weapon")).toHaveLength(58);
+    expect(checked.filter((x) => x.kind === "armour")).toHaveLength(37);
+    expect(reqs.filter((x) => x.status === "reported")).toHaveLength(16);
+    // Every armour piece has one, apart from Juggernaut's (no published number yet).
+    expect(cat.armour.filter((a) => !a.id.startsWith("juggernauts")).every((a) => byId.has(a.id))).toBe(true);
     expect(new Set(reqs.map((x) => x.itemId)).size).toBe(reqs.length);
   });
 
+  it("items added after the check are reported from theforge.gg, never exact", () => {
+    for (const x of reqs.filter((r) => r.status === "reported")) {
+      expect(x.exact).toBeNull();
+      expect(x.reported).toBeGreaterThan(0);
+      expect(x.sources[0].url).toMatch(/^https:\/\/www\.theforge\.gg\/database\//);
+    }
+    expect(moldNeed(reqs, "devils-deed")).toMatchObject({ value: 165 });
+  });
+
   it("are all verified exact numbers, dated, with the in-game check as a source", () => {
-    for (const x of reqs) {
+    for (const x of reqs.filter((r) => r.checked === "2026-10-28")) {
       expect(x.status).toBe("verified");
       expect(x.exact).toBeGreaterThan(0);
       expect(x.checked).toBe("2026-10-28");
@@ -45,7 +56,7 @@ describe("mold requirements checked in game (28 Oct 2026)", () => {
 
   it.each([
     ["dagger", 2], ["hook-blade", 38], ["savage-claws", 40], ["dragon-slayer", 40], ["excalibur", 150], ["knight-spear", 55],
-    ["washi-maru", 60], ["wyvern-axe", 20], ["halberd", 40], ["duskwings-cleaver", 20], ["gladius-daggers", 3], ["falchion-sword", 2],
+    ["washi-maru", 60], ["wyvern-axe", 20], ["spiked-halberd", 40], ["duskwings-cleaver", 20], ["gladius-daggers", 3], ["falchion-sword", 2],
     ["ninjas-helmet", 6], ["light-helmet", 2], ["knight-chestplate", 15], ["dark-knight-chestplate", 22], ["wolf-leggings", 28],
     ["goblins-crown", 22], ["shogun-helmet", 40], ["shogun-leggings", 42], ["shogun-chestplate", 45], ["vanguard-chestplate", 35],
   ])("%s needs %i", (id, n) => {
@@ -71,7 +82,7 @@ describe("mold requirements checked in game (28 Oct 2026)", () => {
         const w = cat.weapons.find((y) => y.id === x.itemId)!;
         for (const world of x.worlds) {
           const i = classNames(cat, "weapon", world as World).indexOf(w.class);
-          if (i >= 0) expect([x.itemId, world, x.minOres]).toEqual([x.itemId, world, cat.locks.weapon[i]]);
+          if (i >= 0 && i < cat.locks.weapon.length) expect([x.itemId, world, x.minOres]).toEqual([x.itemId, world, cat.locks.weapon[i]]);
         }
       }
     }

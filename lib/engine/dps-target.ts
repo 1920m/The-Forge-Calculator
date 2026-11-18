@@ -3,15 +3,16 @@
  *
  * Each forge gives exactly one weapon, so the chance of "any weapon at or above the target" is the sum of those
  * weapons' overall chances (class chance × chance inside the class). The tries maths in odds.ts then applies.
- * Enhancement multiplies DPS by the level's multiplier (enhanceFactor), the same as damage, because every DPS term
- * scales with damage.
+ * Enhancement multiplies the weapon's hits by the level's multiplier (enhanceFactor); trait procs stay the same (tested
+ * in game, 12 Nov 2026).
  */
-export type TargetVariant = { id: string; name: string; overall: number; dps?: { total: number } | null };
+export type TargetVariant = { id: string; name: string; overall: number; dps?: { total: number; hit: number; procs: number; scaling: number } | null };
 export type TargetClass = { name: string; probability: number; variants: TargetVariant[] };
 
 export type TargetRow = { cls: string; id: string; name: string; dps: number; chance: number; hits: boolean };
 
 import { enhanceFactor } from "./index";
+import { atEnhancement } from "./dps";
 export { enhanceFactor };
 
 /** Every weapon this mix can forge, best DPS first, marked by whether it reaches the target. Chances are 0 to 1. */
@@ -20,7 +21,7 @@ export function dpsTarget(classes: readonly TargetClass[], target: number, level
   const rows: TargetRow[] = classes
     .filter((c) => c.probability > 0)
     .flatMap((c) => c.variants.filter((v) => v.overall > 0 && v.dps).map((v) => {
-      const dps = v.dps!.total * k;
+      const dps = atEnhancement(v.dps!, k);
       return { cls: c.name, id: v.id, name: v.name, dps, chance: v.overall / 100, hits: dps >= target - 1e-9 };
     }))
     .sort((a, b) => b.dps - a.dps || b.chance - a.chance);

@@ -2,7 +2,7 @@
 
 import { startTransition, useMemo, useState } from "react";
 import Link from "next/link";
-import { classNames, forge, type Catalogue, type CatalogueOre } from "@/lib/engine/forge";
+import { classNames, forge, type Catalogue, type CatalogueOre, shownAt, siteFor } from "@/lib/engine/forge";
 import type { Kind, World } from "@/lib/engine";
 import { imageUrl } from "@/lib/data/supabase";
 import { fmt, rarityColour } from "@/lib/ui";
@@ -82,18 +82,21 @@ function AreaSection({ area, kind, world, cat, byName }: { area: BuildArea; kind
 }
 
 function RecipeCard({ recipe, cls, kind, world, cat, byName }: { recipe: Recipe; cls: string; kind: Kind; world: World; cat: Catalogue; byName: Map<string, CatalogueOre> }) {
-  const { setWorld } = useShell();
+  const { setWorld, site: picked } = useShell();
   const mix = recipe.flatMap(([name, count]) => { const ore = byName.get(name.toLowerCase()); return ore ? [{ ore, count }] : []; });
   const at = forgeWorld(cat, kind, world, cls);
-  const r = forge(cat, mix, kind, at, 1);
-  const c = r.classes.find((x) => x.name === cls);
+  // Only what the picked forge makes (the Abyss Forge adds the Abyss items to World 4's).
+  const site = siteFor(at, picked);
+  const r = forge(cat, mix, kind, at, 1, site);
+  const found = r.classes.find((x) => x.name === cls);
+  const c = found && { ...found, variants: found.variants.filter((v) => shownAt(v, site)) };
   const values = (c?.variants ?? []).map((v) => v.value).filter((v): v is number => v != null);
   const dps = (c?.variants ?? []).flatMap((v) => (v.dps ? [v.dps.total] : []));
   // The calculator opens on this class and variant: Dark Knight's Gauntlets for gauntlets, otherwise the most likely one.
   const variant = c?.variants.find((v) => cls === "Gauntlets" && v.id === "dark-knights-gauntlets")
     ?? [...(c?.variants ?? [])].sort((a, b) => b.chance - a.chance)[0];
   const unit = kind === "weapon" ? "DMG" : "DEF";
-  const href = `/?o=${mix.map((m) => `${m.ore.id}:${m.count}`).join(",")}&k=${kind}&world=${at}${variant ? `&c=${encodeURIComponent(cls)}&v=${variant.id}` : ""}`;
+  const href = `/?o=${mix.map((m) => `${m.ore.id}:${m.count}`).join(",")}&k=${kind}&world=${at}${site === "abyss" ? "&f=abyss" : ""}${variant ? `&c=${encodeURIComponent(cls)}&v=${variant.id}` : ""}`;
   return (
     <article className="build-card">
       <div className="build-card-h">
@@ -113,7 +116,7 @@ function RecipeCard({ recipe, cls, kind, world, cat, byName }: { recipe: Recipe;
       </div>
       <div className="build-stats">
         <div className="kv"><span>Multiplier</span><span className="gold" style={{ fontWeight: 700 }}>{r.multiplier == null ? "–" : `${fmt(r.multiplier)}x`}</span></div>
-        <div className="kv"><span>Class chance</span><span className="strong" style={{ fontWeight: 700 }}>{!c ? "–" : c.lockable ? <>Guaranteed <span className="muted small" style={{ fontWeight: 400 }}>(lock from {c.lockAt} ores)</span></> : `${c.probability}%`}</span></div>
+        <div className="kv"><span>Class chance</span><span className="strong" style={{ fontWeight: 700 }}>{!c ? "–" : !c.oddsKnown ? "not known yet" : c.lockable ? <>Guaranteed <span className="muted small" style={{ fontWeight: 400 }}>(lock from {c.lockAt} ores)</span></> : `${c.probability}%`}</span></div>
         <div className="kv"><span>{unit}</span><span className="strong">{range(values)}</span></div>
         {kind === "weapon" && <div className="kv"><span>DPS</span><span className="strong">{range(dps)}</span></div>}
         {kind === "armour" && <ArmourLine mix={mix} />}

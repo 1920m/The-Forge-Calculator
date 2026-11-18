@@ -41,22 +41,23 @@ describe("rune totals", () => {
 
 describe("runes in DPS", () => {
   const base = { ores: [{ id: "iron", count: 10 }], damage: 100, interval: 0.5 };
+  // Proc chances are rolled on 101 sides, like the game: 50% is 51 in 101.
   it("explosion: damage × share × chance × hits per second", () => {
     const t = runeTotals([{ id: "blast-chip", level: 3, secondaries: [] }], 1);
     const r = weaponDps({ ...base, extra: { procs: t.procs } });
-    expect(r.total).toBeCloseTo(200 + 100 * 0.8 * 0.5 * 2, 9); // 280
+    expect(r.total).toBeCloseTo(200 + 100 * 0.8 * (51 / 101) * 2, 9);
   });
   it("attack speed and crits from side effects", () => {
     const r = weaponDps({ ...base, extra: { stats: { atk_speed: 0.18, crit_chance: 0.15, crit_dmg: 0.15, lethality: 0.15 } } });
     // 100 × 1.15 lethality × (0.15 × 1.60 + 0.85) crit blend × 1.18 ÷ 0.5
     expect(r.total).toBeCloseTo(100 * 1.15 * (0.15 * 1.6 + 0.85) * 2.36, 9);
   });
-  it("burn and poison are capped at always-on, lightning at its cooldown", () => {
+  it("joins the ores' procs: poison at most always up, lightning a chance on hit with its cooldown", () => {
     const t = runeTotals([{ id: "venom-crumb", level: 3, secondaries: [] }, { id: "thunder-shard", level: 3, secondaries: [] }], 2);
     const r = weaponDps({ ...base, extra: { procs: t.procs } });
-    const part = (l: string) => r.parts.find((p) => p.label.startsWith(l))!.dps;
-    expect(part("Venom Crumb")).toBeCloseTo(100 * 0.2, 9); // always up: 20% per second
-    expect(part("Thunder Shard")).toBeCloseTo(100 * 1 * 0.6 * 0.5, 9); // at most once per 2s cooldown
+    const part = (l: string) => r.parts.find((p) => p.label === l)!.dps;
+    expect(part("Poison")).toBeCloseTo(100 * 0.2, 9); // always up: 20% per second
+    expect(part("Lightning")).toBeCloseTo(100 * 1 / (2 + 1 / ((61 / 101) * 2)), 9); // 2 s cooldown after each strike
   });
 });
 
@@ -75,8 +76,9 @@ describe("DPS at an enhancement level with runes", () => {
     const { dpsAtLevel } = await import("../lib/engine/runes");
     const w = { ores: [{ id: "iron", count: 10 }], raw: 100, interval: 0.5 };
     const blast: RuneSlot = { id: "blast-chip", level: 3, secondaries: [] };
+    const blastDps = 100 * 0.8 * (51 / 101) * 2; // procs use the damage before enhancement
     expect(dpsAtLevel(w, 2, [blast]).total).toBeCloseTo(110 * 2, 9); // no slot yet at +2
-    expect(dpsAtLevel(w, 3, [blast]).total).toBeCloseTo(115 * 2 + 115 * 0.8 * 0.5 * 2, 9);
-    expect(dpsAtLevel(w, 5, [blast, blast]).procs).toBeCloseTo(125 * 0.8 * 0.5 * 2, 9); // second slot opens at +6
+    expect(dpsAtLevel(w, 3, [blast]).total).toBeCloseTo(115 * 2 + blastDps, 9);
+    expect(dpsAtLevel(w, 5, [blast, blast]).procs).toBeCloseTo(blastDps, 9); // second slot opens at +6
   });
 });

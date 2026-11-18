@@ -7,8 +7,11 @@ import available from "@/data/images.json";
 const uploaded = new Set<string>(available as string[]);
 export const DATA_DATE = "24 Oct 2026";
 
-/** Public image in the `forge-images` bucket (listed in data/images.json), or null to show the placeholder tile. */
+/**
+ * Public image in the `forge-images` bucket (listed in data/images.json), or null to show the placeholder tile.
+ * Most are PNG; newer items may be uploaded as WebP (`<folder>/<id>.webp`) straight from their source.
+ */
 export function imageUrl(folder: "ores" | "weapons" | "armour" | "pickaxes", id: string): string | null {
-  const key = `${folder}/${id}.png`;
-  return uploaded.has(key) ? `${SUPABASE_URL}/storage/v1/object/public/forge-images/${key}` : null;
+  const key = [`${folder}/${id}.png`, `${folder}/${id}.webp`].find((k) => uploaded.has(k));
+  return key ? `${SUPABASE_URL}/storage/v1/object/public/forge-images/${key}` : null;
 }

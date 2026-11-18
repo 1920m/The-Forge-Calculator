@@ -3,14 +3,14 @@ import { dpsTarget, enhanceFactor } from "../lib/engine/dps-target";
 
 const classes = [
   { name: "Dagger", probability: 60, variants: [
-    { id: "d1", name: "Dagger A", overall: 40, dps: { total: 1000 } },
-    { id: "d2", name: "Dagger B", overall: 20, dps: { total: 1500 } },
+    { id: "d1", name: "Dagger A", overall: 40, dps: { total: 1000, hit: 1000, procs: 0, scaling: 1000 } },
+    { id: "d2", name: "Dagger B", overall: 20, dps: { total: 1500, hit: 1500, procs: 0, scaling: 1500 } },
   ] },
   { name: "Mace", probability: 40, variants: [
-    { id: "m1", name: "Mace A", overall: 30, dps: { total: 2000 } },
-    { id: "m2", name: "Mace B", overall: 10, dps: { total: 3000 } },
+    { id: "m1", name: "Mace A", overall: 30, dps: { total: 2000, hit: 2000, procs: 0, scaling: 2000 } },
+    { id: "m2", name: "Mace B", overall: 10, dps: { total: 3000, hit: 3000, procs: 0, scaling: 3000 } },
   ] },
-  { name: "Katana", probability: 0, variants: [{ id: "k1", name: "Katana", overall: 0, dps: { total: 9000 } }] },
+  { name: "Katana", probability: 0, variants: [{ id: "k1", name: "Katana", overall: 0, dps: { total: 9000, hit: 9000, procs: 0, scaling: 9000 } }] },
 ];
 
 describe("DPS target", () => {
@@ -37,6 +37,11 @@ describe("DPS target", () => {
     expect(dpsTarget(classes, 1400, 7).rows.find((x) => x.id === "d1")!.hits).toBe(false);
     expect(dpsTarget(classes, 1400, 8).rows.find((x) => x.id === "d1")!.hits).toBe(true);
     expect(dpsTarget(classes, 1400, 8).chance).toBeCloseTo(1, 12);
+  });
+
+  it("grows only the hits with enhancement, not trait procs (tested in game, 12 Nov 2026)", () => {
+    const procs = [{ name: "Mace", probability: 100, variants: [{ id: "m", name: "Mace", overall: 100, dps: { total: 1000, hit: 600, procs: 400, scaling: 600 } }] }];
+    expect(dpsTarget(procs, 0, 9).best!.dps).toBeCloseTo(600 * 1.5 + 400, 9);
   });
 
   it("is 0% when nothing reaches the target", () => {

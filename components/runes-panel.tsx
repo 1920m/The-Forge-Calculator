@@ -24,7 +24,7 @@ type Props = { item: RuneItem; enhance: number; onEnhance: (l: number) => void; 
 /** DPS for the item at this enhancement level with these runes in the open slots. */
 function dpsWith(item: RuneItem, enhance: number, totals: RuneTotals | null): DpsResult | null {
   if (item.kind !== "weapon" || item.raw == null || !item.ores || !item.interval) return null;
-  return weaponDps({ ores: item.ores, damage: item.raw * enhanceFactor(enhance), interval: item.interval, cls: item.cls, extra: totals ? { stats: totals.stats, procs: totals.procs } : undefined });
+  return weaponDps({ ores: item.ores, damage: item.raw, enhance: enhanceFactor(enhance), interval: item.interval, cls: item.cls, extra: totals ? { stats: totals.stats, procs: totals.procs } : undefined });
 }
 
 /** Effective health from a shield: 1 ÷ (1 − chance × cut). Each Ward Patch shields on its own. */

@@ -53,10 +53,10 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
 }
 
 const MODES: { type: ExampleType; title: string; what: React.ReactNode }[] = [
-  { type: "forge", title: "forge: what a recipe makes", what: <>Send <code>kind</code> (<code>weapon</code> or <code>armour</code>), up to four ores with counts, and usually the <code>item</code> you&apos;re aiming for. You get the multiplier, rarity, the item&apos;s damage or defence at that quality, its chance (overall and inside its class), the class lock, active traits and, for weapons, attack speed and estimated DPS at +0. Optional: <code>world</code>, <code>quality</code> (1–100, default 100), <code>lockClass</code>, <code>molds</code>, <code>enhancement</code> (0–9), weapon <code>runes</code>, and <code>detail: &quot;full&quot;</code> for every class and item with its chances.</> },
+  { type: "forge", title: "forge: what a recipe makes", what: <>Send <code>kind</code> (<code>weapon</code> or <code>armour</code>), up to four ores with counts, and usually the <code>item</code> you&apos;re aiming for. You get the multiplier, rarity, the item&apos;s damage or defence at that quality, its chance (overall and inside its class), the class lock, active traits and, for weapons, attack speed and estimated DPS at +0. Optional: <code>world</code>, <code>forge: &quot;abyss&quot;</code> (the Abyss Forge next to World 4), <code>quality</code> (1–100, default 100), <code>lockClass</code>, <code>molds</code>, <code>enhancement</code> (0–9), weapon <code>runes</code>, and <code>detail: &quot;full&quot;</code> for every class and item with its chances.</> },
   { type: "dps", title: "dps: one weapon in depth", what: <>A weapon with enhancement, runes, armour ore mixes and a race. Returns total DPS split into hits and procs, each proc, crit and attack-speed figures, a layer-by-layer breakdown, and situational <code>scenarios</code> kept out of the main number.</> },
   { type: "loadout", title: "loadout: weapon and armour together", what: <>Up to four pieces (<code>weapon</code>, <code>helmet</code>, <code>chestplate</code>, <code>leggings</code>), each an item and its ores, plus enhancement, runes and race. Returns each piece, total defence and the loadout DPS, like the Loadout page on the site.</> },
-  { type: "golemite", title: "golemite: Golem companions", what: <>10 to 50 ores (up to four types), Worlds 3 and 4. Returns the in-game name, rarity, mining help, ore-trait share, size and growth by level, and storage. How Golemites fight isn&apos;t known, so <code>combat.damage</code> is always <code>null</code>.</> },
+  { type: "golemite", title: "golemite: Golem companions", what: <>10 to 50 ores (up to four types), Worlds 3 and 4. Returns the in-game name, rarity, mining help, ore-trait share, size and growth by level, and storage. From level 13 a Golemite also fights: <code>combat.hitShare</code> is its hit as a share of your weapon&apos;s damage (2% rising to 6% at level 25) and <code>combat.hitsPerSecond</code> how often, as the wiki models it.</> },
 ];
 
 export default async function Page() {
@@ -108,7 +108,7 @@ export default async function Page() {
         ]} />
         <p>Errors look like this, with a stable <code>code</code> to branch on and a <code>message</code> you can show to people:</p>
         <Code>{json({ success: false, apiVersion: API_VERSION, error: { code: "INVALID_ORE", message: "Unknown ore ID: nope.", requestId: "req_example" } })}</Code>
-        <p>Values the game data doesn&apos;t have (an unknown drop chance, a Golemite&apos;s damage) are <code>null</code>, never guessed.</p>
+        <p>Values the game data doesn&apos;t have (an unknown drop chance) are <code>null</code>, never guessed.</p>
       </Section>
 
       <Section id="limits" title="Rate limits">

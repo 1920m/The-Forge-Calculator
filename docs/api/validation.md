@@ -1,5 +1,7 @@
 # Validation report (API v1, 4 November 2026)
 
+> The DPS figures below are from calculation model 2026-11-04. Since model 2026-11-12 (procs don't grow with enhancement, the wiki's rolled chances and burn, black hole and lightning maths, the game's exact swing times) the same examples give 2653.65 at +0 and 5169.5 at +9 with Blast Chip III; see `maths.md`.
+
 What was checked before review, how, and what's left to check on the live site.
 
 ## Summary

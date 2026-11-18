@@ -20,7 +20,7 @@ export function work(cat: Catalogue, oreById: Map<string, CatalogueOre>, f: Save
     /** DPS with the saved runes at `runeLevel`, when the save has weapon runes. */
     runeDps: runed, runeLevel: runed != null ? f.enhance ?? 9 : null, hasRunes: !!f.runes,
     rarity: r.rarity, multiplier: r.multiplier, traits: r.traits.filter((t) => t.strength > 0).map((t) => t.ore.name),
-    variantName: v?.name ?? null, value: v?.value ?? null, raw: v?.raw ?? null, dps: v?.dps?.total ?? null, speed: v?.interval ?? null, // real swing time, not the card's index value
+    variantName: v?.name ?? null, value: v?.value ?? null, raw: v?.raw ?? null, dps: v?.dps?.total ?? null, speed: v?.interval ?? null, // time between swings (the card's ATK SPD)
     chance: cls ? (cls.lockable ? "Guaranteed" : `${cls.probability}% class`) : null,
   };
 }
@@ -28,8 +28,8 @@ export function work(cat: Catalogue, oreById: Map<string, CatalogueOre>, f: Save
 type Worn = { f: SavedForge; r: Worked };
 
 /** A worked Golemite as combat input (null when it has no rarity yet, so no traits carry over). */
-export const golemInput = (r: { mix: readonly { ore: { id: string }; count: number }[]; traitScale: number | null } | null | undefined): GolemInput =>
-  r && r.traitScale ? { ores: r.mix.map((m) => ({ id: m.ore.id, count: m.count })), traitScale: r.traitScale } : null;
+export const golemInput = (r: { mix: readonly { ore: { id: string }; count: number }[]; traitScale: number | null } | null | undefined, level?: number): GolemInput =>
+  r && r.traitScale ? { ores: r.mix.map((m) => ({ id: m.ore.id, count: m.count })), traitScale: r.traitScale, level } : null;
 const oreCounts = (r: Worked) => r.mix.map((m) => ({ id: m.ore.id, count: m.count }));
 
 /**

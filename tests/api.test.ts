@@ -248,7 +248,8 @@ describe("POST /api/v1/calculate: forge", () => {
     const expected = combatDps({ weapon: { ores: dkg.ores, raw: v.raw!, interval: v.interval!, cls: "Gauntlets" }, level: 9, runes: [{ id: "blast-chip", level: 3, secondaries: ["crit_chance", "lethality", "atk_speed"] }] });
     expect(out.data.item.weapon!.dps!.total).toBeCloseTo(expected.total, 2);
     expect(out.data.item.enhancement).toMatchObject({ level: 9, multiplier: 1.5, runeSlotsOpen: 3 });
-    expect(out.warnings.map((w) => w.code)).toEqual(expect.arrayContaining(["ESTIMATED_DPS", "PROC_ENHANCEMENT_UNVERIFIED"]));
+    expect(out.warnings.map((w) => w.code)).toContain("ESTIMATED_DPS");
+    expect(out.warnings.map((w) => w.code)).not.toContain("PROC_ENHANCEMENT_UNVERIFIED"); // tested in game: procs don't grow
   });
 
   it("gives armour defence and slot, without DPS", () => {
@@ -326,7 +327,7 @@ describe("POST /api/v1/calculate: dps, loadout and golemite", () => {
     expect(out.data).toMatchObject({ name: "Lucky Cat Golemite", class: "Golem", rarity: "Epic", miningHelp: 0.23, oreTraitShare: 0.15, storage: 50 });
     expect(out.data.rarity).toBe(g.rarity);
     expect(out.data.growth).toMatchObject({ level: 13, canFight: true });
-    expect(out.data.combat).toMatchObject({ status: "unknown", damage: null });
+    expect(out.data.combat).toMatchObject({ status: "fights", hitShare: 0.02 });
   });
 });
 

@@ -40,6 +40,8 @@ export const ForgeRequest = z.strictObject({
   item: id.optional(),
   /** 1–4. Optional when the item and ores settle it; 1 and 2 share one forge. */
   world: world.optional(),
+  /** "abyss": the Abyss Forge next to World 4 (World 4's items plus the Abyss items). Default: the island's forge. */
+  forge: z.enum(["normal", "abyss"]).default("normal"),
   ores,
   quality: quality.default(100),
   /** Lock the item's class (only counts once there are enough ores to lock it). */

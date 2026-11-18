@@ -1,0 +1,1068 @@
+{
+ "about": "The wiki's DPS calculator (MediaWiki:ForgeCalculator.js, revision of 10 Nov 2026, with Data:Ores.json of 8 Nov and Data:Weapons.json of 12 Nov) run in a browser on forgewiki.org on 12 Nov 2026 with these builds at 100% quality. Armour is typed into its armour boxes as the stats of our pieces.",
+ "builds": [
+  {
+   "id": "mace",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 4.2,
+    "hits": 4.2,
+    "procs": {}
+   }
+  },
+  {
+   "id": "mace9",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": null,
+   "lvl": 9,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 6.3,
+    "hits": 6.3,
+    "procs": {}
+   }
+  },
+  {
+   "id": "hell",
+   "ours": "hell-slayer",
+   "cls": "Straight Sword",
+   "ores": [
+    [
+     "Bismuth",
+     1
+    ],
+    [
+     "Fichilliumorite",
+     1
+    ],
+    [
+     "Galaxite",
+     1
+    ],
+    [
+     "Kitsunite",
+     1
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Hell Slayer",
+    "bonusType": "Straight Sword"
+   },
+   "expected": {
+    "total": 2512.832,
+    "hits": 1417.236,
+    "procs": {
+     "explosion": 183.847,
+     "fire": 195.77,
+     "poison": 1.953,
+     "smite": 139.968,
+     "blackhole": 333.728,
+     "lightning": 240.33
+    }
+   }
+  },
+  {
+   "id": "hellDB6",
+   "ours": "hell-slayer",
+   "cls": "Straight Sword",
+   "ores": [
+    [
+     "Bismuth",
+     1
+    ],
+    [
+     "Fichilliumorite",
+     1
+    ],
+    [
+     "Galaxite",
+     1
+    ],
+    [
+     "Kitsunite",
+     1
+    ]
+   ],
+   "race": "Dragonborn",
+   "lvl": 6,
+   "wiki": {
+    "weapon": "Hell Slayer",
+    "bonusType": "Straight Sword"
+   },
+   "expected": {
+    "total": 3311.286,
+    "hits": 2040.471,
+    "procs": {
+     "explosion": 183.847,
+     "fire": 370.989,
+     "poison": 1.953,
+     "smite": 139.968,
+     "blackhole": 333.728,
+     "lightning": 240.33
+    }
+   }
+  },
+  {
+   "id": "exH0",
+   "ours": "excalibur",
+   "cls": "Colossal Sword",
+   "ores": [
+    [
+     "Kitsunite",
+     12
+    ],
+    [
+     "Galaxite",
+     12
+    ],
+    [
+     "Tetrinite",
+     12
+    ],
+    [
+     "Bismuth",
+     4
+    ]
+   ],
+   "race": "Human",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Excalibur",
+    "bonusType": "Colossal Sword"
+   },
+   "expected": {
+    "total": 4915.412,
+    "hits": 1465.282,
+    "procs": {
+     "explosion": 317.246,
+     "fire": 585.991,
+     "poison": 611.04,
+     "smite": 278.394,
+     "blackhole": 512.092,
+     "lightning": 863.697,
+     "ancient_poison": 281.67
+    }
+   }
+  },
+  {
+   "id": "exH9",
+   "ours": "excalibur",
+   "cls": "Colossal Sword",
+   "ores": [
+    [
+     "Kitsunite",
+     12
+    ],
+    [
+     "Galaxite",
+     12
+    ],
+    [
+     "Tetrinite",
+     12
+    ],
+    [
+     "Bismuth",
+     4
+    ]
+   ],
+   "race": "Human",
+   "lvl": 9,
+   "wiki": {
+    "weapon": "Excalibur",
+    "bonusType": "Colossal Sword"
+   },
+   "expected": {
+    "total": 5648.053,
+    "hits": 2197.923,
+    "procs": {
+     "explosion": 317.246,
+     "fire": 585.991,
+     "poison": 611.04,
+     "smite": 278.394,
+     "blackhole": 512.092,
+     "lightning": 863.697,
+     "ancient_poison": 281.67
+    }
+   }
+  },
+  {
+   "id": "exK9",
+   "ours": "excalibur",
+   "cls": "Colossal Sword",
+   "ores": [
+    [
+     "Kitsunite",
+     12
+    ],
+    [
+     "Galaxite",
+     12
+    ],
+    [
+     "Tetrinite",
+     12
+    ],
+    [
+     "Bismuth",
+     4
+    ]
+   ],
+   "race": "Kitsune",
+   "lvl": 9,
+   "wiki": {
+    "weapon": "Excalibur",
+    "bonusType": "Colossal Sword"
+   },
+   "expected": {
+    "total": 7791.073,
+    "hits": 3315.616,
+    "procs": {
+     "explosion": 379.574,
+     "fire": 612.94,
+     "poison": 611.04,
+     "smite": 333.088,
+     "blackhole": 591.536,
+     "lightning": 1005.506,
+     "fox_claws": 247.367,
+     "foxfire": 403.338,
+     "ancient_poison": 291.069
+    }
+   }
+  },
+  {
+   "id": "tanto",
+   "ours": "tanto",
+   "cls": "Dagger",
+   "ores": [
+    [
+     "Galaxite",
+     10
+    ],
+    [
+     "Kitsunite",
+     10
+    ],
+    [
+     "Fierce Jade",
+     10
+    ],
+    [
+     "Kyubite",
+     10
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Tanto",
+    "bonusType": "Dagger"
+   },
+   "expected": {
+    "total": 1728.629,
+    "hits": 1302.138,
+    "procs": {
+     "explosion": 105.513,
+     "fire": 140.888,
+     "smite": 90.371,
+     "blackhole": 46.579,
+     "lightning": 43.14
+    }
+   }
+  },
+  {
+   "id": "dkg9",
+   "ours": "dark-knights-gauntlets",
+   "cls": "Gauntlets",
+   "ores": [
+    [
+     "Galaxite",
+     5
+    ],
+    [
+     "Kyubite",
+     5
+    ],
+    [
+     "Fierce Jade",
+     5
+    ],
+    [
+     "Bismuth",
+     1
+    ]
+   ],
+   "race": null,
+   "lvl": 9,
+   "wiki": {
+    "weapon": "Dark Knight's Gauntlets",
+    "bonusType": "Gauntlet"
+   },
+   "expected": {
+    "total": 3742.469,
+    "hits": 3266.455,
+    "procs": {
+     "fire": 177,
+     "blackhole": 299.015
+    }
+   }
+  },
+  {
+   "id": "tet",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Tetrinite",
+     14
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 512.654,
+    "hits": 281.992,
+    "procs": {
+     "poison": 131.6,
+     "lightning": 36.495,
+     "ancient_poison": 62.567
+    }
+   }
+  },
+  {
+   "id": "fs",
+   "ours": "great-sword",
+   "cls": "Colossal Sword",
+   "ores": [
+    [
+     "Frost Star",
+     19
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Great Sword",
+    "bonusType": "Colossal Sword"
+   },
+   "expected": {
+    "total": 1220.141,
+    "hits": 831.037,
+    "procs": {
+     "frost_slash": 62.212,
+     "starfall": 83.662,
+     "stellar_mark": 243.23
+    }
+   }
+  },
+  {
+   "id": "fsgal",
+   "ours": "great-sword",
+   "cls": "Colossal Sword",
+   "ores": [
+    [
+     "Frost Star",
+     10
+    ],
+    [
+     "Galaxite",
+     9
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Great Sword",
+    "bonusType": "Colossal Sword"
+   },
+   "expected": {
+    "total": 1697.6,
+    "hits": 1032.604,
+    "procs": {
+     "blackhole": 116.241,
+     "frost_slash": 59.292,
+     "glacier_explosion": 114.128,
+     "starfall": 143.523,
+     "stellar_mark": 231.813
+    }
+   }
+  },
+  {
+   "id": "echo",
+   "ours": "dagger",
+   "cls": "Dagger",
+   "ores": [
+    [
+     "Echotite",
+     3
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Dagger",
+    "bonusType": "Dagger"
+   },
+   "expected": {
+    "total": 571.975,
+    "hits": 405.4,
+    "procs": {
+     "explosion": 82.284,
+     "reverberation": 84.291
+    }
+   }
+  },
+  {
+   "id": "mix",
+   "ours": "dark-knights-gauntlets",
+   "cls": "Gauntlets",
+   "ores": [
+    [
+     "Echotite",
+     5
+    ],
+    [
+     "Tetrinite",
+     5
+    ],
+    [
+     "Frost Star",
+     4
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Dark Knight's Gauntlets",
+    "bonusType": "Gauntlet"
+   },
+   "expected": {
+    "total": 2076.762,
+    "hits": 1000.91,
+    "procs": {
+     "explosion": 198.511,
+     "poison": 193.429,
+     "lightning": 67.983,
+     "reverberation": 128.83,
+     "frost_slash": 70.222,
+     "starfall": 45.694,
+     "stellar_mark": 274.547,
+     "ancient_poison": 96.635
+    }
+   }
+  },
+  {
+   "id": "galOnly",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Galaxite",
+     14
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 431.478,
+    "hits": 387.739,
+    "procs": {
+     "blackhole": 43.739
+    }
+   }
+  },
+  {
+   "id": "galRes",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Galaxite",
+     1
+    ],
+    [
+     "Bismuth",
+     2
+    ],
+    [
+     "Iron",
+     11
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 41.662,
+    "hits": 32.392,
+    "procs": {
+     "explosion": 0.046,
+     "fire": 0.022,
+     "poison": 0.025,
+     "blackhole": 9.125,
+     "lightning": 0.052
+    }
+   }
+  },
+  {
+   "id": "kitsAll",
+   "ours": "excalibur",
+   "cls": "Colossal Sword",
+   "ores": [
+    [
+     "Kitsunite",
+     50
+    ]
+   ],
+   "race": null,
+   "lvl": 9,
+   "wiki": {
+    "weapon": "Excalibur",
+    "bonusType": "Colossal Sword"
+   },
+   "expected": {
+    "total": 3267.739,
+    "hits": 1763.7,
+    "procs": {
+     "explosion": 334.113,
+     "fire": 625.108,
+     "smite": 296.86,
+     "lightning": 247.957
+    }
+   }
+  },
+  {
+   "id": "demon",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Demon",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 6.567,
+    "hits": 6.048,
+    "procs": {
+     "fire": 0.029,
+     "cursed_aura": 0.49
+    }
+   }
+  },
+  {
+   "id": "dragon",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Dragonborn",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 5.712,
+    "hits": 4.704,
+    "procs": {
+     "fire": 1.008
+    }
+   }
+  },
+  {
+   "id": "angel",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Angel",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 4.836,
+    "hits": 4.2,
+    "procs": {
+     "smite": 0.636
+    }
+   }
+  },
+  {
+   "id": "arch",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Archangel",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 6.616,
+    "hits": 6.048,
+    "procs": {
+     "archangel_smite": 0.568
+    }
+   }
+  },
+  {
+   "id": "kits",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Kitsune",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 8.38,
+    "hits": 6.048,
+    "procs": {
+     "fox_claws": 0.945,
+     "foxfire": 1.387
+    }
+   }
+  },
+  {
+   "id": "orclord",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Orc Lord",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 6.214,
+    "hits": 5.88,
+    "procs": {
+     "smash": 0.334
+    }
+   }
+  },
+  {
+   "id": "fallen",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Fallen Angel",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 6.04,
+    "hits": 5.544,
+    "procs": {
+     "dark_smite": 0.496
+    }
+   }
+  },
+  {
+   "id": "imp",
+   "ours": "spear",
+   "cls": "Spear",
+   "ores": [
+    [
+     "Iron",
+     24
+    ]
+   ],
+   "race": "Imp",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Spear",
+    "bonusType": "Spear"
+   },
+   "expected": {
+    "total": 11.65,
+    "hits": 10.862,
+    "procs": {
+     "trident_toss": 0.787
+    }
+   },
+   "note": "ours adds Hellfire Prod's spear burn, which the wiki leaves out"
+  },
+  {
+   "id": "kitsDem9",
+   "ours": "hell-slayer",
+   "cls": "Straight Sword",
+   "ores": [
+    [
+     "Kitsunite",
+     10
+    ],
+    [
+     "Supermassive Black Hole",
+     10
+    ],
+    [
+     "Gargantuan",
+     10
+    ],
+    [
+     "Kyubite",
+     10
+    ]
+   ],
+   "race": "Demon",
+   "lvl": 9,
+   "wiki": {
+    "weapon": "Hell Slayer",
+    "bonusType": "Straight Sword"
+   },
+   "expected": {
+    "total": 2771.165,
+    "hits": 1573.325,
+    "procs": {
+     "explosion": 367.177,
+     "fire": 604.07,
+     "smite": 108.795,
+     "lightning": 74.689,
+     "cursed_aura": 43.109
+    }
+   }
+  },
+  {
+   "id": "marb",
+   "ours": "uchigatana",
+   "cls": "Katana",
+   "ores": [
+    [
+     "Marblite",
+     10
+    ],
+    [
+     "Malachite",
+     10
+    ],
+    [
+     "Sun Stone",
+     10
+    ]
+   ],
+   "race": null,
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Uchigatana",
+    "bonusType": "Katana"
+   },
+   "expected": {
+    "total": 422.579,
+    "hits": 310.353,
+    "procs": {
+     "fire": 74.95,
+     "poison": 18.098,
+     "lightning": 19.178
+    }
+   }
+  },
+  {
+   "id": "kunaiGob",
+   "ours": "kunai",
+   "cls": "Dagger",
+   "ores": [
+    [
+     "Iron",
+     3
+    ]
+   ],
+   "race": "Goblin",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Kunai",
+    "bonusType": "Dagger"
+   },
+   "expected": {
+    "total": 7.662,
+    "hits": 7.662,
+    "procs": {}
+   }
+  },
+  {
+   "id": "dkgFel",
+   "ours": "dark-knights-gauntlets",
+   "cls": "Gauntlets",
+   "ores": [
+    [
+     "Iron",
+     15
+    ]
+   ],
+   "race": "Felynx",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Dark Knight's Gauntlets",
+    "bonusType": "Gauntlet"
+   },
+   "expected": {
+    "total": 19.921,
+    "hits": 19.921,
+    "procs": {}
+   }
+  },
+  {
+   "id": "spearFairy",
+   "ours": "spear",
+   "cls": "Spear",
+   "ores": [
+    [
+     "Iron",
+     24
+    ]
+   ],
+   "race": "Fairy",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Spear",
+    "bonusType": "Spear"
+   },
+   "expected": {
+    "total": 9.577,
+    "hits": 9.577,
+    "procs": {}
+   }
+  },
+  {
+   "id": "maceOrc",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Orc",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace"
+   },
+   "expected": {
+    "total": 4.62,
+    "hits": 4.62,
+    "procs": {}
+   }
+  },
+  {
+   "id": "maceShadowArm",
+   "ours": "mace",
+   "cls": "Mace",
+   "ores": [
+    [
+     "Iron",
+     14
+    ]
+   ],
+   "race": "Shadow",
+   "lvl": 0,
+   "armour": [
+    [
+     [
+      "Vanegos",
+      10
+     ]
+    ],
+    [
+     [
+      "Yin-Yang",
+      10
+     ]
+    ]
+   ],
+   "wiki": {
+    "weapon": "Mace",
+    "bonusType": "Mace",
+    "armour": {
+     "armor_lethality": 0.4,
+     "armor_crit_chance": 0.45,
+     "armor_crit_dmg": 0.2,
+     "berserk": 0.6
+    }
+   },
+   "expected": {
+    "total": 8.658,
+    "hits": 8.658,
+    "procs": {},
+    "lowHp": 12.241
+   }
+  },
+  {
+   "id": "hellVamp",
+   "ours": "hell-slayer",
+   "cls": "Straight Sword",
+   "ores": [
+    [
+     "Bismuth",
+     1
+    ],
+    [
+     "Fichilliumorite",
+     1
+    ],
+    [
+     "Galaxite",
+     1
+    ],
+    [
+     "Kitsunite",
+     1
+    ]
+   ],
+   "race": "Vampire",
+   "lvl": 0,
+   "wiki": {
+    "weapon": "Hell Slayer",
+    "bonusType": "Straight Sword"
+   },
+   "expected": {
+    "total": 2639.797,
+    "hits": 1544.2,
+    "procs": {
+     "explosion": 183.847,
+     "fire": 195.77,
+     "poison": 1.953,
+     "smite": 139.968,
+     "blackhole": 333.728,
+     "lightning": 240.33
+    }
+   }
+  },
+  {
+   "id": "hellMino",
+   "ours": "hell-slayer",
+   "cls": "Straight Sword",
+   "ores": [
+    [
+     "Bismuth",
+     1
+    ],
+    [
+     "Fichilliumorite",
+     1
+    ],
+    [
+     "Galaxite",
+     1
+    ],
+    [
+     "Kitsunite",
+     1
+    ]
+   ],
+   "race": "Minotaur",
+   "lvl": 0,
+   "armour": [
+    [
+     [
+      "Fierce Jade",
+      10
+     ]
+    ]
+   ],
+   "wiki": {
+    "weapon": "Hell Slayer",
+    "bonusType": "Straight Sword",
+    "armour": {
+     "armor_lethality": 0.2,
+     "armor_crit_chance": 0.35,
+     "armor_crit_dmg": 0.2,
+     "berserk": 0.35
+    }
+   },
+   "expected": {
+    "total": 3286.66,
+    "hits": 2191.064,
+    "procs": {
+     "explosion": 183.847,
+     "fire": 195.77,
+     "poison": 1.953,
+     "smite": 139.968,
+     "blackhole": 333.728,
+     "lightning": 240.33
+    },
+    "lowHp": 4368.667
+   }
+  }
+ ]
+}

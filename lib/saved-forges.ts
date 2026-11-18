@@ -73,7 +73,7 @@ export function forgeKey(f: Pick<SavedForge, "kind" | "variant_id" | "quality" |
 }
 
 /** Calculator link that opens this forge exactly: ores, kind, quality, world and the saved item. */
-export function calculatorHref(f: Pick<SavedForge, "kind" | "world" | "class_name" | "variant_id" | "quality" | "ores"> & Partial<Pick<SavedForge, "enhance" | "runes">>): string {
+export function calculatorHref(f: Pick<SavedForge, "kind" | "world" | "class_name" | "variant_id" | "quality" | "ores"> & Partial<Pick<SavedForge, "enhance" | "runes">> & { site?: "abyss" }): string {
   const p = new URLSearchParams({
     o: f.ores.map((e) => `${e.id}:${e.count}`).join(","),
     k: f.kind,
@@ -82,6 +82,7 @@ export function calculatorHref(f: Pick<SavedForge, "kind" | "world" | "class_nam
     c: f.class_name,
     v: f.variant_id,
   });
+  if (f.site === "abyss") p.set("f", "abyss");
   // Saved runes open at the bottom of the calculator.
   if (f.runes) { p.set("e", String(f.enhance ?? 9)); p.set(f.kind === "weapon" ? "rw" : "ra", f.runes); }
   return `/?${p.toString()}`;

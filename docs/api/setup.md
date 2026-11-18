@@ -83,7 +83,7 @@ curl -i "$BASE/catalogue?type=ores&ids=bismuth"
 # 200 with the Bismuth entry, an ETag and X-RateLimit-* headers
 curl -i -H "Authorization: Bearer $KEY" "$BASE/catalogue?type=ores&ids=bismuth"
 
-# 200: Dark Knight's Gauntlets, 393.33 DMG, estimated DPS 2851.87
+# 200: Dark Knight's Gauntlets, 393.33 DMG, estimated DPS 2451.43
 curl -s -X POST "$BASE/calculate" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
   -d '{"type":"forge","kind":"weapon","item":"dark-knights-gauntlets","ores":[{"id":"galaxite","count":5},{"id":"kyubite","count":5},{"id":"fierce-jade","count":5},{"id":"bismuth","count":1}]}'
 ```

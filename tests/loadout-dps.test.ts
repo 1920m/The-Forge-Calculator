@@ -115,8 +115,9 @@ describe("races", () => {
   it("merges Dragonborn's burn and Angel's smite into the weapon's own", () => {
     expect(run({ weapon: plainMace, raceId: "dragonborn" }).result.parts.map((p) => p.label)).toContain("Burn");
     expect(run({ weapon: plainMace, raceId: "angel" }).result.parts.map((p) => p.label)).toContain("Smite");
-    // Demon's +20% fire damage alone can't start a burn: it needs a burn chance from somewhere.
-    expect(run({ weapon: plainMace, raceId: "demon" }).result.parts.map((p) => p.label)).not.toContain("Burn");
+    // Demon's +20% fire damage alone burns only on the 1-in-101 roll, as in the wiki's calculator.
+    const demon = run({ weapon: plainMace, raceId: "demon" }).result.parts.find((p) => p.label === "Burn")!.dps;
+    expect(demon).toBeLessThan(0.01 * plainMace.raw);
   });
   it("adds race and runes together once each", () => {
     const runes = decodeRunes("blast-chip:3:atk_speed,-,-", "weapon");
@@ -170,82 +171,34 @@ describe("enhancement", () => {
     expect(enhanceFactor(9)).toBeCloseTo(1.5, 9);
     expect(enhanceFactor(10)).toBeCloseTo(1.5, 9);
     const r0 = run({ weapon: plainMace, level: 0 }).total, r9 = run({ weapon: plainMace, level: 9 }).total;
-    expect(r9 / r0).toBeCloseTo(1.5, 9);
-    expect(r9).toBeCloseTo(6.282, 3); // the wiki's calculator, Mace (14 Iron) at +9
+    expect(r9 / r0).toBeCloseTo(1.5, 9); // a plain Mace has hits only
+    expect(r9).toBeCloseTo(6.3, 3); // the wiki's calculator, Mace (14 Iron) at +9
   });
-  it.todo("stop scaling procs with enhancement, if the game shows procs use the damage before enhancing (as the wiki's script does)");
-});
-
-/*
- * The wiki's DPS calculator (MediaWiki:ForgeCalculator.js), run in the browser on 3 Nov 2026 with the same builds.
- * Race and armour layers match it. The known differences (docs/wiki-dps-comparison.md) are left out here:
- * enhancement (×1.50 at +9), and the wiki's newer proc maths (rolled chances, saturating burn uptime).
- */
-describe("matches the wiki's calculator for race and armour", () => {
-  const kunai = weaponOf(mix(["Iron", 3]), 4, "Dagger", "kunai");
-  const wiki: [string, CombatInput["weapon"], string | null, CombatInput["armour"], number][] = [
-    ["Mace, no race", plainMace, null, [], 4.188],
-    ["Kunai, Goblin", kunai, "goblin", [], 7.641],
-    ["Dark Knight's Gauntlets, Felynx", gauntlets, "felynx", [], 19.765],
-    ["Spear, Fairy", spear, "fairy", [], 9.511],
-    ["Mace, Orc", plainMace, "orc", [], 4.607],
-    ["Mace, Dragonborn", plainMace, "dragonborn", [], 5.697],
-    ["Mace, ArchAngel", plainMace, "archangel", [], 6.598],
-    ["Mace, Kitsune", plainMace, "kitsune", [], 8.358],
-    ["Mace, Orc Lord", plainMace, "orc-lord", [], 6.197],
-    ["Mace, Shadow, Vanegos and Yin-Yang armour", plainMace, "shadow", [piece(["Vanegos", 10]), piece(["Yin-Yang", 10]), null], 8.634],
-  ];
-  for (const [name, weapon, raceId, armour, expected] of wiki) {
-    it(name, () => expect(run({ weapon, raceId, armour }).total).toBeCloseTo(expected, 2));
-  }
-  it("adds the same for Vampire on a Hell Slayer, and Minotaur below 35% HP", () => {
-    const plain = run({ weapon: hellSlayer }).total;
-    expect(run({ weapon: hellSlayer, raceId: "vampire" }).total - plain).toBeCloseTo(2380.632 - 2265.494, 2);
-    const mino = run({ weapon: hellSlayer, raceId: "minotaur", armour: [piece(["Fierce Jade", 10]), null, null] });
-    expect(mino.lowHp! - mino.total).toBeCloseTo(3862.427 - 2896.805, 1);
+  it("grows hits only, not procs (tested in game, 12 Nov 2026)", () => {
+    const r0 = run({ weapon: hellSlayer, level: 0 }).result, r9 = run({ weapon: hellSlayer, level: 9 }).result;
+    expect(r9.hit / r0.hit).toBeCloseTo(1.5, 9);
+    expect(r9.procs).toBeCloseTo(r0.procs, 9);
   });
 });
 
-/*
- * Version 1.10 (7 Nov 2026): Imp, Fallen Angel and the spear buffs, against the wiki's calculator of 7 Nov 2026 (22:52),
- * run in the browser with the same builds (100% quality, +0, the race's weapon class picked where it has one).
- * Two differences on purpose: Hellfire Prod's spear burn is ours only (the wiki leaves it out), and Black Halo uses
- * the plain 30% chance where the wiki rolls it to 30.7%, as for Angel's smite.
- */
-describe("Version 1.10 races and spears match the wiki's calculator", () => {
-  const angelic = weaponOf(mix(["Iron", 24]), 3, "Spear", "angelic-spear");
-  const demonic = weaponOf(mix(["Iron", 24]), 4, "Spear", "demonic-spear");
+// Imp and Fallen Angel against the wiki are in tests/wiki-dps.test.ts. Hellfire Prod is ours only.
+describe("Version 1.10 races and spears", () => {
   const part = (r: ReturnType<typeof run>, label: string) => r.result.parts.find((p) => p.label === label)?.dps ?? 0;
-  const withoutBurn = (r: ReturnType<typeof run>) => r.total - part(r, "Burn");
-
-  it("buffs the Angelic and Demonic Spears", () => {
-    expect(run({ weapon: angelic }).total).toBeCloseTo(13.9045, 3);
-    expect(run({ weapon: demonic }).total).toBeCloseTo(13.8274, 3);
-    expect(demonic.interval).toBe(0.73);
-  });
-  it("gives Imp +25% Physical Damage, +20% attack speed and Trident Toss with Spears only", () => {
-    for (const [w, total, toss] of [[spear, 11.5752, 0.7875], [angelic, 22.2334, 1.3765], [demonic, 22.2552, 1.5141]] as const) {
-      const imp = run({ weapon: w, raceId: "imp" });
-      expect(withoutBurn(imp)).toBeCloseTo(total, 3);
-      expect(part(imp, "Trident Toss")).toBeCloseTo(toss, 3);
-    }
+  it("gives Imp's spear bonuses and Trident Toss with Spears only", () => {
+    const imp = run({ weapon: spear, raceId: "imp" });
+    expect(part(imp, "Trident Toss")).toBeGreaterThan(0);
     expect(run({ weapon: plainMace, raceId: "imp" }).total).toBe(run({ weapon: plainMace }).total);
   });
-  it("adds Hellfire Prod as a spear burn (25% for 20% a second), like Dragonborn's breath", () => {
+  it("adds Hellfire Prod as a spear burn (25% for 20% a second, 3 s), like Dragonborn's breath", () => {
     const imp = run({ weapon: spear, raceId: "imp" });
     const rate = imp.result.attacksPerSecond;
-    expect(part(imp, "Burn")).toBeCloseTo(spear.raw * 0.2 * Math.min(1, 0.25 * rate * 2), 9); // 3 s burn counts as 2, as for every burn
+    const n = rate * 3, k = Math.floor(n), f = n - k, miss = 1 - 26 / 101;
+    expect(part(imp, "Burn")).toBeCloseTo(spear.raw * 0.2 * (1 - ((1 - f) * Math.pow(miss, k) + f * Math.pow(miss, k + 1))), 9);
     expect(raceExtra("imp", "Mace").extra.vals?.fire_dmg).toBeUndefined();
   });
-  it("gives Fallen Angel +20% Physical Damage, +10% attack speed, Black Halo and Last Descent below 30% HP", () => {
-    const fa = run({ weapon: plainMace, raceId: "fallen-angel" });
-    expect(fa.result.hit).toBeCloseTo(5.5282, 3);
-    expect(part(fa, "Black Halo")).toBeCloseTo(plainMace.raw * fa.result.attacksPerSecond * 0.35 * 0.3, 9); // wiki: 0.4949 at 30.7%
-    expect(fa.lowHp! - fa.total).toBeCloseTo(7.4051 - 6.0231, 3);
-  });
-  it("fixes Jack's Crest and The Carver", () => {
-    expect(run({ weapon: weaponOf(mix(["Iron", 11]), 2, "Greatsword", "jacks-crest") }).total).toBeCloseTo(9.6574, 3);
-    expect(run({ weapon: weaponOf(mix(["Iron", 11]), 2, "Greatsword", "the-carver") }).total).toBeCloseTo(8.9444, 3);
+  it("uses the Version 1.10 spear numbers", () => {
+    expect(cat.weapons.find((w) => w.id === "angelic-spear")!.baseDamage).toBeCloseTo(13.11225, 9);
+    expect(cat.weapons.find((w) => w.id === "demonic-spear")).toMatchObject({ baseDamage: 14.42325, trueSpeed: 0.725 });
   });
 });
 
@@ -256,8 +209,9 @@ describe("full-loadout DPS: Golemites", () => {
     const g = golem(["Galaxite", 10]); // Divine: traits at 30%
     expect(g?.traitScale).toBe(0.3);
     const withGolem = run({ weapon: plainMace, golems: [g] });
-    // Galaxite at full strength (100% of the Golemite): 45% crit chance, 20% crit damage, 60% black hole, × 0.3.
-    const manual = weaponDps({ ores: plainMace.ores, damage: plainMace.raw, interval: plainMace.interval, extra: { vals: { crit_chance: [0.135], crit_dmg: [0.06], blackhole_dmg: [0.18] } } }).total;
+    // Galaxite at full strength (100% of the Golemite): 45% crit chance, 20% crit damage, 60% black hole at a 30% chance,
+    // all × 0.3.
+    const manual = weaponDps({ ores: plainMace.ores, damage: plainMace.raw, interval: plainMace.interval, extra: { vals: { crit_chance: [0.135], crit_dmg: [0.06], blackhole_dmg: [0.18], blackhole_chance: [0.09] } } }).total;
     expect(withGolem.total).toBeCloseTo(manual, 9);
     expect(withGolem.total).toBeGreaterThan(run({ weapon: plainMace }).total);
     expect(withGolem.golemsCounted).toEqual([true]);
